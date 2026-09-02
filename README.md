@@ -2,21 +2,22 @@
 
 Velaris is a cinematic interface layer for Jellyfin Web with its own cyan, violet and magenta visual identity.
 
-## Current version: V0.0.4
+## Current release — V0.0.5
 
-V0.0.4 pushes Velaris further away from the stock Jellyfin layout and more toward a dedicated streaming interface.
+V0.0.5 expands Velaris beyond the home screen and gives Jellyfin detail pages and playback controls a dedicated cinematic treatment.
 
-- rotating **Velaris Spotlight** hero with multiple titles
-- automatic featured-title selection from the Jellyfin home page
-- Spotlight previous/next controls and indicator dots
-- automatic Spotlight rotation with reduced-motion support
-- Continue Watching / Weiterschauen and Next Up row prioritization
-- smarter horizontal rail controls with scroll-state awareness
-- larger playback rows on desktop
-- streaming-style floating header navigation
-- page-state detection for home, browse, details, player and login views
-- SPA-aware MutationObserver refresh
-- responsive and keyboard-focus handling
+### Highlights
+
+- rotating **Velaris Spotlight** with up to six library titles
+- Spotlight pauses while hovered/focused and only rotates while visible
+- keyboard left/right navigation inside Spotlight
+- Spotlight image preloading and more reliable card re-resolution after Jellyfin SPA updates
+- smart row classification for Continue Watching / Weiterschauen, Next Up, Latest and Favorites
+- custom horizontal rail controls with scroll-state awareness
+- cinematic **detail page redesign** with stronger backdrop gradients, oversized title treatment, metadata pills and glass action buttons
+- new **Velaris Cinema** detail-page identity marker
+- redesigned **player OSD** with glass controls, accent progress styling and Velaris playback badge
+- SPA-aware MutationObserver refresh, resize handling and reduced-motion support
 
 ## Version archive
 
@@ -24,9 +25,12 @@ Historic releases live in `HistoricVersions/Vx.x.x/`.
 
 Whenever a newer Velaris version is released, the previous version is frozen and moved into `HistoricVersions` so it remains reproducible and accessible.
 
-The previous release is available under `HistoricVersions/V0.0.3/`.
+Current historic releases:
 
-## Recommended installation: Tampermonkey
+- `HistoricVersions/V0.0.3/`
+- `HistoricVersions/V0.0.4/`
+
+## Recommended installation — Tampermonkey
 
 Velaris includes a ready-to-use userscript loader:
 
@@ -36,31 +40,29 @@ Install URL:
 
 `https://raw.githubusercontent.com/Homiiboy/Velaris/main/velaris-loader.user.js`
 
-With Tampermonkey installed, open the URL above and confirm the userscript installation.
-
-The loader automatically injects both:
+With Tampermonkey installed, open the URL above and confirm the userscript installation. The loader automatically injects the matching, pinned V0.0.5 copies of:
 
 - `dist/velaris.css`
 - `dist/velaris.js`
 
-It targets normal Jellyfin Web paths such as `/web/` and `/jellyfin/`. The userscript contains Tampermonkey update metadata and V0.0.4 uses versioned asset URLs to reduce stale cache problems after an update.
+The loader includes Tampermonkey update metadata so newer Velaris loader versions can be detected automatically.
 
 ## CSS-only installation
 
 If JavaScript is not wanted, paste this into **Jellyfin → Dashboard → General → Custom CSS**:
 
 ```css
-@import url("https://cdn.jsdelivr.net/gh/Homiiboy/Velaris@main/dist/velaris.css?v=0.0.4");
+@import url("https://cdn.jsdelivr.net/gh/Homiiboy/Velaris@72896b5c23da41bf14f082ca1138c8b1fb2cdaca/dist/velaris.css");
 ```
 
-The CSS works without JavaScript; Spotlight generation, automatic rotation, row reordering and custom rail controls are then disabled.
+The CSS-only mode keeps the visual redesign, but JavaScript-powered features such as Spotlight generation, row reordering, dynamic detail-page classes and player enhancements are reduced or unavailable.
 
 ## Manual JavaScript installation
 
-Jellyfin Custom CSS cannot execute JavaScript. If Tampermonkey is not used, load the JavaScript using another custom-script injection method:
+If Tampermonkey is not used, load the matching JavaScript with another custom-script injection method:
 
 ```html
-<script defer src="https://cdn.jsdelivr.net/gh/Homiiboy/Velaris@main/dist/velaris.js?v=0.0.4"></script>
+<script defer src="https://cdn.jsdelivr.net/gh/Homiiboy/Velaris@72896b5c23da41bf14f082ca1138c8b1fb2cdaca/dist/velaris.js"></script>
 ```
 
 ## License
