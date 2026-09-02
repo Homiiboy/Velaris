@@ -1,15 +1,20 @@
-/* Velaris v0.0.4 */
+/* Velaris v0.0.5 */
 :root {
     --vl-bg: #020305;
+    --vl-bg-soft: #07090d;
     --vl-panel: rgba(8, 11, 16, .94);
+    --vl-panel-soft: rgba(13, 17, 24, .78);
     --vl-cyan: #00eaff;
     --vl-purple: #8b5cf6;
     --vl-pink: #ff2bd6;
     --vl-white: #f7f8fb;
-    --vl-muted: rgba(215, 220, 232, .58);
+    --vl-muted: rgba(215, 220, 232, .62);
+    --vl-border: rgba(255, 255, 255, .09);
     --vl-radius: 12px;
+    --vl-radius-lg: 24px;
     --vl-pad: clamp(1rem, 4vw, 4.75rem);
     --vl-header-height: 4.7rem;
+    --vl-shadow: 0 30px 80px rgba(0, 0, 0, .58);
 }
 
 html,
@@ -24,7 +29,7 @@ body {
     background-image:
         radial-gradient(ellipse at -5% 0%, rgba(0, 234, 255, .16), transparent 50%),
         radial-gradient(ellipse at 104% 8%, rgba(255, 43, 214, .11), transparent 52%),
-        radial-gradient(ellipse at 50% 108%, rgba(139, 92, 246, .1), transparent 48%),
+        radial-gradient(ellipse at 50% 108%, rgba(139, 92, 246, .10), transparent 48%),
         linear-gradient(180deg, #080a0f, #030407 42%, var(--vl-bg)) !important;
 }
 
@@ -43,15 +48,16 @@ body::before {
     inset: 0;
     pointer-events: none;
     z-index: 0;
-    opacity: .085;
+    opacity: .075;
     background-image:
-        linear-gradient(rgba(0, 234, 255, .048) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(0, 234, 255, .035) 1px, transparent 1px);
+        linear-gradient(rgba(0, 234, 255, .045) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 234, 255, .032) 1px, transparent 1px);
     background-size: 72px 72px;
     -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, .72), transparent 68%);
     mask-image: linear-gradient(to bottom, rgba(0, 0, 0, .72), transparent 68%);
 }
 
+/* Header */
 .skinHeader.velaris-header {
     min-height: var(--vl-header-height);
     background: linear-gradient(180deg, rgba(2, 3, 5, .985), rgba(2, 3, 5, .78) 72%, rgba(2, 3, 5, .44)) !important;
@@ -126,6 +132,7 @@ body::before {
     box-shadow: 0 0 10px rgba(0, 234, 255, .58);
 }
 
+/* Home rails */
 .homePage .verticalSection,
 .homePage .velaris-hero {
     margin-left: var(--vl-pad) !important;
@@ -197,8 +204,8 @@ body::before {
     -webkit-backdrop-filter: blur(14px);
     backdrop-filter: blur(14px);
     box-shadow: 0 7px 22px rgba(0, 0, 0, .34);
-    opacity: .48;
-    transition: opacity .16s ease, transform .16s ease, border-color .16s ease;
+    opacity: .42;
+    transition: opacity .16s ease, transform .16s ease, border-color .16s ease, background-color .16s ease;
 }
 
 .velaris-can-scroll-left .velaris-rail-button--prev,
@@ -209,6 +216,7 @@ body::before {
 .velaris-rail-button:hover {
     transform: scale(1.07);
     border-color: rgba(0, 234, 255, .5) !important;
+    background: rgba(20, 25, 34, .96) !important;
 }
 
 .homePage .emby-scroller,
@@ -221,6 +229,7 @@ body::before {
     display: none;
 }
 
+/* Spotlight */
 .velaris-hero {
     position: relative;
     min-height: clamp(24rem, 49vw, 40rem);
@@ -232,6 +241,11 @@ body::before {
     background: #07090d;
     box-shadow: 0 34px 90px rgba(0, 0, 0, .58), 0 0 0 1px rgba(255, 255, 255, .015) inset;
     isolation: isolate;
+    outline: none;
+}
+
+.velaris-hero:focus-visible {
+    box-shadow: var(--vl-shadow), 0 0 0 2px var(--vl-cyan);
 }
 
 .velaris-hero__art {
@@ -268,7 +282,9 @@ body::before {
     inset: 0;
     z-index: -2;
     pointer-events: none;
-    background: radial-gradient(circle at 72% 20%, rgba(0, 234, 255, .08), transparent 26%);
+    background:
+        radial-gradient(circle at 72% 20%, rgba(0, 234, 255, .08), transparent 26%),
+        radial-gradient(circle at 85% 74%, rgba(255, 43, 214, .06), transparent 24%);
     mix-blend-mode: screen;
 }
 
@@ -383,6 +399,7 @@ body::before {
     box-shadow: 0 0 12px rgba(0, 234, 255, .35);
 }
 
+/* Cards */
 .card {
     position: relative;
     z-index: 1;
@@ -418,18 +435,21 @@ body::before {
         z-index: 120;
         transform: translateY(-10px) scale(1.055);
     }
-}
 
-.card:hover .cardImageContainer,
-.card:focus-within .cardImageContainer {
-    outline-color: rgba(255, 255, 255, .3);
-    filter: brightness(1.045) saturate(1.07);
-    box-shadow: 0 32px 72px rgba(0, 0, 0, .86), 0 0 28px rgba(0, 234, 255, .045);
+    .card:hover .cardImageContainer,
+    .card:focus-within .cardImageContainer {
+        outline-color: rgba(255, 255, 255, .30);
+        filter: brightness(1.045) saturate(1.07);
+        box-shadow:
+            0 32px 72px rgba(0, 0, 0, .86),
+            0 0 32px rgba(0, 234, 255, .055);
+    }
 }
 
 .cardOverlayContainer {
     overflow: hidden !important;
-    background: linear-gradient(to top, rgba(2, 3, 5, 1), rgba(2, 3, 5, .94) 28%, rgba(2, 3, 5, .48) 58%, transparent 100%) !important;
+    background:
+        linear-gradient(to top, rgba(2, 3, 5, 1), rgba(2, 3, 5, .96) 25%, rgba(2, 3, 5, .52) 58%, transparent 100%) !important;
 }
 
 .cardOverlayContainer > .cardOverlayFab-primary {
@@ -441,9 +461,9 @@ body::before {
 }
 
 .cardOverlayButtonIcon {
-    background: rgba(15, 16, 20, .9) !important;
+    background: rgba(15, 16, 20, .90) !important;
     color: #fff !important;
-    border: 1.6px solid rgba(255, 255, 255, .58);
+    border: 1.5px solid rgba(255, 255, 255, .56);
     border-radius: 50% !important;
 }
 
@@ -471,57 +491,268 @@ body::before {
     box-shadow: 0 0 10px rgba(0, 234, 255, .48);
 }
 
-.backdropContainer {
+/* Detail page — V0.0.5 cinematic pass */
+body[data-velaris-page="details"] {
+    overflow-x: hidden;
+}
+
+.velaris-detail-page {
+    --vl-detail-content: min(58rem, 88vw);
+}
+
+.velaris-detail-page .backdropContainer,
+body[data-velaris-page="details"] .backdropContainer {
     overflow: hidden !important;
 }
 
-.backdropImage {
-    transform: scale(1.08);
-    filter: brightness(.58) contrast(1.12) saturate(1.18);
+.velaris-detail-page .backdropImage,
+body[data-velaris-page="details"] .backdropImage {
+    transform: scale(1.075);
+    filter: brightness(.58) contrast(1.09) saturate(1.16);
 }
 
-.backdropContainer::after {
+.velaris-detail-page .backdropContainer::after,
+body[data-velaris-page="details"] .backdropContainer::after {
     content: "";
     position: absolute;
     inset: 0;
     z-index: 2;
     pointer-events: none;
     background:
-        linear-gradient(to right, rgba(2, 3, 5, .97), rgba(2, 3, 5, .4) 45%, rgba(2, 3, 5, .1) 72%),
-        linear-gradient(to bottom, transparent 30%, rgba(2, 3, 5, .38) 65%, var(--vl-bg));
+        linear-gradient(90deg, rgba(2, 3, 5, .97) 0%, rgba(2, 3, 5, .84) 27%, rgba(2, 3, 5, .39) 52%, rgba(2, 3, 5, .12) 76%, rgba(2, 3, 5, .28) 100%),
+        linear-gradient(0deg, var(--vl-bg) 0%, rgba(2, 3, 5, .88) 12%, rgba(2, 3, 5, .3) 46%, rgba(2, 3, 5, .08) 72%);
 }
 
+.velaris-detail-primary {
+    position: relative;
+    z-index: 5;
+    max-width: var(--vl-detail-content);
+    padding-top: clamp(4.8rem, 12vh, 9rem) !important;
+    padding-bottom: 2rem !important;
+}
+
+.velaris-detail-primary::before {
+    content: "";
+    position: absolute;
+    left: -1.2rem;
+    top: clamp(4.8rem, 12vh, 9rem);
+    bottom: 1rem;
+    width: 1px;
+    opacity: .52;
+    background: linear-gradient(180deg, var(--vl-cyan), var(--vl-purple) 52%, transparent 92%);
+    box-shadow: 0 0 16px rgba(0, 234, 255, .22);
+}
+
+.velaris-detail-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    margin-bottom: .78rem;
+    color: rgba(232, 238, 247, .68);
+    font-size: .72rem;
+    font-weight: 820;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+}
+
+.velaris-detail-kicker::before {
+    content: "";
+    width: .58rem;
+    height: .58rem;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--vl-cyan), var(--vl-purple), var(--vl-pink));
+    box-shadow: 0 0 14px rgba(0, 234, 255, .4);
+}
+
+.velaris-detail-title,
 .detailPagePrimaryContainer .itemName {
+    max-width: 14ch;
     color: #fff !important;
-    font-size: clamp(2.2em, 4vw, 4.8em) !important;
-    font-weight: 820 !important;
-    letter-spacing: -.045em;
+    font-size: clamp(2.8rem, 6.5vw, 6.7rem) !important;
+    font-weight: 880 !important;
+    line-height: .91 !important;
+    letter-spacing: -.055em !important;
+    text-shadow: 0 12px 38px rgba(0, 0, 0, .75);
 }
 
-.overview {
-    max-width: 55em;
-    color: rgba(245, 247, 252, .86) !important;
-    line-height: 1.62;
+.velaris-detail-meta,
+.detailPagePrimaryContainer .itemMiscInfo {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .45rem .65rem;
+    margin-top: 1.05rem;
+    color: rgba(239, 243, 249, .76) !important;
+    font-weight: 620;
 }
 
-.btnPlay,
-.btnResume {
+.velaris-detail-meta > *,
+.detailPagePrimaryContainer .itemMiscInfo > * {
+    border: 1px solid rgba(255, 255, 255, .09);
+    border-radius: 999px;
+    background: rgba(10, 13, 18, .48);
+    padding: .28rem .6rem;
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+}
+
+.velaris-detail-overview,
+.detailPagePrimaryContainer .overview {
+    max-width: 48rem;
+    margin-top: 1.15rem;
+    color: rgba(240, 244, 250, .86) !important;
+    font-size: clamp(1rem, 1.2vw, 1.08rem);
+    line-height: 1.68;
+    text-shadow: 0 3px 12px rgba(0, 0, 0, .45);
+}
+
+.velaris-detail-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .58rem;
+    margin-top: 1.25rem;
+}
+
+.velaris-detail-actions .btnPlay,
+.velaris-detail-actions .btnResume,
+.detailPagePrimaryContainer .btnPlay,
+.detailPagePrimaryContainer .btnResume {
+    min-height: 3rem;
+    padding: .75rem 1.45rem !important;
+    border: 0 !important;
+    border-radius: 9px !important;
     background: #fff !important;
     color: #050609 !important;
-    border: 0 !important;
-    border-radius: 7px !important;
-    font-weight: 750 !important;
-    box-shadow: 0 9px 25px rgba(0, 0, 0, .45);
+    font-weight: 780 !important;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, .42);
+    transition: transform .16s ease, box-shadow .16s ease, background-color .16s ease;
 }
 
+.velaris-detail-actions .btnPlay:hover,
+.velaris-detail-actions .btnResume:hover,
+.detailPagePrimaryContainer .btnPlay:hover,
+.detailPagePrimaryContainer .btnResume:hover {
+    transform: translateY(-2px) scale(1.02);
+    background: #e7e9ec !important;
+    box-shadow: 0 16px 38px rgba(0, 0, 0, .5);
+}
+
+.velaris-detail-action,
+.detailPagePrimaryContainer .detailButton {
+    border: 1px solid rgba(255, 255, 255, .12) !important;
+    border-radius: 999px !important;
+    background: rgba(16, 20, 27, .55) !important;
+    color: rgba(255, 255, 255, .9) !important;
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+}
+
+.velaris-detail-action:hover,
+.detailPagePrimaryContainer .detailButton:hover {
+    color: var(--vl-cyan) !important;
+    border-color: rgba(0, 234, 255, .34) !important;
+    box-shadow: 0 0 18px rgba(0, 234, 255, .09);
+}
+
+.velaris-detail-secondary,
+.detailPageSecondaryContainer {
+    position: relative;
+    z-index: 5;
+    margin-top: 0 !important;
+    padding-top: clamp(1.5rem, 3vw, 3rem) !important;
+    background:
+        linear-gradient(180deg, rgba(2, 3, 5, .02), rgba(2, 3, 5, .86) 18%, var(--vl-bg) 58%) !important;
+}
+
+.velaris-detail-secondary .verticalSection,
+.detailPageSecondaryContainer .verticalSection {
+    margin-bottom: 2.4rem;
+}
+
+/* Player — V0.0.5 glass OSD */
+body[data-velaris-page="player"] {
+    background: #000 !important;
+}
+
+body[data-velaris-page="player"] .skinHeader {
+    background: linear-gradient(180deg, rgba(0, 0, 0, .82), transparent) !important;
+    border: 0 !important;
+    box-shadow: none !important;
+}
+
+.velaris-player-shell {
+    background: #000;
+}
+
+.velaris-player-controls,
+body[data-velaris-page="player"] .videoOsdBottom,
+body[data-velaris-page="player"] .osdControls,
+body[data-velaris-page="player"] .videoOsdControls {
+    border: 1px solid rgba(255, 255, 255, .09);
+    border-radius: 18px;
+    background: linear-gradient(180deg, rgba(13, 16, 22, .58), rgba(5, 7, 10, .78)) !important;
+    -webkit-backdrop-filter: blur(22px) saturate(1.2);
+    backdrop-filter: blur(22px) saturate(1.2);
+    box-shadow: 0 24px 64px rgba(0, 0, 0, .46);
+}
+
+.velaris-player-badge {
+    display: inline-flex;
+    align-items: center;
+    min-height: 1.55rem;
+    margin-left: auto;
+    padding: .25rem .58rem;
+    border: 1px solid rgba(0, 234, 255, .18);
+    border-radius: 999px;
+    background: rgba(0, 234, 255, .055);
+    color: rgba(220, 248, 252, .78);
+    font-size: .62rem;
+    font-weight: 850;
+    letter-spacing: .16em;
+    pointer-events: none;
+}
+
+.velaris-player-button,
+body[data-velaris-page="player"] .paper-icon-button-light {
+    border-radius: 50% !important;
+    transition: transform .14s ease, background-color .14s ease, color .14s ease;
+}
+
+.velaris-player-button:hover,
+body[data-velaris-page="player"] .paper-icon-button-light:hover {
+    transform: scale(1.08);
+    background: rgba(255, 255, 255, .08) !important;
+    color: var(--vl-cyan) !important;
+}
+
+body[data-velaris-page="player"] .emby-slider-background,
+body[data-velaris-page="player"] .mdl-slider-background-lower {
+    background: linear-gradient(90deg, var(--vl-pink), var(--vl-purple), var(--vl-cyan)) !important;
+    box-shadow: 0 0 10px rgba(0, 234, 255, .28);
+}
+
+body[data-velaris-page="player"] .sliderBubble {
+    border: 1px solid rgba(255, 255, 255, .12);
+    border-radius: 10px !important;
+    background: rgba(8, 11, 16, .94) !important;
+    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
+    box-shadow: 0 14px 36px rgba(0, 0, 0, .45);
+}
+
+/* Drawer, dialogs, forms */
 .mainDrawer {
     background: linear-gradient(180deg, rgba(5, 7, 11, .99), rgba(2, 3, 5, .99)) !important;
+    -webkit-backdrop-filter: blur(30px);
+    backdrop-filter: blur(30px);
     border-right: 1px solid rgba(0, 234, 255, .11);
-    box-shadow: 18px 0 54px rgba(0, 0, 0, .5);
+    box-shadow: 16px 0 45px rgba(0, 0, 0, .55);
 }
 
 .navMenuOption {
     border-radius: 8px !important;
+    transition: color .16s ease, background-color .16s ease, transform .16s ease;
 }
 
 .navMenuOption:hover {
@@ -539,6 +770,13 @@ body::before {
     border-radius: 8px !important;
 }
 
+.emby-input:focus,
+.emby-textarea:focus,
+.emby-select:focus {
+    border-color: rgba(0, 234, 255, .7) !important;
+    box-shadow: 0 0 0 3px rgba(0, 234, 255, .07);
+}
+
 .dialog,
 .actionSheet {
     background: linear-gradient(145deg, rgba(12, 15, 22, .985), rgba(3, 4, 7, .985)) !important;
@@ -546,13 +784,7 @@ body::before {
     border-radius: 13px !important;
     -webkit-backdrop-filter: blur(32px);
     backdrop-filter: blur(32px);
-    box-shadow: 0 32px 85px rgba(0, 0, 0, .74);
-}
-
-button:focus-visible,
-.emby-button:focus-visible {
-    outline: 2px solid var(--vl-cyan) !important;
-    outline-offset: 3px;
+    box-shadow: var(--vl-shadow);
 }
 
 ::-webkit-scrollbar {
@@ -569,33 +801,93 @@ button:focus-visible,
     border-radius: 999px;
 }
 
+::selection {
+    background: rgba(139, 92, 246, .58);
+    color: #fff;
+}
+
+button:focus-visible,
+.emby-button:focus-visible {
+    outline: 2px solid var(--vl-cyan) !important;
+    outline-offset: 3px;
+    box-shadow: 0 0 18px rgba(0, 234, 255, .32) !important;
+}
+
+/* Responsive */
 @media (max-width: 899px) {
-    :root { --vl-pad: 1rem; }
-    .velaris-brand { display: none; }
-    .velaris-tabs { border: 0; background: transparent; padding: 0; }
-    .velaris-hero { min-height: 25rem; }
-    .velaris-hero__content { width: calc(100% - 2rem); left: 1rem; bottom: 3.8rem; }
+    :root {
+        --vl-pad: 1rem;
+    }
+
+    .velaris-brand {
+        display: none;
+    }
+
+    .velaris-hero {
+        min-height: 25rem;
+    }
+
+    .velaris-hero__content {
+        width: calc(100% - 2rem);
+        left: 1rem;
+        bottom: 3.6rem;
+    }
+
+    .velaris-detail-primary {
+        padding-top: 4.7rem !important;
+    }
+
+    .velaris-detail-primary::before {
+        display: none;
+    }
+
+    .velaris-detail-title,
+    .detailPagePrimaryContainer .itemName {
+        font-size: clamp(2.5rem, 10vw, 4.4rem) !important;
+    }
 }
 
 @media (max-width: 600px) {
-    .velaris-rail-controls { display: none; }
-    .velaris-hero { min-height: 23rem; border-radius: 16px; }
-    .velaris-hero__meta { display: none; }
-    .velaris-hero__navigation { right: 1rem; bottom: .9rem; }
-    .velaris-hero__nav { display: none; }
-    .velaris-hero__dot { width: .42rem; height: .42rem; }
-    .velaris-hero__dot.is-active { width: 1.1rem; }
-    .card:hover,
-    .card-hoverable:hover { transform: none; }
+    .velaris-rail-controls {
+        display: none;
+    }
+
+    .velaris-hero {
+        min-height: 22rem;
+        border-radius: 16px;
+    }
+
+    .velaris-hero__meta {
+        display: none;
+    }
+
+    .velaris-hero__navigation {
+        left: 1rem;
+        right: auto;
+        bottom: 1rem;
+    }
+
+    .velaris-detail-kicker {
+        font-size: .64rem;
+    }
+
+    .velaris-detail-meta > *,
+    .detailPagePrimaryContainer .itemMiscInfo > * {
+        padding: .22rem .48rem;
+    }
+
+    .velaris-player-badge {
+        display: none;
+    }
 }
 
 @media (prefers-reduced-motion: reduce) {
     *,
     *::before,
     *::after {
+        scroll-behavior: auto !important;
         transition-duration: .01ms !important;
         animation-duration: .01ms !important;
         animation-iteration-count: 1 !important;
-        scroll-behavior: auto !important;
     }
 }
