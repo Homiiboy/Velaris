@@ -16,6 +16,14 @@ This is the first Velaris build that combines CSS with a JavaScript enhancement 
 - SPA-aware MutationObserver refresh
 - responsive and reduced-motion handling
 
+## Version archive
+
+Historic releases live in `HistoricVersions/Vx.x.x/`.
+
+Whenever a newer Velaris version is released, the previous version is frozen and moved into `HistoricVersions` so it remains reproducible and accessible.
+
+The current archived release is `HistoricVersions/V0.0.3/`.
+
 ## Install CSS
 
 Paste this into **Jellyfin → Dashboard → General → Custom CSS**:
@@ -33,8 +41,6 @@ Jellyfin Custom CSS cannot execute JavaScript. Load `dist/velaris.js` with your 
 ```
 
 The CSS works without JavaScript; the Spotlight hero, row reordering and custom rail controls are then disabled.
-
-A frozen copy of this release lives in `Prototyp/V0.0.3/`.
 
 ## License
 
