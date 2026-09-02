@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Velaris for Jellyfin
 // @namespace    https://github.com/Homiiboy/Velaris
-// @version      0.0.4
+// @version      0.0.5
 // @description  Loads the Velaris CSS and JavaScript enhancement layer into Jellyfin Web.
 // @author       Homiiboy
 // @match        http://*/web/*
@@ -17,9 +17,10 @@
 (() => {
     'use strict';
 
-    const VERSION = '0.0.4';
-    const CSS_URL = `https://cdn.jsdelivr.net/gh/Homiiboy/Velaris@main/dist/velaris.css?v=${VERSION}`;
-    const JS_URL = `https://cdn.jsdelivr.net/gh/Homiiboy/Velaris@main/dist/velaris.js?v=${VERSION}`;
+    const VERSION = '0.0.5';
+    const COMMIT = '72896b5c23da41bf14f082ca1138c8b1fb2cdaca';
+    const CSS_URL = `https://cdn.jsdelivr.net/gh/Homiiboy/Velaris@${COMMIT}/dist/velaris.css`;
+    const JS_URL = `https://cdn.jsdelivr.net/gh/Homiiboy/Velaris@${COMMIT}/dist/velaris.js`;
     const CSS_ID = 'velaris-userscript-css';
     const JS_ID = 'velaris-userscript-js';
 
