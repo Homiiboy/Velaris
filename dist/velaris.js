@@ -1,12 +1,12 @@
-/** Velaris v0.0.4 */
+/** Velaris v0.0.5 */
 (() => {
     'use strict';
 
-    if (window.__VELARIS_V004__) return;
-    window.__VELARIS_V004__ = true;
+    if (window.__VELARIS_V005__) return;
+    window.__VELARIS_V005__ = true;
 
-    const VERSION = '0.0.4';
-    const HERO_INTERVAL = 12000;
+    const VERSION = '0.0.5';
+    const HERO_INTERVAL = 11000;
     const rx = {
         continue: /continue\s*watching|weiterschauen|weiter\s*schauen|fortsetzen/i,
         next: /next\s*up|als\s*n[aä]chstes|n[aä]chste\s*folgen/i,
@@ -20,6 +20,7 @@
     let heroIndex = 0;
     let heroRotation = 0;
     let heroFingerprint = '';
+    let heroVisible = true;
 
     const q = (root, selector) => root?.querySelector?.(selector) || null;
     const qa = (root, selector) => root?.querySelectorAll ? Array.from(root.querySelectorAll(selector)) : [];
@@ -28,14 +29,33 @@
 
     function detectPage() {
         const body = document.body;
-        if (!body) return;
+        if (!body) return 'unknown';
+
         let page = 'browse';
         if (q(document, '.homePage')) page = 'home';
         else if (q(document, '.detailPagePrimaryContainer,.itemDetailPage')) page = 'details';
         else if (q(document, '.videoOsdPage,.videoPlayerContainer,.nowPlayingPage')) page = 'player';
         else if (q(document, '.loginPage,.selectServerPage')) page = 'login';
+
         body.dataset.velarisPage = page;
         body.classList.add('velaris-active');
+        return page;
+    }
+
+    function enhanceHeader() {
+        const header = q(document, '.skinHeader');
+        if (!header) return;
+
+        header.classList.add('velaris-header');
+
+        if (!q(header, '.velaris-brand')) {
+            const brand = document.createElement('div');
+            brand.className = 'velaris-brand';
+            brand.innerHTML = '<span class="velaris-brand__mark"></span><span>Velaris</span>';
+            header.appendChild(brand);
+        }
+
+        q(header, '.headerTabs')?.classList.add('velaris-tabs');
     }
 
     function classify(section) {
@@ -104,6 +124,7 @@
             rail.dataset.velarisScrollBound = '1';
             rail.addEventListener('scroll', () => updateRailState(section, rail), { passive: true });
         }
+
         updateRailState(section, rail);
     }
 
@@ -121,6 +142,7 @@
     function cardImage(card) {
         const img = q(card, 'img');
         if (img?.currentSrc || img?.src) return img.currentSrc || img.src;
+
         const box = q(card, '.cardImageContainer,.cardImage');
         const bg = box ? getComputedStyle(box).backgroundImage : '';
         const match = bg && bg !== 'none' ? bg.match(/url\(["']?(.*?)["']?\)/) : null;
@@ -137,18 +159,34 @@
                 const image = cardImage(card);
                 const title = cardTitle(card);
                 if (!image || !title) continue;
+
                 const key = `${title}|${image}`;
                 if (seen.has(key)) continue;
                 seen.add(key);
+
                 items.push({ card, image, title, subtitle: cardSubtitle(card) });
                 if (items.length >= 6) return items;
             }
         }
+
         return items;
     }
 
-    function triggerCard(card, play = false) {
-        if (!card?.isConnected) return;
+    function resolveCard(item) {
+        if (!item) return null;
+        if (item.card?.isConnected) return item.card;
+
+        return qa(document, '.card').find(card => {
+            const title = cardTitle(card);
+            const image = cardImage(card);
+            return title === item.title && (!item.image || !image || image === item.image);
+        }) || qa(document, '.card').find(card => cardTitle(card) === item.title) || null;
+    }
+
+    function triggerItem(item, play = false) {
+        const card = resolveCard(item);
+        if (!card) return;
+
         if (play) {
             const playButton = q(card, '.cardOverlayFab-primary,[data-action="play"],.btnPlay');
             if (playButton) {
@@ -156,6 +194,7 @@
                 return;
             }
         }
+
         (q(card, 'a[href],button[data-id],.cardImageContainer') || card).click();
     }
 
@@ -179,37 +218,86 @@
             </div>`;
     }
 
+    function preloadHero(index) {
+        if (heroItems.length < 2) return;
+        const next = heroItems[(index + 1) % heroItems.length];
+        if (!next?.image) return;
+        const image = new Image();
+        image.decoding = 'async';
+        image.src = next.image;
+    }
+
     function renderHero(hero, index, animate = true) {
-        if (!heroItems.length) return;
+        if (!heroItems.length || !hero) return;
+
         heroIndex = (index + heroItems.length) % heroItems.length;
         const item = heroItems[heroIndex];
         if (!item) return;
 
         const art = q(hero, '.velaris-hero__art');
         const safeImage = item.image.replace(/"/g, '%22');
+
         if (animate && !reduceMotion()) {
             hero.classList.remove('velaris-hero--changing');
             void hero.offsetWidth;
             hero.classList.add('velaris-hero--changing');
         }
+
         art.style.backgroundImage = `url("${safeImage}")`;
         q(hero, '.velaris-hero__title').textContent = item.title;
-        q(hero, '.velaris-hero__meta').textContent = item.subtitle || 'Aus deiner Mediathek — kuratiert für einen cineastischen Start.';
+        q(hero, '.velaris-hero__meta').textContent =
+            item.subtitle || 'Aus deiner Mediathek — kuratiert für einen cineastischen Start.';
+
         hero.dataset.velarisIndex = String(heroIndex);
 
         qa(hero, '.velaris-hero__dot').forEach((dot, i) => {
             dot.classList.toggle('is-active', i === heroIndex);
             dot.setAttribute('aria-current', i === heroIndex ? 'true' : 'false');
         });
+
+        preloadHero(heroIndex);
     }
 
     function restartHeroRotation(hero) {
         clearInterval(heroRotation);
         heroRotation = 0;
-        if (heroItems.length < 2 || reduceMotion()) return;
+
+        if (heroItems.length < 2 || reduceMotion() || !heroVisible) return;
+
         heroRotation = window.setInterval(() => {
-            if (!document.hidden && hero?.isConnected) renderHero(hero, heroIndex + 1);
+            if (!document.hidden && hero?.isConnected && !hero.matches(':hover') && !hero.matches(':focus-within')) {
+                renderHero(hero, heroIndex + 1);
+            }
         }, HERO_INTERVAL);
+    }
+
+    function bindHeroVisibility(hero) {
+        if (hero.dataset.velarisVisibilityBound) return;
+        hero.dataset.velarisVisibilityBound = '1';
+
+        if ('IntersectionObserver' in window) {
+            const io = new IntersectionObserver(entries => {
+                const entry = entries[0];
+                heroVisible = Boolean(entry?.isIntersecting);
+                restartHeroRotation(hero);
+            }, { threshold: 0.18 });
+            io.observe(hero);
+        }
+
+        hero.addEventListener('mouseenter', () => clearInterval(heroRotation), { passive: true });
+        hero.addEventListener('mouseleave', () => restartHeroRotation(hero), { passive: true });
+        hero.addEventListener('focusin', () => clearInterval(heroRotation));
+        hero.addEventListener('focusout', () => restartHeroRotation(hero));
+
+        hero.addEventListener('keydown', event => {
+            if (event.key === 'ArrowLeft') {
+                renderHero(hero, heroIndex - 1);
+                restartHeroRotation(hero);
+            } else if (event.key === 'ArrowRight') {
+                renderHero(hero, heroIndex + 1);
+                restartHeroRotation(hero);
+            }
+        });
     }
 
     function buildHero(home, sections) {
@@ -223,10 +311,11 @@
             hero = document.createElement('section');
             hero.className = 'velaris-hero';
             hero.setAttribute('aria-label', 'Velaris Spotlight');
+            hero.setAttribute('tabindex', '0');
             hero.innerHTML = heroMarkup();
 
-            q(hero, '[data-velaris-action="play"]').addEventListener('click', () => triggerCard(heroItems[heroIndex]?.card, true));
-            q(hero, '[data-velaris-action="details"]').addEventListener('click', () => triggerCard(heroItems[heroIndex]?.card, false));
+            q(hero, '[data-velaris-action="play"]').addEventListener('click', () => triggerItem(heroItems[heroIndex], true));
+            q(hero, '[data-velaris-action="details"]').addEventListener('click', () => triggerItem(heroItems[heroIndex], false));
             q(hero, '[data-velaris-hero="prev"]').addEventListener('click', () => {
                 renderHero(hero, heroIndex - 1);
                 restartHeroRotation(hero);
@@ -238,14 +327,18 @@
 
             const first = sections[0];
             first?.parentElement?.insertBefore(hero, first);
+            bindHeroVisibility(hero);
         }
 
         heroItems = items;
+
         if (fingerprint !== heroFingerprint) {
             heroFingerprint = fingerprint;
             heroIndex = 0;
+
             const dots = q(hero, '.velaris-hero__dots');
             dots.replaceChildren();
+
             heroItems.forEach((item, i) => {
                 const dot = document.createElement('button');
                 dot.type = 'button';
@@ -257,6 +350,7 @@
                 });
                 dots.appendChild(dot);
             });
+
             renderHero(hero, 0, false);
             restartHeroRotation(hero);
         }
@@ -272,21 +366,6 @@
         const anchor = hero?.nextSibling || sections[0];
 
         [continueRow, nextRow].filter(Boolean).reverse().forEach(row => parent.insertBefore(row, anchor));
-    }
-
-    function enhanceHeader() {
-        const header = q(document, '.skinHeader');
-        if (!header) return;
-        header.classList.add('velaris-header');
-
-        if (!q(header, '.velaris-brand')) {
-            const brand = document.createElement('div');
-            brand.className = 'velaris-brand';
-            brand.innerHTML = '<span class="velaris-brand__mark"></span><span>Velaris</span>';
-            header.appendChild(brand);
-        }
-
-        q(header, '.headerTabs')?.classList.add('velaris-tabs');
     }
 
     function enhanceHome() {
@@ -310,27 +389,89 @@
         home.dataset.velarisEnhanced = VERSION;
     }
 
+    function enhanceDetails() {
+        const primary = q(document, '.detailPagePrimaryContainer');
+        const page = q(document, '.itemDetailPage') || primary?.closest?.('[data-role="page"]') || primary?.parentElement;
+        if (!primary || !page) return;
+
+        page.classList.add('velaris-detail-page');
+        primary.classList.add('velaris-detail-primary');
+        q(document, '.detailPageSecondaryContainer')?.classList.add('velaris-detail-secondary');
+
+        const title = q(primary, '.itemName');
+        title?.classList.add('velaris-detail-title');
+
+        const misc = q(primary, '.itemMiscInfo');
+        misc?.classList.add('velaris-detail-meta');
+
+        const overview = q(primary, '.overview') || q(document, '.overview');
+        overview?.classList.add('velaris-detail-overview');
+
+        const play = q(primary, '.btnPlay,.btnResume') || q(document, '.btnPlay,.btnResume');
+        const buttonParent = play?.parentElement;
+        buttonParent?.classList.add('velaris-detail-actions');
+
+        qa(primary, '.detailButton').forEach(button => button.classList.add('velaris-detail-action'));
+
+        if (!q(primary, '.velaris-detail-kicker')) {
+            const kicker = document.createElement('div');
+            kicker.className = 'velaris-detail-kicker';
+            kicker.textContent = 'Velaris Cinema';
+            (title?.parentElement || primary).insertBefore(kicker, title || (title?.parentElement || primary).firstChild);
+        }
+
+        page.dataset.velarisDetailReady = VERSION;
+    }
+
+    function enhancePlayer() {
+        const shell = q(document, '.videoOsdPage,.videoPlayerContainer,.nowPlayingPage');
+        if (!shell) return;
+
+        shell.classList.add('velaris-player-shell');
+
+        const controls = q(document, '.videoOsdBottom,.osdControls,.videoOsdControls,.videoOsdBottomButtons');
+        controls?.classList.add('velaris-player-controls');
+
+        if (controls && !q(controls, '.velaris-player-badge')) {
+            const badge = document.createElement('div');
+            badge.className = 'velaris-player-badge';
+            badge.textContent = 'VELARIS';
+            controls.appendChild(badge);
+        }
+
+        qa(document, '.videoOsdBottom .paper-icon-button-light,.osdControls .paper-icon-button-light,.videoOsdControls .paper-icon-button-light')
+            .forEach(button => button.classList.add('velaris-player-button'));
+    }
+
     function enhance() {
-        detectPage();
+        const page = detectPage();
         enhanceHeader();
-        enhanceHome();
+
+        if (page === 'home') enhanceHome();
+        if (page === 'details') enhanceDetails();
+        if (page === 'player') enhancePlayer();
+
         document.documentElement.dataset.velarisVersion = VERSION;
     }
 
-    function schedule(ms = 90) {
+    function schedule(ms = 85) {
         clearTimeout(timer);
         timer = window.setTimeout(enhance, ms);
     }
 
     function boot() {
         enhance();
+
         observer = new MutationObserver(mutations => {
-            if (mutations.some(m => m.addedNodes.length || m.removedNodes.length)) schedule();
+            if (mutations.some(mutation => mutation.addedNodes.length || mutation.removedNodes.length)) schedule();
         });
+
         observer.observe(document.documentElement, { childList: true, subtree: true });
 
-        addEventListener('hashchange', () => schedule(40), { passive: true });
-        addEventListener('popstate', () => schedule(40), { passive: true });
+        addEventListener('hashchange', () => schedule(35), { passive: true });
+        addEventListener('popstate', () => schedule(35), { passive: true });
+        addEventListener('resize', () => schedule(120), { passive: true });
+
         document.addEventListener('visibilitychange', () => {
             const hero = q(document, '.velaris-hero');
             if (!document.hidden && hero) restartHeroRotation(hero);
@@ -342,6 +483,10 @@
             nextSpotlight() {
                 const hero = q(document, '.velaris-hero');
                 if (hero) renderHero(hero, heroIndex + 1);
+            },
+            previousSpotlight() {
+                const hero = q(document, '.velaris-hero');
+                if (hero) renderHero(hero, heroIndex - 1);
             },
             stop() {
                 observer?.disconnect();
