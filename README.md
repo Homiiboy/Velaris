@@ -22,25 +22,42 @@ Historic releases live in `HistoricVersions/Vx.x.x/`.
 
 Whenever a newer Velaris version is released, the previous version is frozen and moved into `HistoricVersions` so it remains reproducible and accessible.
 
-The current archived release is `HistoricVersions/V0.0.3/`.
+## Recommended installation: Tampermonkey
 
-## Install CSS
+Velaris includes a ready-to-use userscript loader:
 
-Paste this into **Jellyfin → Dashboard → General → Custom CSS**:
+`velaris-loader.user.js`
+
+Install URL:
+
+`https://raw.githubusercontent.com/Homiiboy/Velaris/main/velaris-loader.user.js`
+
+With Tampermonkey installed, open the URL above and confirm the userscript installation.
+
+The loader automatically injects both:
+
+- `dist/velaris.css`
+- `dist/velaris.js`
+
+It currently targets normal Jellyfin Web paths such as `/web/` and `/jellyfin/` and includes Tampermonkey update metadata so loader updates can be detected automatically.
+
+## CSS-only installation
+
+If JavaScript is not wanted, paste this into **Jellyfin → Dashboard → General → Custom CSS**:
 
 ```css
 @import url("https://cdn.jsdelivr.net/gh/Homiiboy/Velaris@main/dist/velaris.css");
 ```
 
-## Install JavaScript
+The CSS works without JavaScript; the Spotlight hero, row reordering and custom rail controls are then disabled.
 
-Jellyfin Custom CSS cannot execute JavaScript. Load `dist/velaris.js` with your preferred userscript/custom-script injection method for Jellyfin Web.
+## Manual JavaScript installation
+
+Jellyfin Custom CSS cannot execute JavaScript. If Tampermonkey is not used, load the JavaScript using another custom-script injection method:
 
 ```html
 <script defer src="https://cdn.jsdelivr.net/gh/Homiiboy/Velaris@main/dist/velaris.js"></script>
 ```
-
-The CSS works without JavaScript; the Spotlight hero, row reordering and custom rail controls are then disabled.
 
 ## License
 
