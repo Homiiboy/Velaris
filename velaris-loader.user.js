@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Velaris for Jellyfin
 // @namespace    https://github.com/Homiiboy/Velaris
-// @version      0.0.3
+// @version      0.0.4
 // @description  Loads the Velaris CSS and JavaScript enhancement layer into Jellyfin Web.
 // @author       Homiiboy
 // @match        http://*/web/*
@@ -17,9 +17,9 @@
 (() => {
     'use strict';
 
-    const VERSION = '0.0.3';
-    const CSS_URL = 'https://cdn.jsdelivr.net/gh/Homiiboy/Velaris@main/dist/velaris.css';
-    const JS_URL = 'https://cdn.jsdelivr.net/gh/Homiiboy/Velaris@main/dist/velaris.js';
+    const VERSION = '0.0.4';
+    const CSS_URL = `https://cdn.jsdelivr.net/gh/Homiiboy/Velaris@main/dist/velaris.css?v=${VERSION}`;
+    const JS_URL = `https://cdn.jsdelivr.net/gh/Homiiboy/Velaris@main/dist/velaris.js?v=${VERSION}`;
     const CSS_ID = 'velaris-userscript-css';
     const JS_ID = 'velaris-userscript-js';
 
@@ -35,7 +35,9 @@
     };
 
     const injectCss = () => {
-        if (document.getElementById(CSS_ID)) return;
+        const old = document.getElementById(CSS_ID);
+        if (old?.dataset.velarisVersion === VERSION) return;
+        old?.remove();
 
         const link = document.createElement('link');
         link.id = CSS_ID;
@@ -46,7 +48,9 @@
     };
 
     const injectJs = () => {
-        if (document.getElementById(JS_ID)) return;
+        const old = document.getElementById(JS_ID);
+        if (old?.dataset.velarisVersion === VERSION) return;
+        old?.remove();
 
         const script = document.createElement('script');
         script.id = JS_ID;
