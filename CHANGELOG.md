@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.0.9 — 2026-09-03
+
+- Added the dedicated **Velaris Login & Profiles** feature layer.
+- Added a cinematic Velaris authentication shell for compatible Jellyfin login views.
+- Redesigned username, password and sign-in controls with a responsive glass-panel layout.
+- Added a dedicated profile-selection experience with a `Wer schaut heute?` presentation.
+- Added responsive profile cards with larger avatar treatment and improved focus / hover states.
+- Added a local `Zuletzt` marker for the last selected profile name without storing credentials.
+- Added styling for compatible Jellyfin server-selection and connection views.
+- Integrated compatible native secondary actions such as manual login, password recovery, server connection and Back.
+- Added SPA-aware login/profile/server detection for Jellyfin DOM changes.
+- Added support for the V0.0.8 motion preferences on authentication views.
+- Added modular `dist/velaris-v009.css` and `dist/velaris-v009.js` feature layers.
+- Converted the canonical bundle loaders to use the frozen V0.0.8 release as their base.
+- Archived V0.0.8 under `HistoricVersions/V0.0.8/`.
+
 ## 0.0.8 — 2026-09-03
 
 - Added the dedicated **Velaris Settings & Branding** feature layer.
@@ -77,7 +93,7 @@
 - Migrated the interface to the new Velaris identity.
 - Added the first JavaScript enhancement layer.
 - Added a generated cinematic Spotlight hero.
-- Added smart row classification for English and German Jellyfin labels.
+- Added smart row classification for English/German Jellyfin labels.
 - Prioritized Continue Watching and Next Up rows below the hero.
 - Added custom horizontal rail controls.
 - Added responsive and reduced-motion handling.
