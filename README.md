@@ -2,23 +2,26 @@
 
 Velaris is a cinematic interface layer for Jellyfin Web with its own cyan, violet and magenta visual identity.
 
-## Current release — V0.0.6
+## Current release — V0.0.7
 
-V0.0.6 expands Velaris into Jellyfin's library, movie, series and browse views. The release keeps the stable V0.0.5 home/detail/player layer and adds a dedicated modular Library / Discover enhancement on top.
+V0.0.7 adds a dedicated **Velaris Search & Navigation** layer on top of the V0.0.6 home, library, detail and player experience.
 
 ### Highlights
 
-- new **Velaris Collection** hero on compatible library and browse pages
-- hero artwork assembled dynamically from visible Jellyfin library cards
-- contextual titles and descriptions for movies, series, favorites, collections and genres
-- visible title-count badge in the Collection hero
-- redesigned filter, sort and view controls with a glass toolbar treatment
-- responsive library grid with dedicated desktop, tablet and mobile layouts
-- refined library-card hover states and captions
-- redesigned alphabet picker, paging and empty-state presentation
-- library-aware SPA refresh handling for dynamic Jellyfin page changes
-- retains the rotating **Velaris Spotlight**, cinematic detail pages and redesigned player OSD from V0.0.5
-- V0.0.6 introduces a modular bundle structure so future feature layers can be added without rewriting the entire base bundle
+- new full-screen **Velaris Search** overlay
+- live Jellyfin library search for movies, series and episodes
+- grouped results for Movies, Series and Episodes
+- category chips for quickly filtering the current result set
+- poster artwork, type labels, year and episode metadata in search results
+- keyboard-first navigation with arrow keys and Enter
+- global **Ctrl/Cmd + K** shortcut to open Velaris Search
+- `/` shortcut to open search when no input field is active
+- Escape closes the overlay
+- new Velaris command bar in the Jellyfin header with Home, Search and current-page context
+- compatible native Jellyfin search buttons are redirected into Velaris Search
+- dedicated desktop, tablet and mobile search layouts
+- separate search debounce and Jellyfin SPA-refresh timers for more reliable live results
+- retains the V0.0.6 Library / Discover redesign, Spotlight, cinematic details and player treatment
 
 ## Version archive
 
@@ -31,15 +34,16 @@ Current historic releases:
 - `HistoricVersions/V0.0.3/`
 - `HistoricVersions/V0.0.4/`
 - `HistoricVersions/V0.0.5/`
+- `HistoricVersions/V0.0.6/`
 
-## V0.0.6 bundle structure
+## V0.0.7 bundle structure
 
-The current `dist/velaris.css` and `dist/velaris.js` are lightweight bundle loaders. They load the frozen V0.0.5 base and then the V0.0.6 modules:
+The canonical `dist/velaris.css` and `dist/velaris.js` stay lightweight. V0.0.7 loads the frozen V0.0.6 bundle and then adds:
 
-- `dist/velaris-v006.css`
-- `dist/velaris-v006.js`
+- `dist/velaris-v007.css`
+- `dist/velaris-v007.js`
 
-This keeps historic behavior stable while making future Velaris development easier to maintain.
+The V0.0.7 feature code is pinned to commit `3c4159f2b47a1a8392aa0abdafbf11cf8bb07eaa`.
 
 ## Recommended installation — Tampermonkey
 
@@ -51,26 +55,32 @@ Install URL:
 
 `https://raw.githubusercontent.com/Homiiboy/Velaris/main/velaris-loader.user.js`
 
-With Tampermonkey installed, open the URL above and confirm the userscript installation. The loader automatically injects the pinned V0.0.6 bundle.
+With Tampermonkey installed, open the URL above and confirm the userscript installation. The loader automatically injects the pinned V0.0.7 bundle and includes update metadata for future Velaris releases.
 
-The loader includes Tampermonkey update metadata so newer Velaris versions can be detected automatically.
+## Search shortcuts
+
+- `Ctrl + K` / `Cmd + K` — open Velaris Search
+- `/` — open Velaris Search when you are not typing in another field
+- `↑` / `↓` — move through visible search results
+- `Enter` — open the focused result
+- `Esc` — close Velaris Search
 
 ## CSS-only installation
 
 If JavaScript is not wanted, paste this into **Jellyfin → Dashboard → General → Custom CSS**:
 
 ```css
-@import url("https://cdn.jsdelivr.net/gh/Homiiboy/Velaris@d7dbe4117f766aa3209c7a45f3ea51daceb31915/dist/velaris.css");
+@import url("https://cdn.jsdelivr.net/gh/Homiiboy/Velaris@3c4159f2b47a1a8392aa0abdafbf11cf8bb07eaa/dist/velaris.css");
 ```
 
-CSS-only mode keeps the visual layer, but JavaScript-powered features such as Spotlight generation, dynamic library heroes, row reordering and page detection are reduced or unavailable.
+CSS-only mode keeps the visual layers, but JavaScript-powered features such as Spotlight generation, dynamic library heroes, Velaris Search, row reordering and page detection are reduced or unavailable.
 
 ## Manual JavaScript installation
 
 If Tampermonkey is not used, load the matching JavaScript with another custom-script injection method:
 
 ```html
-<script defer src="https://cdn.jsdelivr.net/gh/Homiiboy/Velaris@d7dbe4117f766aa3209c7a45f3ea51daceb31915/dist/velaris.js"></script>
+<script defer src="https://cdn.jsdelivr.net/gh/Homiiboy/Velaris@3c4159f2b47a1a8392aa0abdafbf11cf8bb07eaa/dist/velaris.js"></script>
 ```
 
 ## License
