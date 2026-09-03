@@ -1,0 +1,355 @@
+/* Velaris v0.0.6 — Library / Discover patch */
+body.velaris-library-active {
+    --vl-library-surface: rgba(8, 11, 16, .72);
+    --vl-library-surface-strong: rgba(10, 14, 20, .92);
+    --vl-library-border: rgba(255, 255, 255, .085);
+}
+
+body.velaris-library-active .backgroundContainer,
+body.velaris-library-active .backgroundContainer:not(.withBackdrop) {
+    background-image:
+        radial-gradient(circle at 14% 8%, rgba(0, 234, 255, .11), transparent 29%),
+        radial-gradient(circle at 92% 18%, rgba(139, 92, 246, .09), transparent 30%),
+        radial-gradient(circle at 54% 92%, rgba(255, 43, 214, .055), transparent 28%),
+        linear-gradient(180deg, #07090d, #020305 54%, #020305) !important;
+}
+
+.velaris-library-page {
+    padding-bottom: 6rem !important;
+}
+
+.velaris-library-page .velaris-library-native-title {
+    display: none !important;
+}
+
+.velaris-library-hero {
+    position: relative;
+    min-height: clamp(13rem, 24vw, 19rem);
+    margin: 1.25rem var(--vl-pad) 2.1rem;
+    overflow: hidden;
+    border: 1px solid var(--vl-library-border);
+    border-radius: clamp(18px, 2vw, 28px);
+    background: linear-gradient(115deg, rgba(10, 14, 20, .98), rgba(8, 12, 18, .92) 48%, rgba(8, 11, 16, .74)), #080b10;
+    box-shadow: 0 26px 74px rgba(0, 0, 0, .46), inset 0 1px 0 rgba(255, 255, 255, .025);
+    isolation: isolate;
+}
+
+.velaris-library-hero::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 4px;
+    z-index: 4;
+    background: linear-gradient(180deg, var(--vl-cyan), var(--vl-purple), var(--vl-pink));
+    box-shadow: 0 0 24px rgba(0, 234, 255, .34);
+}
+
+.velaris-library-hero__glow {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+        radial-gradient(circle at 14% 20%, rgba(0, 234, 255, .12), transparent 25%),
+        radial-gradient(circle at 72% 85%, rgba(255, 43, 214, .075), transparent 27%);
+}
+
+.velaris-library-hero__copy {
+    position: relative;
+    z-index: 3;
+    display: flex;
+    min-height: inherit;
+    width: min(52rem, 68%);
+    flex-direction: column;
+    justify-content: center;
+    padding: clamp(1.65rem, 4vw, 3.8rem);
+}
+
+.velaris-library-hero__eyebrow {
+    margin-bottom: .65rem;
+    color: rgba(218, 226, 238, .62);
+    font-size: .72rem;
+    font-weight: 850;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+}
+
+.velaris-library-hero__title {
+    margin: 0;
+    color: #fff;
+    font-size: clamp(2.35rem, 5.4vw, 5.2rem);
+    font-weight: 880;
+    line-height: .94;
+    letter-spacing: -.052em;
+    text-shadow: 0 12px 34px rgba(0, 0, 0, .5);
+}
+
+.velaris-library-hero__subtitle {
+    max-width: 42rem;
+    margin: .9rem 0 0;
+    color: rgba(231, 236, 244, .7);
+    font-size: clamp(.92rem, 1.15vw, 1.08rem);
+    line-height: 1.55;
+}
+
+.velaris-library-hero__stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .55rem;
+    margin-top: 1.15rem;
+}
+
+.velaris-library-hero__count,
+.velaris-library-hero__mode {
+    display: inline-flex;
+    align-items: center;
+    min-height: 1.95rem;
+    padding: .42rem .72rem;
+    border: 1px solid rgba(255, 255, 255, .1);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .045);
+    color: rgba(246, 248, 252, .78);
+    font-size: .76rem;
+    font-weight: 700;
+    letter-spacing: .025em;
+    backdrop-filter: blur(12px);
+}
+
+.velaris-library-hero__count::before {
+    content: "";
+    width: .42rem;
+    height: .42rem;
+    margin-right: .45rem;
+    border-radius: 50%;
+    background: var(--vl-cyan);
+    box-shadow: 0 0 11px rgba(0, 234, 255, .58);
+}
+
+.velaris-library-hero__art {
+    position: absolute;
+    top: -10%;
+    right: -3%;
+    bottom: -10%;
+    width: min(46%, 43rem);
+    z-index: 1;
+    pointer-events: none;
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 22%, #000 100%);
+    mask-image: linear-gradient(90deg, transparent, #000 22%, #000 100%);
+}
+
+.velaris-library-hero__art::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, rgba(8, 11, 16, .9), transparent 38%, rgba(8, 11, 16, .08));
+}
+
+.velaris-library-hero__tile {
+    position: absolute;
+    width: 38%;
+    height: 88%;
+    top: 6%;
+    border-radius: 18px;
+    background-color: rgba(255, 255, 255, .035);
+    background-position: center;
+    background-size: cover;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, .58);
+    outline: 1px solid rgba(255, 255, 255, .08);
+    filter: saturate(.92) brightness(.8);
+    transform: rotate(5deg) scale(.92);
+}
+
+.velaris-library-hero__tile[data-tile="0"] { left: 7%; z-index: 3; transform: rotate(-5deg) scale(.94); }
+.velaris-library-hero__tile[data-tile="1"] { left: 34%; z-index: 2; transform: rotate(2deg) scale(.9); }
+.velaris-library-hero__tile[data-tile="2"] { left: 62%; z-index: 1; transform: rotate(7deg) scale(.86); }
+.velaris-library-hero__tile.is-empty { opacity: .16; }
+
+.velaris-library-toolbar {
+    position: sticky !important;
+    top: calc(var(--vl-header-height) + .55rem);
+    z-index: 75;
+    display: flex !important;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: .5rem;
+    width: fit-content;
+    max-width: calc(100% - (2 * var(--vl-pad)));
+    margin: 0 var(--vl-pad) 1.25rem !important;
+    padding: .45rem !important;
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 999px;
+    background: rgba(8, 11, 16, .78) !important;
+    box-shadow: 0 12px 36px rgba(0, 0, 0, .34), inset 0 1px 0 rgba(255, 255, 255, .025);
+    -webkit-backdrop-filter: blur(22px) saturate(1.25);
+    backdrop-filter: blur(22px) saturate(1.25);
+}
+
+.velaris-library-tool {
+    min-height: 2.35rem !important;
+    padding: .45rem .8rem !important;
+    border: 1px solid transparent !important;
+    border-radius: 999px !important;
+    background: transparent !important;
+    color: rgba(238, 242, 248, .72) !important;
+    transition: background-color .16s ease, color .16s ease, border-color .16s ease, transform .16s ease;
+}
+
+.velaris-library-tool:hover,
+.velaris-library-tool:focus-visible {
+    border-color: rgba(0, 234, 255, .22) !important;
+    background: rgba(0, 234, 255, .075) !important;
+    color: #fff !important;
+    transform: translateY(-1px);
+}
+
+.velaris-library-grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
+    gap: 1.65rem .9rem !important;
+    align-items: start;
+    padding-left: var(--vl-pad) !important;
+    padding-right: var(--vl-pad) !important;
+    overflow: visible !important;
+}
+
+.velaris-library-grid > .card,
+.velaris-library-grid > * > .card,
+.velaris-library-grid .velaris-library-card {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+}
+
+.velaris-library-card .cardImageContainer {
+    border-radius: 14px !important;
+    background: rgba(255, 255, 255, .028) !important;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, .42);
+}
+
+.velaris-library-card .cardText {
+    margin-top: .35rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+@media (hover: hover) and (min-width: 760px) {
+    .velaris-library-card:hover,
+    .velaris-library-card:focus-within {
+        transform: translateY(-8px) scale(1.035) !important;
+    }
+
+    .velaris-library-card:hover .cardImageContainer,
+    .velaris-library-card:focus-within .cardImageContainer {
+        outline-color: rgba(0, 234, 255, .28);
+        box-shadow: 0 26px 64px rgba(0, 0, 0, .7), 0 0 0 1px rgba(0, 234, 255, .08);
+    }
+}
+
+.velaris-library-alpha {
+    margin: 0 var(--vl-pad) 1rem !important;
+    padding: .55rem .7rem !important;
+    border: 1px solid rgba(255, 255, 255, .07);
+    border-radius: 14px;
+    background: rgba(8, 11, 16, .48);
+    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
+}
+
+.velaris-library-alpha button,
+.velaris-library-alpha .alphaPickerButton {
+    color: rgba(225, 231, 240, .56) !important;
+    border-radius: 8px !important;
+}
+
+.velaris-library-alpha button:hover,
+.velaris-library-alpha .alphaPickerButton:hover,
+.velaris-library-alpha .selected {
+    background: rgba(0, 234, 255, .08) !important;
+    color: var(--vl-cyan) !important;
+}
+
+.velaris-library-paging {
+    margin: 1.5rem var(--vl-pad) 0 !important;
+    color: rgba(227, 233, 242, .66) !important;
+}
+
+.velaris-library-empty {
+    margin: 4rem var(--vl-pad) !important;
+    padding: 2.4rem !important;
+    border: 1px dashed rgba(255, 255, 255, .12);
+    border-radius: 20px;
+    background: rgba(255, 255, 255, .025);
+    color: rgba(230, 235, 244, .66) !important;
+    text-align: center;
+}
+
+.velaris-library-page .emby-select,
+.velaris-library-page select,
+.velaris-library-page .emby-input {
+    border-color: rgba(255, 255, 255, .1) !important;
+    background: rgba(9, 12, 18, .86) !important;
+}
+
+@media (min-width: 1450px) {
+    .velaris-library-grid {
+        grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
+        gap: 1.8rem 1rem !important;
+    }
+}
+
+@media (max-width: 899px) {
+    .velaris-library-hero { min-height: 15rem; margin-top: .9rem; }
+    .velaris-library-hero__copy { width: 76%; padding: 1.55rem; }
+    .velaris-library-hero__art { width: 48%; right: -9%; opacity: .74; }
+    .velaris-library-toolbar {
+        top: calc(var(--vl-header-height) + .25rem);
+        max-width: calc(100% - 2rem);
+        margin-left: 1rem !important;
+        margin-right: 1rem !important;
+    }
+    .velaris-library-grid {
+        grid-template-columns: repeat(auto-fill, minmax(135px, 1fr));
+        gap: 1.35rem .72rem !important;
+    }
+}
+
+@media (max-width: 600px) {
+    .velaris-library-hero {
+        min-height: 14rem;
+        margin-left: 1rem;
+        margin-right: 1rem;
+        border-radius: 18px;
+    }
+    .velaris-library-hero__copy {
+        width: 100%;
+        padding: 1.35rem;
+        background: linear-gradient(90deg, rgba(5, 7, 11, .96), rgba(5, 7, 11, .74) 70%, rgba(5, 7, 11, .35));
+    }
+    .velaris-library-hero__subtitle { max-width: 88%; font-size: .9rem; }
+    .velaris-library-hero__art { width: 60%; opacity: .48; }
+    .velaris-library-hero__mode { display: none; }
+    .velaris-library-toolbar {
+        position: relative !important;
+        top: auto;
+        width: calc(100% - 2rem);
+        max-width: none;
+        border-radius: 16px;
+    }
+    .velaris-library-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1.2rem .65rem !important;
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+    }
+    .velaris-library-alpha,
+    .velaris-library-paging {
+        margin-left: 1rem !important;
+        margin-right: 1rem !important;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .velaris-library-card,
+    .velaris-library-tool { transition: none !important; }
+}
