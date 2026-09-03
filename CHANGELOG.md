@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.0.6 — 2026-09-03
+
+- Added a dedicated Velaris Library / Discover redesign for movie, series and browse views.
+- Added the dynamic **Velaris Collection** hero using visible Jellyfin library artwork.
+- Added contextual library titles, descriptions and visible title counts.
+- Added glass-style filter, sort and view controls.
+- Added a responsive library grid with dedicated desktop, tablet and mobile behavior.
+- Added refined library card hover states, captions, alphabet picker, paging and empty-state styling.
+- Added library-specific SPA refresh handling for dynamic Jellyfin page changes.
+- Introduced modular `dist/velaris-v006.css` and `dist/velaris-v006.js` feature layers.
+- Converted the canonical `dist/velaris.css` and `dist/velaris.js` files into lightweight V0.0.6 bundle loaders that retain the frozen V0.0.5 base.
+- Archived V0.0.5 under `HistoricVersions/V0.0.5/`.
+
 ## 0.0.5 — 2026-09-02
 
 - Added a dedicated cinematic redesign for Jellyfin detail pages.
