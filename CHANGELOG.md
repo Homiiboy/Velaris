@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.2.0 — 2026-09-03
+
+- Added the dedicated **Velaris Series Experience** milestone.
+- Added an API-driven Series Hub for compatible Jellyfin series detail pages.
+- Added a cinematic **Als Nächstes / Next Up** hero using Jellyfin's next-up episode data when available.
+- Added direct season navigation with explicit Specials handling.
+- Added season-level episode counts and watched progress when Jellyfin exposes user data.
+- Added responsive landscape episode cards with artwork, episode numbering, runtime, premiere date and overview metadata.
+- Added watched and partially-watched episode states with progress bars.
+- Added automatic selection of the season containing the current Next Up episode when available.
+- Added per-season episode caching to reduce repeated Jellyfin API calls during navigation.
+- Added dedicated loading, empty and error states for the Series Hub.
+- Added a safe fallback that keeps Jellyfin's native episode surfaces available when the Velaris episode API layer reports an error.
+- Added `window.VelarisSeries` for refresh, season selection and state inspection.
+- Added modular `dist/velaris-v020.css` and `dist/velaris-v020.js` feature layers.
+- Converted the canonical bundle loaders to use the frozen V0.1.0 release as their base.
+- Archived V0.1.0 under `HistoricVersions/V0.1.0/`.
+
 ## 0.1.0 — 2026-09-03
 
 - Added the **Velaris Unified App Shell** milestone.
