@@ -18,7 +18,7 @@
     'use strict';
 
     const VERSION = '0.2.0';
-    const COMMIT = '575d3f52352e3b096efbc6e220d6c785f04ab0d8';
+    const COMMIT = '35e35d3f3406e99e91d1a4d4c31493eb4c9fb1c3';
     const CSS_URL = `https://cdn.jsdelivr.net/gh/Homiiboy/Velaris@${COMMIT}/dist/velaris.css`;
     const JS_URL = `https://cdn.jsdelivr.net/gh/Homiiboy/Velaris@${COMMIT}/dist/velaris.js`;
     const CSS_ID = 'velaris-userscript-css';
