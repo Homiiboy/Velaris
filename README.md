@@ -23,6 +23,47 @@ V0.0.7 adds a dedicated **Velaris Search & Navigation** layer on top of the V0.0
 - separate search debounce and Jellyfin SPA-refresh timers for more reliable live results
 - retains the V0.0.6 Library / Discover redesign, Spotlight, cinematic details and player treatment
 
+## Development & Release Strategy
+
+Velaris remains in an active **feature-development phase through V1.0.0**.
+
+Until V1.0.0, releases may introduce substantial new functionality, redesign existing areas, replace Jellyfin interface elements and expand Velaris into additional parts of the web client. The goal of this phase is to make Velaris a complete and coherent Jellyfin frontend experience rather than only a visual theme.
+
+### Feature phase — V0.x.x through V1.0.0
+
+During this phase the project may add or substantially rework features such as:
+
+- Home, Spotlight and discovery experiences
+- Library, movie and series browsing
+- Search and navigation
+- Velaris settings and personalization
+- login, profile and branding experiences
+- series, seasons and episode interfaces
+- collections, genres, actors and discovery pages
+- player controls, playback overlays and Up Next experiences
+- browser branding such as favicon, page title, theme color and PWA presentation
+- responsive desktop, tablet, mobile and TV-oriented layouts
+- deeper Jellyfin Web integration where needed
+
+Large UI and architecture changes are expected during the feature phase. Backward compatibility between development releases is therefore secondary to building the best final Velaris experience.
+
+### Stabilization phase — after V1.0.0
+
+Once V1.0.0 is reached, the primary feature set is considered complete. Development will then shift mainly toward:
+
+- bug fixes
+- Jellyfin-version compatibility
+- performance optimization
+- accessibility improvements
+- responsive-layout corrections
+- browser compatibility
+- visual consistency and polish
+- animation and interaction tuning
+- code cleanup and maintainability
+- reliability and regression fixes
+
+Major new features should become the exception after V1.0.0 so that the project can focus on stability and refinement.
+
 ## Version archive
 
 Historic releases live in `HistoricVersions/Vx.x.x/`.
