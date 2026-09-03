@@ -2,27 +2,24 @@
 
 Velaris is a cinematic interface layer for Jellyfin Web with its own cyan, violet and magenta visual identity.
 
-## Current release — V0.0.8
+## Current release — V0.0.9
 
-V0.0.8 introduces the first dedicated **Velaris Settings & Branding** layer. Velaris can now be configured directly inside Jellyfin and keeps those preferences locally in the current browser.
+V0.0.9 introduces the dedicated **Velaris Login & Profiles** experience. Velaris now begins before the library loads, giving Jellyfin authentication, profile selection and compatible server-selection screens their own streaming-style presentation.
 
 ### Highlights
 
-- dedicated Velaris Settings drawer integrated into the command bar
-- persistent settings via `localStorage`
-- Spotlight on/off control
-- animation modes: Full, Reduced and Off
-- UI density modes: Compact, Standard and Spacious
-- configurable card sizing: Small, Medium and Large
-- accent intensity modes: Subtle, Balanced and Vivid
-- optional Velaris browser-tab title
-- custom Velaris SVG favicon replacing Jellyfin's browser icon
-- optional Velaris browser / PWA theme color
-- `Ctrl + ,` / `Cmd + ,` shortcut for Settings
-- responsive Settings UI for desktop and mobile
-- retains Velaris Search, Library / Discover, Spotlight, cinematic details and player enhancements from earlier releases
-
-The browser branding icon is stored in `assets/velaris-mark.svg` and is included in GitHub Releases and GitHub Packages.
+- dedicated Velaris authentication shell for compatible Jellyfin login views
+- cinematic Login / Access branding with responsive glass-panel layout
+- redesigned username, password and sign-in controls
+- dedicated **Who is watching? / Wer schaut heute?** profile experience
+- responsive profile grid with larger avatar cards and focused hover states
+- remembers only the last selected profile name locally and marks it as `Zuletzt`
+- does **not** store Jellyfin passwords or authentication credentials
+- styling for compatible Jellyfin server-selection / connection views
+- native secondary actions such as manual login, password recovery, server connection and Back are visually integrated
+- login/profile detection follows Jellyfin SPA DOM changes without requiring a page refresh
+- respects the existing Velaris motion preferences from V0.0.8
+- retains Velaris Settings, browser branding, Search, Library / Discover, Spotlight, cinematic details and player enhancements from earlier releases
 
 ## Development & Release Strategy
 
@@ -96,15 +93,16 @@ Current historic releases:
 - `HistoricVersions/V0.0.5/`
 - `HistoricVersions/V0.0.6/`
 - `HistoricVersions/V0.0.7/`
+- `HistoricVersions/V0.0.8/`
 
-## V0.0.8 bundle structure
+## V0.0.9 bundle structure
 
-The canonical `dist/velaris.css` and `dist/velaris.js` remain lightweight bundle loaders. V0.0.8 loads the frozen V0.0.7 bundle and adds:
+The canonical `dist/velaris.css` and `dist/velaris.js` remain lightweight bundle loaders. V0.0.9 loads the frozen V0.0.8 release and adds:
 
-- `dist/velaris-v008.css`
-- `dist/velaris-v008.js`
+- `dist/velaris-v009.css`
+- `dist/velaris-v009.js`
 
-The V0.0.8 feature code is pinned to commit `f9155bbf6826fff434e1c827f087622ec667911c`.
+The V0.0.9 feature code is pinned to commit `23a794f7909bd84ac51c98fabe3fb0ea8f90b2c9`.
 
 ## Recommended installation — Tampermonkey
 
@@ -128,15 +126,15 @@ The loader injects the pinned matching CSS and JavaScript bundle and includes Ta
 Paste into Jellyfin Custom CSS:
 
 ```css
-@import url("https://cdn.jsdelivr.net/gh/Homiiboy/Velaris@f9155bbf6826fff434e1c827f087622ec667911c/dist/velaris.css");
+@import url("https://cdn.jsdelivr.net/gh/Homiiboy/Velaris@23a794f7909bd84ac51c98fabe3fb0ea8f90b2c9/dist/velaris.css");
 ```
 
-CSS-only mode keeps the visual layers, but JavaScript-powered features such as Spotlight generation, dynamic library heroes, Velaris Search, Settings, browser branding, row reordering and page detection are reduced or unavailable.
+CSS-only mode keeps the visual layers, but JavaScript-powered features such as Spotlight generation, dynamic library heroes, Velaris Search, Settings, browser branding, auth/profile detection, row reordering and page detection are reduced or unavailable.
 
 ## Manual JavaScript installation
 
 ```html
-<script defer src="https://cdn.jsdelivr.net/gh/Homiiboy/Velaris@f9155bbf6826fff434e1c827f087622ec667911c/dist/velaris.js"></script>
+<script defer src="https://cdn.jsdelivr.net/gh/Homiiboy/Velaris@23a794f7909bd84ac51c98fabe3fb0ea8f90b2c9/dist/velaris.js"></script>
 ```
 
 ## License
