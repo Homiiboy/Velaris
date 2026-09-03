@@ -1,0 +1,291 @@
+/** Velaris v0.1.0 — Unified App Shell */
+
+:root {
+    --vl-shell-edge: rgba(255,255,255,.08);
+    --vl-shell-panel: rgba(7,10,15,.76);
+    --vl-shell-panel-strong: rgba(5,8,13,.92);
+    --vl-shell-soft: rgba(255,255,255,.055);
+    --vl-shell-shadow: 0 22px 70px rgba(0,0,0,.46);
+    --vl-shell-transition: 240ms cubic-bezier(.22,.8,.24,1);
+}
+
+.velaris-shell-root {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    overflow: hidden;
+    pointer-events: none;
+    background:
+        radial-gradient(circle at 15% 5%, rgba(0,234,255,.065), transparent 30rem),
+        radial-gradient(circle at 88% 22%, rgba(139,92,246,.07), transparent 34rem),
+        linear-gradient(180deg, rgba(2,3,5,.25), rgba(2,3,5,.88));
+}
+
+.velaris-shell-root__orb {
+    position: absolute;
+    width: 36rem;
+    height: 36rem;
+    border-radius: 999px;
+    filter: blur(86px);
+    opacity: .13;
+}
+
+.velaris-shell-root__orb--a { left: -18rem; top: 20vh; background: var(--vl-cyan,#00eaff); }
+.velaris-shell-root__orb--b { right: -20rem; bottom: 8vh; background: var(--vl-purple,#8b5cf6); }
+
+.velaris-shell-root__grain {
+    position: absolute;
+    inset: 0;
+    opacity: .12;
+    background-image: linear-gradient(rgba(255,255,255,.018) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.014) 1px, transparent 1px);
+    background-size: 36px 36px;
+    mask-image: linear-gradient(to bottom, #000 0%, transparent 78%);
+}
+
+.skinHeader {
+    isolation: isolate;
+}
+
+.velaris-commandbar {
+    gap: .42rem !important;
+    border: 1px solid var(--vl-shell-edge);
+    box-shadow: 0 10px 34px rgba(0,0,0,.24);
+}
+
+.velaris-shell-dock {
+    display: inline-flex;
+    align-items: center;
+    gap: .22rem;
+    min-width: 0;
+}
+
+.velaris-shell-dock__divider {
+    width: 1px;
+    height: 1.35rem;
+    margin: 0 .28rem;
+    background: linear-gradient(180deg, transparent, rgba(255,255,255,.16), transparent);
+}
+
+.velaris-shell-dock__item {
+    display: inline-flex !important;
+    align-items: center;
+    gap: .46rem;
+    min-height: 2.35rem;
+    padding: 0 .7rem !important;
+    border-radius: 999px !important;
+    color: rgba(232,236,245,.72) !important;
+    font-size: .83rem !important;
+    font-weight: 650 !important;
+    letter-spacing: .01em;
+    transition: background var(--vl-shell-transition), color var(--vl-shell-transition), transform var(--vl-shell-transition) !important;
+}
+
+.velaris-shell-dock__item:hover,
+.velaris-shell-dock__item:focus-visible,
+.velaris-shell-dock__item.is-active {
+    color: #fff !important;
+    background: rgba(255,255,255,.075) !important;
+}
+
+.velaris-shell-dock__item:active { transform: scale(.97); }
+
+.velaris-shell-dock__dot {
+    width: .42rem;
+    height: .42rem;
+    border-radius: 50%;
+    background: rgba(255,255,255,.24);
+    box-shadow: 0 0 0 0 rgba(0,234,255,0);
+    transition: inherit;
+}
+
+.velaris-shell-dock__item.is-active .velaris-shell-dock__dot,
+.velaris-shell-dock__item:hover .velaris-shell-dock__dot {
+    background: var(--vl-cyan,#00eaff);
+    box-shadow: 0 0 14px rgba(0,234,255,.46);
+}
+
+.velaris-shell-status {
+    display: inline-flex;
+    align-items: center;
+    gap: .42rem;
+    max-width: 11rem;
+    min-height: 2rem;
+    margin-left: .25rem;
+    padding: 0 .62rem;
+    border-left: 1px solid rgba(255,255,255,.08);
+    color: rgba(217,224,236,.52);
+    font-size: .72rem;
+    font-weight: 650;
+    letter-spacing: .02em;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.velaris-shell-status__pulse {
+    flex: 0 0 auto;
+    width: .38rem;
+    height: .38rem;
+    border-radius: 50%;
+    background: var(--vl-cyan,#00eaff);
+    box-shadow: 0 0 12px rgba(0,234,255,.55);
+}
+
+.velaris-shell-status__label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.velaris-shell-page {
+    position: relative;
+    isolation: isolate;
+}
+
+body:not(.velaris-route-changing) .velaris-shell-page {
+    animation: velaris-shell-enter var(--vl-shell-transition) both;
+}
+
+body.velaris-route-changing .velaris-shell-page {
+    opacity: .56;
+    transform: translateY(5px) scale(.997);
+    filter: saturate(.84);
+    transition: opacity 120ms ease, transform 120ms ease, filter 120ms ease;
+}
+
+@keyframes velaris-shell-enter {
+    from { opacity: .25; transform: translateY(7px); filter: blur(2px); }
+    to { opacity: 1; transform: none; filter: none; }
+}
+
+.velaris-surface--dialog,
+.dialog.velaris-surface,
+.formDialog.velaris-surface,
+.promptDialog.velaris-surface {
+    border: 1px solid rgba(255,255,255,.09) !important;
+    border-radius: 20px !important;
+    background: linear-gradient(180deg, rgba(13,17,24,.96), rgba(5,8,13,.98)) !important;
+    box-shadow: var(--vl-shell-shadow) !important;
+    backdrop-filter: blur(26px) saturate(1.15) !important;
+}
+
+.velaris-surface--dialog .dialogHeader,
+.velaris-surface--dialog .formDialogHeader {
+    border-bottom: 1px solid rgba(255,255,255,.07) !important;
+    background: rgba(255,255,255,.018) !important;
+}
+
+.velaris-surface--menu,
+.actionSheet.velaris-surface,
+.popupMenu.velaris-surface {
+    border: 1px solid rgba(255,255,255,.08) !important;
+    border-radius: 16px !important;
+    background: rgba(8,11,17,.96) !important;
+    box-shadow: 0 18px 46px rgba(0,0,0,.42) !important;
+    backdrop-filter: blur(22px) !important;
+    overflow: hidden;
+}
+
+.velaris-surface--menu .listItem,
+.velaris-surface--menu button {
+    transition: background 140ms ease, color 140ms ease !important;
+}
+
+.velaris-surface--menu .listItem:hover,
+.velaris-surface--menu button:hover {
+    background: rgba(255,255,255,.065) !important;
+}
+
+.velaris-surface--toast {
+    border: 1px solid rgba(255,255,255,.08) !important;
+    border-radius: 14px !important;
+    background: rgba(8,11,17,.94) !important;
+    box-shadow: 0 14px 38px rgba(0,0,0,.34) !important;
+    backdrop-filter: blur(18px) !important;
+}
+
+.velaris-toast-host {
+    position: fixed;
+    right: max(1.2rem, env(safe-area-inset-right));
+    bottom: max(1.2rem, env(safe-area-inset-bottom));
+    z-index: 100000;
+    display: grid;
+    gap: .65rem;
+    width: min(24rem, calc(100vw - 2rem));
+    pointer-events: none;
+}
+
+.velaris-toast {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: .72rem;
+    padding: .88rem 1rem;
+    border: 1px solid rgba(255,255,255,.09);
+    border-radius: 15px;
+    background: rgba(7,10,15,.94);
+    box-shadow: 0 18px 46px rgba(0,0,0,.42);
+    backdrop-filter: blur(22px);
+    color: rgba(245,247,252,.9);
+    opacity: 0;
+    transform: translateY(8px) scale(.98);
+    transition: opacity 220ms ease, transform 220ms ease;
+}
+
+.velaris-toast.is-visible { opacity: 1; transform: none; }
+.velaris-toast__mark { width: .48rem; height: .48rem; border-radius: 50%; background: var(--vl-cyan,#00eaff); box-shadow: 0 0 14px rgba(0,234,255,.45); }
+.velaris-toast--success .velaris-toast__mark { background: #7cf7b5; box-shadow: 0 0 14px rgba(124,247,181,.35); }
+.velaris-toast--error .velaris-toast__mark { background: #ff6b85; box-shadow: 0 0 14px rgba(255,107,133,.36); }
+.velaris-toast__copy { font-size: .86rem; font-weight: 620; line-height: 1.35; }
+
+body.velaris-modal-open::after,
+body.velaris-overlay-open::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 99;
+    pointer-events: none;
+    background: radial-gradient(circle at 50% 20%, rgba(0,234,255,.025), transparent 40%), rgba(0,0,0,.08);
+}
+
+html[data-velaris-shell-page="player"] .velaris-shell-root { opacity: .35; }
+html[data-velaris-shell-page="auth"] .velaris-shell-dock,
+html[data-velaris-shell-page="auth"] .velaris-shell-status { display: none !important; }
+
+:where(.emby-button,.listItem,.card,.paper-icon-button-light):focus-visible {
+    outline: 2px solid rgba(0,234,255,.78) !important;
+    outline-offset: 2px !important;
+    box-shadow: 0 0 0 4px rgba(0,234,255,.09) !important;
+}
+
+@media (max-width: 1100px) {
+    .velaris-shell-dock__item span:last-child { display: none; }
+    .velaris-shell-dock__item { padding: 0 .58rem !important; }
+    .velaris-shell-status { display: none; }
+}
+
+@media (max-width: 760px) {
+    .velaris-shell-dock { display: none; }
+    .velaris-commandbar { gap: .18rem !important; }
+    .velaris-toast-host { left: 1rem; right: 1rem; bottom: max(1rem, env(safe-area-inset-bottom)); width: auto; }
+    .velaris-surface--dialog { border-radius: 18px 18px 0 0 !important; }
+}
+
+html[data-velaris-motion="reduced"] .velaris-shell-root__orb { filter: blur(100px); }
+html[data-velaris-motion="reduced"] body:not(.velaris-route-changing) .velaris-shell-page { animation-duration: 120ms; }
+
+html[data-velaris-motion="off"] *,
+html[data-velaris-motion="off"] *::before,
+html[data-velaris-motion="off"] *::after {
+    scroll-behavior: auto !important;
+}
+
+html[data-velaris-motion="off"] body:not(.velaris-route-changing) .velaris-shell-page,
+html[data-velaris-motion="off"] .velaris-toast {
+    animation: none !important;
+    transition-duration: 0ms !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body:not(.velaris-route-changing) .velaris-shell-page { animation-duration: 100ms; }
+    .velaris-shell-dock__item,
+    .velaris-toast { transition-duration: 100ms !important; }
+}
