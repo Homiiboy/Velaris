@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.1.0 — 2026-09-03
+
+- Added the **Velaris Unified App Shell** milestone.
+- Added shell-wide SPA route detection and shared page state across Home, Library, Details, Player, Auth and browse views.
+- Expanded the Velaris command bar with direct Movies, Series and Discover navigation.
+- Added active navigation states and a compact current-page status indicator.
+- Added cinematic route transitions that respect the existing Velaris motion preference.
+- Added consistent Velaris treatment for compatible Jellyfin dialogs, menus, action sheets and notifications.
+- Added a reusable `VelarisShell.toast()` notification surface for current and future modules.
+- Added shared focus-visible styling for keyboard navigation across buttons, cards and list items.
+- Added a persistent ambient shell background with Player and authentication adaptations.
+- Added global modal / overlay state coordination for Search, Settings and compatible Jellyfin surfaces.
+- Added `Alt + 1`, `Alt + 2` and `Alt + 3` shortcuts for Home, Movies and Series.
+- Added modular `dist/velaris-v010.css` and `dist/velaris-v010.js` feature layers.
+- Converted the canonical bundle loaders to use the frozen V0.0.9 release as their base.
+- Archived V0.0.9 under `HistoricVersions/V0.0.9/`.
+
 ## 0.0.9 — 2026-09-03
 
 - Added the dedicated **Velaris Login & Profiles** feature layer.
