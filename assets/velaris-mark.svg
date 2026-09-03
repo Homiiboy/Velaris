@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">Velaris</title>
+  <defs>
+    <linearGradient id="g" x1="10" y1="8" x2="54" y2="58" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#00eaff"/>
+      <stop offset="0.55" stop-color="#8b5cf6"/>
+      <stop offset="1" stop-color="#ff2bd6"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="#020305"/>
+  <rect x="2" y="2" width="60" height="60" rx="14" fill="none" stroke="url(#g)" stroke-opacity="0.32"/>
+  <path d="M13 15h10.5L32 40.5 40.5 15H51L36.4 51H27.6L13 15Z" fill="url(#g)"/>
+  <circle cx="47.5" cy="16.5" r="4.5" fill="#ff2bd6"/>
+</svg>
