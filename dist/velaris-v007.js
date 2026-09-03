@@ -9,6 +9,7 @@
     const MIN_QUERY = 2;
     const SEARCH_LIMIT = 36;
     let searchTimer = 0;
+    let enhanceTimer = 0;
     let requestId = 0;
     let activeIndex = -1;
     let lastResults = [];
@@ -431,8 +432,8 @@
 
         observer = new MutationObserver(mutations => {
             if (mutations.some(mutation => mutation.addedNodes.length || mutation.removedNodes.length)) {
-                window.clearTimeout(searchTimer);
-                searchTimer = window.setTimeout(enhance, 100);
+                window.clearTimeout(enhanceTimer);
+                enhanceTimer = window.setTimeout(enhance, 100);
             }
         });
         observer.observe(document.documentElement, { childList: true, subtree: true });
@@ -480,6 +481,8 @@
             stop() {
                 observer?.disconnect();
                 observer = null;
+                window.clearTimeout(searchTimer);
+                window.clearTimeout(enhanceTimer);
             }
         });
 
