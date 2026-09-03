@@ -1,3 +1,10 @@
 /* Velaris v0.2.0 bundle */
 @import url("https://cdn.jsdelivr.net/gh/Homiiboy/Velaris@v0.1.0/dist/velaris.css");
 @import url("./velaris-v020.css");
+
+/* Keep Jellyfin's native episode surfaces visible if the Series Hub API layer reports an error. */
+body.velaris-series-ready:has(.velaris-series-episodes__state.is-error) .itemDetailPage .nextUpSection,
+body.velaris-series-ready:has(.velaris-series-episodes__state.is-error) .itemDetailPage #childrenCollapsible,
+body.velaris-series-ready:has(.velaris-series-episodes__state.is-error) .itemDetailPage #listChildrenCollapsible {
+    display: block !important;
+}
