@@ -2,26 +2,29 @@
 
 Velaris is a cinematic interface layer for Jellyfin Web with its own cyan, violet and magenta visual identity.
 
-## Current release — V0.1.0
+## Current release — V0.2.0
 
-V0.1.0 introduces the **Velaris Unified App Shell**. The existing Home, Library, Search, Settings, Login, Details and Player layers now sit inside one shared interaction and navigation system instead of behaving like isolated theme patches.
+V0.2.0 introduces the dedicated **Velaris Series Experience**. Series detail pages now receive an API-driven Series Hub with a focused Next Up experience, season navigation and a custom episode guide while the V0.1.0 Unified App Shell remains the frozen foundation.
 
 ### Highlights
 
-- unified Velaris shell state across Jellyfin SPA routes
-- expanded command bar with direct **Filme**, **Serien** and **Entdecken** navigation
-- active navigation state and current-page status indicator
-- cinematic page transitions between compatible Jellyfin views
-- global Velaris treatment for compatible dialogs, menus, action sheets and notifications
-- new reusable Velaris toast system for current and future feature modules
-- consistent keyboard focus treatment across buttons, cards and list items
-- shared ambient shell background that adapts to Player and authentication views
-- modal / overlay state handling for Search, Settings and compatible Jellyfin dialogs
-- new keyboard shortcuts `Alt + 1`, `Alt + 2` and `Alt + 3` for Home, Movies and Series
-- respects the Full, Reduced and Off motion preferences introduced in V0.0.8
-- retains Login & Profiles, Settings & Branding, Search, Library / Discover, Spotlight, Details and Player enhancements from previous releases
+- API-driven **Velaris Series Hub** for compatible Jellyfin series detail pages
+- dedicated **Als Nächstes / Next Up** hero using Jellyfin's next-up data when available
+- direct season navigation with dedicated **Specials** handling
+- season cards with episode counts and watched progress when Jellyfin exposes user data
+- responsive landscape episode cards with artwork, episode number, runtime, premiere date and overview
+- watched and partially-watched episode states
+- per-episode progress bars and `Gesehen` status treatment
+- automatic selection of the season containing the current Next Up episode when possible
+- per-season episode caching to reduce repeated Jellyfin API calls while browsing seasons
+- dedicated empty, loading and error states
+- safe fallback to Jellyfin's native episode surfaces when the Velaris episode layer reports an API error
+- responsive desktop, tablet and mobile layouts
+- respects the existing Full, Reduced and Off Velaris motion modes
+- exposes `window.VelarisSeries` for refresh, season selection and current Series Hub state
+- retains the V0.1.0 App Shell, Login & Profiles, Settings & Branding, Search, Library / Discover, Spotlight, Details and Player enhancements
 
-V0.1.0 deliberately does **not** replace Jellyfin's core router or playback internals. The shell enhances and coordinates the existing client so Velaris can become more independent without making playback unnecessarily fragile.
+V0.2.0 uses Jellyfin's own client API for series, seasons, episodes and Next Up data. It does not replace Jellyfin's playback engine or authentication internals.
 
 ## Development & Release Strategy
 
@@ -97,15 +100,16 @@ Current historic releases:
 - `HistoricVersions/V0.0.7/`
 - `HistoricVersions/V0.0.8/`
 - `HistoricVersions/V0.0.9/`
+- `HistoricVersions/V0.1.0/`
 
-## V0.1.0 bundle structure
+## V0.2.0 bundle structure
 
-The canonical `dist/velaris.css` and `dist/velaris.js` remain lightweight bundle loaders. V0.1.0 loads the frozen V0.0.9 release and adds:
+The canonical `dist/velaris.css` and `dist/velaris.js` remain lightweight bundle loaders. V0.2.0 loads the frozen V0.1.0 release and adds:
 
-- `dist/velaris-v010.css`
-- `dist/velaris-v010.js`
+- `dist/velaris-v020.css`
+- `dist/velaris-v020.js`
 
-The V0.1.0 feature code is pinned to commit `3b9895ae3ce86c5ee19ea74929b35eaf498a45aa`.
+The V0.2.0 feature bundle is pinned to commit `35e35d3f3406e99e91d1a4d4c31493eb4c9fb1c3`.
 
 ## Recommended installation — Tampermonkey
 
@@ -132,15 +136,15 @@ The loader injects the pinned matching CSS and JavaScript bundle and includes Ta
 Paste into Jellyfin Custom CSS:
 
 ```css
-@import url("https://cdn.jsdelivr.net/gh/Homiiboy/Velaris@3b9895ae3ce86c5ee19ea74929b35eaf498a45aa/dist/velaris.css");
+@import url("https://cdn.jsdelivr.net/gh/Homiiboy/Velaris@35e35d3f3406e99e91d1a4d4c31493eb4c9fb1c3/dist/velaris.css");
 ```
 
-CSS-only mode keeps the visual layers, but JavaScript-powered features such as Spotlight generation, dynamic library heroes, Search, Settings, browser branding, authentication detection, shell navigation and route coordination are reduced or unavailable.
+CSS-only mode keeps the visual layers, but JavaScript-powered features such as the API-driven Series Hub, Spotlight generation, dynamic library heroes, Search, Settings, browser branding, authentication detection, shell navigation and route coordination are reduced or unavailable.
 
 ## Manual JavaScript installation
 
 ```html
-<script defer src="https://cdn.jsdelivr.net/gh/Homiiboy/Velaris@3b9895ae3ce86c5ee19ea74929b35eaf498a45aa/dist/velaris.js"></script>
+<script defer src="https://cdn.jsdelivr.net/gh/Homiiboy/Velaris@35e35d3f3406e99e91d1a4d4c31493eb4c9fb1c3/dist/velaris.js"></script>
 ```
 
 ## License
