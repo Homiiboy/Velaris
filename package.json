@@ -20,6 +20,7 @@
     "velaris"
   ],
   "files": [
+    "assets/",
     "dist/",
     "velaris-loader.user.js",
     "theme.css",
