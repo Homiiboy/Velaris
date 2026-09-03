@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.0.7 — 2026-09-03
+
+- Added the dedicated **Velaris Search & Navigation** feature layer.
+- Added a full-screen live library search overlay powered by Jellyfin's client API.
+- Added grouped Movie, Series and Episode search results with category filters.
+- Added poster artwork, media type, year and episode metadata to search results.
+- Added keyboard navigation for search results plus `Ctrl/Cmd + K`, `/` and Escape shortcuts.
+- Added a new Velaris command bar with Home, Search and current-page context.
+- Redirected compatible native Jellyfin header search controls into Velaris Search.
+- Added responsive desktop, tablet and mobile search layouts.
+- Added separate timers for search debounce and SPA refresh handling.
+- Added modular `dist/velaris-v007.css` and `dist/velaris-v007.js` feature layers.
+- Converted the canonical bundle loaders to use the frozen V0.0.6 release as their base.
+- Archived V0.0.6 under `HistoricVersions/V0.0.6/`.
+
 ## 0.0.6 — 2026-09-03
 
 - Added a dedicated Velaris Library / Discover redesign for movie, series and browse views.
