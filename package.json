@@ -1,0 +1,35 @@
+{
+  "name": "@homiiboy/velaris",
+  "version": "0.0.7",
+  "description": "Cinematic interface layer for Jellyfin Web.",
+  "license": "MIT",
+  "author": "Homiiboy",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Homiiboy/Velaris.git"
+  },
+  "homepage": "https://github.com/Homiiboy/Velaris",
+  "bugs": {
+    "url": "https://github.com/Homiiboy/Velaris/issues"
+  },
+  "keywords": [
+    "jellyfin",
+    "theme",
+    "userscript",
+    "ui",
+    "velaris"
+  ],
+  "files": [
+    "dist/",
+    "velaris-loader.user.js",
+    "theme.css",
+    "README.md",
+    "LICENSE",
+    "VERSION"
+  ],
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
+    "access": "public"
+  },
+  "sideEffects": true
+}
