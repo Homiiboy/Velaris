@@ -1,0 +1,99 @@
+name: Release Velaris
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - VERSION
+      - package.json
+      - CHANGELOG.md
+      - dist/**
+      - velaris-loader.user.js
+      - theme.css
+      - .github/workflows/release.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js for GitHub Packages
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@homiiboy'
+
+      - name: Validate release version
+        shell: bash
+        run: |
+          VERSION="$(tr -d '[:space:]' < VERSION)"
+          PACKAGE_VERSION="$(node -p "require('./package.json').version")"
+          if [ "$VERSION" != "$PACKAGE_VERSION" ]; then
+            echo "VERSION ($VERSION) and package.json ($PACKAGE_VERSION) do not match."
+            exit 1
+          fi
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "TAG=v$VERSION" >> "$GITHUB_ENV"
+
+      - name: Build release archive
+        shell: bash
+        run: |
+          ROOT="Velaris-v${VERSION}"
+          mkdir -p "release/${ROOT}"
+          cp -R dist "release/${ROOT}/dist"
+          cp velaris-loader.user.js theme.css README.md LICENSE VERSION package.json "release/${ROOT}/"
+          (
+            cd release
+            zip -qr "../velaris-v${VERSION}.zip" "$ROOT"
+          )
+          sha256sum "velaris-v${VERSION}.zip" > SHA256SUMS.txt
+
+      - name: Build release notes from changelog
+        shell: bash
+        run: |
+          awk -v ver="$VERSION" '
+            $0 ~ "^## " ver " " { capture=1; next }
+            capture && /^## / { exit }
+            capture { print }
+          ' CHANGELOG.md > release-notes.md
+          if ! grep -q '[^[:space:]]' release-notes.md; then
+            printf 'Velaris v%s release.\n' "$VERSION" > release-notes.md
+          fi
+          printf '\n### Package\n`@homiiboy/velaris@%s` is published to GitHub Packages.\n' "$VERSION" >> release-notes.md
+
+      - name: Create GitHub Release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG already exists; skipping release creation."
+          else
+            gh release create "$TAG" \
+              --target "$GITHUB_SHA" \
+              --title "Velaris v${VERSION}" \
+              --notes-file release-notes.md \
+              "velaris-v${VERSION}.zip#Velaris v${VERSION}" \
+              "SHA256SUMS.txt#SHA256 checksums"
+          fi
+
+      - name: Publish GitHub Package
+        shell: bash
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if npm view "@homiiboy/velaris@${VERSION}" version --registry=https://npm.pkg.github.com >/dev/null 2>&1; then
+            echo "Package @homiiboy/velaris@${VERSION} already exists; skipping publish."
+          else
+            npm publish --registry=https://npm.pkg.github.com
+          fi
