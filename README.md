@@ -64,6 +64,35 @@ Once V1.0.0 is reached, the primary feature set is considered complete. Developm
 
 Major new features should become the exception after V1.0.0 so that the project can focus on stability and refinement.
 
+## Releases & GitHub Packages
+
+Starting with **V0.0.7**, Velaris uses a complete automated release pipeline.
+
+Every versioned release is intended to provide:
+
+- a Git tag in the form `vX.Y.Z`
+- a GitHub Release named `Velaris vX.Y.Z`
+- a ready-to-use `velaris-vX.Y.Z.zip` release asset
+- a `SHA256SUMS.txt` checksum file for release verification
+- the matching `@homiiboy/velaris` package in GitHub Packages
+- release notes generated from the matching section in `CHANGELOG.md`
+
+The package manifest is stored in `package.json`. `package.json` and `VERSION` must always contain the same version number before a release is published.
+
+The automation lives in `.github/workflows/release.yml`. When a new version is prepared on `main`, the workflow validates the version, packages the current distribution files, creates the GitHub Release if it does not already exist and publishes the matching GitHub Package if that version is not already available.
+
+Package name:
+
+```text
+@homiiboy/velaris
+```
+
+Package registry:
+
+```text
+https://npm.pkg.github.com
+```
+
 ## Version archive
 
 Historic releases live in `HistoricVersions/Vx.x.x/`.
