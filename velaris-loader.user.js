@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Velaris for Jellyfin
 // @namespace    https://github.com/Homiiboy/Velaris
-// @version      0.0.5
+// @version      0.0.6
 // @description  Loads the Velaris CSS and JavaScript enhancement layer into Jellyfin Web.
 // @author       Homiiboy
 // @match        http://*/web/*
@@ -17,8 +17,8 @@
 (() => {
     'use strict';
 
-    const VERSION = '0.0.5';
-    const COMMIT = '72896b5c23da41bf14f082ca1138c8b1fb2cdaca';
+    const VERSION = '0.0.6';
+    const COMMIT = 'd7dbe4117f766aa3209c7a45f3ea51daceb31915';
     const CSS_URL = `https://cdn.jsdelivr.net/gh/Homiiboy/Velaris@${COMMIT}/dist/velaris.css`;
     const JS_URL = `https://cdn.jsdelivr.net/gh/Homiiboy/Velaris@${COMMIT}/dist/velaris.js`;
     const CSS_ID = 'velaris-userscript-css';
@@ -27,19 +27,13 @@
     const looksLikeJellyfin = () => {
         const path = location.pathname.toLowerCase();
         if (path.includes('/web/') || path.includes('/jellyfin/')) return true;
-
-        return Boolean(
-            document.querySelector('.skinHeader, .mainDrawer, .homePage, [data-role="page"]') ||
-            window.ApiClient ||
-            window.Emby
-        );
+        return Boolean(document.querySelector('.skinHeader, .mainDrawer, .homePage, [data-role="page"]') || window.ApiClient || window.Emby);
     };
 
     const injectCss = () => {
         const old = document.getElementById(CSS_ID);
         if (old?.dataset.velarisVersion === VERSION) return;
         old?.remove();
-
         const link = document.createElement('link');
         link.id = CSS_ID;
         link.rel = 'stylesheet';
@@ -52,7 +46,6 @@
         const old = document.getElementById(JS_ID);
         if (old?.dataset.velarisVersion === VERSION) return;
         old?.remove();
-
         const script = document.createElement('script');
         script.id = JS_ID;
         script.src = JS_URL;
@@ -70,10 +63,6 @@
     };
 
     boot();
-
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', boot, { once: true });
-    } else {
-        boot();
-    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true });
+    else boot();
 })();
