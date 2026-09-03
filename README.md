@@ -2,24 +2,26 @@
 
 Velaris is a cinematic interface layer for Jellyfin Web with its own cyan, violet and magenta visual identity.
 
-## Current release — V0.0.9
+## Current release — V0.1.0
 
-V0.0.9 introduces the dedicated **Velaris Login & Profiles** experience. Velaris now begins before the library loads, giving Jellyfin authentication, profile selection and compatible server-selection screens their own streaming-style presentation.
+V0.1.0 introduces the **Velaris Unified App Shell**. The existing Home, Library, Search, Settings, Login, Details and Player layers now sit inside one shared interaction and navigation system instead of behaving like isolated theme patches.
 
 ### Highlights
 
-- dedicated Velaris authentication shell for compatible Jellyfin login views
-- cinematic Login / Access branding with responsive glass-panel layout
-- redesigned username, password and sign-in controls
-- dedicated **Who is watching? / Wer schaut heute?** profile experience
-- responsive profile grid with larger avatar cards and focused hover states
-- remembers only the last selected profile name locally and marks it as `Zuletzt`
-- does **not** store Jellyfin passwords or authentication credentials
-- styling for compatible Jellyfin server-selection / connection views
-- native secondary actions such as manual login, password recovery, server connection and Back are visually integrated
-- login/profile detection follows Jellyfin SPA DOM changes without requiring a page refresh
-- respects the existing Velaris motion preferences from V0.0.8
-- retains Velaris Settings, browser branding, Search, Library / Discover, Spotlight, cinematic details and player enhancements from earlier releases
+- unified Velaris shell state across Jellyfin SPA routes
+- expanded command bar with direct **Filme**, **Serien** and **Entdecken** navigation
+- active navigation state and current-page status indicator
+- cinematic page transitions between compatible Jellyfin views
+- global Velaris treatment for compatible dialogs, menus, action sheets and notifications
+- new reusable Velaris toast system for current and future feature modules
+- consistent keyboard focus treatment across buttons, cards and list items
+- shared ambient shell background that adapts to Player and authentication views
+- modal / overlay state handling for Search, Settings and compatible Jellyfin dialogs
+- new keyboard shortcuts `Alt + 1`, `Alt + 2` and `Alt + 3` for Home, Movies and Series
+- respects the Full, Reduced and Off motion preferences introduced in V0.0.8
+- retains Login & Profiles, Settings & Branding, Search, Library / Discover, Spotlight, Details and Player enhancements from previous releases
+
+V0.1.0 deliberately does **not** replace Jellyfin's core router or playback internals. The shell enhances and coordinates the existing client so Velaris can become more independent without making playback unnecessarily fragile.
 
 ## Development & Release Strategy
 
@@ -94,15 +96,16 @@ Current historic releases:
 - `HistoricVersions/V0.0.6/`
 - `HistoricVersions/V0.0.7/`
 - `HistoricVersions/V0.0.8/`
+- `HistoricVersions/V0.0.9/`
 
-## V0.0.9 bundle structure
+## V0.1.0 bundle structure
 
-The canonical `dist/velaris.css` and `dist/velaris.js` remain lightweight bundle loaders. V0.0.9 loads the frozen V0.0.8 release and adds:
+The canonical `dist/velaris.css` and `dist/velaris.js` remain lightweight bundle loaders. V0.1.0 loads the frozen V0.0.9 release and adds:
 
-- `dist/velaris-v009.css`
-- `dist/velaris-v009.js`
+- `dist/velaris-v010.css`
+- `dist/velaris-v010.js`
 
-The V0.0.9 feature code is pinned to commit `23a794f7909bd84ac51c98fabe3fb0ea8f90b2c9`.
+The V0.1.0 feature code is pinned to commit `3b9895ae3ce86c5ee19ea74929b35eaf498a45aa`.
 
 ## Recommended installation — Tampermonkey
 
@@ -120,21 +123,24 @@ The loader injects the pinned matching CSS and JavaScript bundle and includes Ta
 - `Enter` — open the focused result
 - `Esc` — close Search or Settings
 - `Ctrl + ,` / `Cmd + ,` — open Velaris Settings
+- `Alt + 1` — Home
+- `Alt + 2` — Movies / Filme
+- `Alt + 3` — Series / Serien
 
 ## CSS-only installation
 
 Paste into Jellyfin Custom CSS:
 
 ```css
-@import url("https://cdn.jsdelivr.net/gh/Homiiboy/Velaris@23a794f7909bd84ac51c98fabe3fb0ea8f90b2c9/dist/velaris.css");
+@import url("https://cdn.jsdelivr.net/gh/Homiiboy/Velaris@3b9895ae3ce86c5ee19ea74929b35eaf498a45aa/dist/velaris.css");
 ```
 
-CSS-only mode keeps the visual layers, but JavaScript-powered features such as Spotlight generation, dynamic library heroes, Velaris Search, Settings, browser branding, auth/profile detection, row reordering and page detection are reduced or unavailable.
+CSS-only mode keeps the visual layers, but JavaScript-powered features such as Spotlight generation, dynamic library heroes, Search, Settings, browser branding, authentication detection, shell navigation and route coordination are reduced or unavailable.
 
 ## Manual JavaScript installation
 
 ```html
-<script defer src="https://cdn.jsdelivr.net/gh/Homiiboy/Velaris@23a794f7909bd84ac51c98fabe3fb0ea8f90b2c9/dist/velaris.js"></script>
+<script defer src="https://cdn.jsdelivr.net/gh/Homiiboy/Velaris@3b9895ae3ce86c5ee19ea74929b35eaf498a45aa/dist/velaris.js"></script>
 ```
 
 ## License
