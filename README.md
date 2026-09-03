@@ -2,36 +2,37 @@
 
 Velaris is a cinematic interface layer for Jellyfin Web with its own cyan, violet and magenta visual identity.
 
-## Current release — V0.0.7
+## Current release — V0.0.8
 
-V0.0.7 adds a dedicated **Velaris Search & Navigation** layer on top of the V0.0.6 home, library, detail and player experience.
+V0.0.8 introduces the first dedicated **Velaris Settings & Branding** layer. Velaris can now be configured directly inside Jellyfin and keeps those preferences locally in the current browser.
 
 ### Highlights
 
-- new full-screen **Velaris Search** overlay
-- live Jellyfin library search for movies, series and episodes
-- grouped results for Movies, Series and Episodes
-- category chips for quickly filtering the current result set
-- poster artwork, type labels, year and episode metadata in search results
-- keyboard-first navigation with arrow keys and Enter
-- global **Ctrl/Cmd + K** shortcut to open Velaris Search
-- `/` shortcut to open search when no input field is active
-- Escape closes the overlay
-- new Velaris command bar in the Jellyfin header with Home, Search and current-page context
-- compatible native Jellyfin search buttons are redirected into Velaris Search
-- dedicated desktop, tablet and mobile search layouts
-- separate search debounce and Jellyfin SPA-refresh timers for more reliable live results
-- retains the V0.0.6 Library / Discover redesign, Spotlight, cinematic details and player treatment
+- dedicated Velaris Settings drawer integrated into the command bar
+- persistent settings via `localStorage`
+- Spotlight on/off control
+- animation modes: Full, Reduced and Off
+- UI density modes: Compact, Standard and Spacious
+- configurable card sizing: Small, Medium and Large
+- accent intensity modes: Subtle, Balanced and Vivid
+- optional Velaris browser-tab title
+- custom Velaris SVG favicon replacing Jellyfin's browser icon
+- optional Velaris browser / PWA theme color
+- `Ctrl + ,` / `Cmd + ,` shortcut for Settings
+- responsive Settings UI for desktop and mobile
+- retains Velaris Search, Library / Discover, Spotlight, cinematic details and player enhancements from earlier releases
+
+The browser branding icon is stored in `assets/velaris-mark.svg` and is included in GitHub Releases and GitHub Packages.
 
 ## Development & Release Strategy
 
 Velaris remains in an active **feature-development phase through V1.0.0**.
 
-Until V1.0.0, releases may introduce substantial new functionality, redesign existing areas, replace Jellyfin interface elements and expand Velaris into additional parts of the web client. The goal of this phase is to make Velaris a complete and coherent Jellyfin frontend experience rather than only a visual theme.
+Until V1.0.0, releases may introduce substantial new functionality, redesign existing areas, replace Jellyfin interface elements and expand Velaris into additional parts of the web client. The goal is to make Velaris a complete and coherent Jellyfin frontend experience rather than only a visual theme.
 
 ### Feature phase — V0.x.x through V1.0.0
 
-During this phase the project may add or substantially rework features such as:
+During this phase the project may add or substantially rework:
 
 - Home, Spotlight and discovery experiences
 - Library, movie and series browsing
@@ -41,7 +42,7 @@ During this phase the project may add or substantially rework features such as:
 - series, seasons and episode interfaces
 - collections, genres, actors and discovery pages
 - player controls, playback overlays and Up Next experiences
-- browser branding such as favicon, page title, theme color and PWA presentation
+- browser branding, favicon, page title, theme color and PWA presentation
 - responsive desktop, tablet, mobile and TV-oriented layouts
 - deeper Jellyfin Web integration where needed
 
@@ -49,45 +50,34 @@ Large UI and architecture changes are expected during the feature phase. Backwar
 
 ### Stabilization phase — after V1.0.0
 
-Once V1.0.0 is reached, the primary feature set is considered complete. Development will then shift mainly toward:
+Once V1.0.0 is reached, the primary feature set is considered complete. Development will then shift mainly toward bug fixes, Jellyfin-version compatibility, performance optimization, accessibility, responsive corrections, browser compatibility, visual polish, animation tuning, code cleanup and regression fixes.
 
-- bug fixes
-- Jellyfin-version compatibility
-- performance optimization
-- accessibility improvements
-- responsive-layout corrections
-- browser compatibility
-- visual consistency and polish
-- animation and interaction tuning
-- code cleanup and maintainability
-- reliability and regression fixes
-
-Major new features should become the exception after V1.0.0 so that the project can focus on stability and refinement.
+Major new features should become the exception after V1.0.0.
 
 ## Releases & GitHub Packages
 
-Starting with **V0.0.7**, Velaris uses a complete automated release pipeline.
+Starting with **V0.0.7**, Velaris uses an automated release pipeline.
 
-Every versioned release is intended to provide:
+Every versioned release provides:
 
-- a Git tag in the form `vX.Y.Z`
-- a GitHub Release named `Velaris vX.Y.Z`
-- a ready-to-use `velaris-vX.Y.Z.zip` release asset
-- a `SHA256SUMS.txt` checksum file for release verification
-- the matching `@homiiboy/velaris` package in GitHub Packages
-- release notes generated from the matching section in `CHANGELOG.md`
+- Git tag `vX.Y.Z`
+- GitHub Release `Velaris vX.Y.Z`
+- `velaris-vX.Y.Z.zip`
+- `SHA256SUMS.txt`
+- matching `@homiiboy/velaris` package in GitHub Packages
+- release notes generated from `CHANGELOG.md`
 
-The package manifest is stored in `package.json`. `package.json` and `VERSION` must always contain the same version number before a release is published.
+The release ZIP and package include the active `dist/` modules, `assets/`, Tampermonkey loader, CSS loader, README, license and version metadata.
 
-The automation lives in `.github/workflows/release.yml`. When a new version is prepared on `main`, the workflow validates the version, packages the current distribution files, creates the GitHub Release if it does not already exist and publishes the matching GitHub Package if that version is not already available.
+`package.json` and `VERSION` must contain the same version before publication. The automation lives in `.github/workflows/release.yml`.
 
-Package name:
+Package:
 
 ```text
 @homiiboy/velaris
 ```
 
-Package registry:
+Registry:
 
 ```text
 https://npm.pkg.github.com
@@ -97,7 +87,7 @@ https://npm.pkg.github.com
 
 Historic releases live in `HistoricVersions/Vx.x.x/`.
 
-Whenever a newer Velaris version is released, the previous version is frozen and moved into `HistoricVersions` so it remains reproducible and accessible.
+Whenever a newer Velaris version is released, the previous version is frozen so it remains reproducible.
 
 Current historic releases:
 
@@ -105,52 +95,48 @@ Current historic releases:
 - `HistoricVersions/V0.0.4/`
 - `HistoricVersions/V0.0.5/`
 - `HistoricVersions/V0.0.6/`
+- `HistoricVersions/V0.0.7/`
 
-## V0.0.7 bundle structure
+## V0.0.8 bundle structure
 
-The canonical `dist/velaris.css` and `dist/velaris.js` stay lightweight. V0.0.7 loads the frozen V0.0.6 bundle and then adds:
+The canonical `dist/velaris.css` and `dist/velaris.js` remain lightweight bundle loaders. V0.0.8 loads the frozen V0.0.7 bundle and adds:
 
-- `dist/velaris-v007.css`
-- `dist/velaris-v007.js`
+- `dist/velaris-v008.css`
+- `dist/velaris-v008.js`
 
-The V0.0.7 feature code is pinned to commit `3c4159f2b47a1a8392aa0abdafbf11cf8bb07eaa`.
+The V0.0.8 feature code is pinned to commit `f9155bbf6826fff434e1c827f087622ec667911c`.
 
 ## Recommended installation — Tampermonkey
 
-Velaris includes a ready-to-use userscript loader:
-
-`velaris-loader.user.js`
-
-Install URL:
+Install the userscript:
 
 `https://raw.githubusercontent.com/Homiiboy/Velaris/main/velaris-loader.user.js`
 
-With Tampermonkey installed, open the URL above and confirm the userscript installation. The loader automatically injects the pinned V0.0.7 bundle and includes update metadata for future Velaris releases.
+The loader injects the pinned matching CSS and JavaScript bundle and includes Tampermonkey update metadata.
 
-## Search shortcuts
+## Shortcuts
 
 - `Ctrl + K` / `Cmd + K` — open Velaris Search
-- `/` — open Velaris Search when you are not typing in another field
-- `↑` / `↓` — move through visible search results
+- `/` — open Velaris Search when another input is not active
+- `↑` / `↓` — navigate visible search results
 - `Enter` — open the focused result
-- `Esc` — close Velaris Search
+- `Esc` — close Search or Settings
+- `Ctrl + ,` / `Cmd + ,` — open Velaris Settings
 
 ## CSS-only installation
 
-If JavaScript is not wanted, paste this into **Jellyfin → Dashboard → General → Custom CSS**:
+Paste into Jellyfin Custom CSS:
 
 ```css
-@import url("https://cdn.jsdelivr.net/gh/Homiiboy/Velaris@3c4159f2b47a1a8392aa0abdafbf11cf8bb07eaa/dist/velaris.css");
+@import url("https://cdn.jsdelivr.net/gh/Homiiboy/Velaris@f9155bbf6826fff434e1c827f087622ec667911c/dist/velaris.css");
 ```
 
-CSS-only mode keeps the visual layers, but JavaScript-powered features such as Spotlight generation, dynamic library heroes, Velaris Search, row reordering and page detection are reduced or unavailable.
+CSS-only mode keeps the visual layers, but JavaScript-powered features such as Spotlight generation, dynamic library heroes, Velaris Search, Settings, browser branding, row reordering and page detection are reduced or unavailable.
 
 ## Manual JavaScript installation
 
-If Tampermonkey is not used, load the matching JavaScript with another custom-script injection method:
-
 ```html
-<script defer src="https://cdn.jsdelivr.net/gh/Homiiboy/Velaris@3c4159f2b47a1a8392aa0abdafbf11cf8bb07eaa/dist/velaris.js"></script>
+<script defer src="https://cdn.jsdelivr.net/gh/Homiiboy/Velaris@f9155bbf6826fff434e1c827f087622ec667911c/dist/velaris.js"></script>
 ```
 
 ## License
