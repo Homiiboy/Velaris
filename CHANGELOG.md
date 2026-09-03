@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.0.8 — 2026-09-03
+
+- Added the dedicated **Velaris Settings & Branding** feature layer.
+- Added an in-app Settings drawer integrated into the Velaris command bar.
+- Added persistent browser-local settings via `localStorage`.
+- Added Spotlight visibility control.
+- Added Full, Reduced and Off animation modes.
+- Added Compact, Standard and Spacious UI-density modes.
+- Added Small, Medium and Large card-size modes.
+- Added Subtle, Balanced and Vivid accent-intensity modes.
+- Added optional Velaris browser-tab title handling.
+- Added a custom SVG Velaris favicon and optional browser theme color.
+- Added `Ctrl/Cmd + ,` as a global Settings shortcut.
+- Added responsive desktop and mobile Settings layouts.
+- Added `assets/velaris-mark.svg` and included assets in release ZIPs and GitHub Packages.
+- Added modular `dist/velaris-v008.css` and `dist/velaris-v008.js` feature layers.
+- Converted the canonical bundle loaders to use the frozen V0.0.7 release as their base.
+- Archived V0.0.7 under `HistoricVersions/V0.0.7/`.
+
 ## 0.0.7 — 2026-09-03
 
 - Added the dedicated **Velaris Search & Navigation** feature layer.
