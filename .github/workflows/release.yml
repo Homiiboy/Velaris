@@ -8,6 +8,7 @@ on:
       - VERSION
       - package.json
       - CHANGELOG.md
+      - assets/**
       - dist/**
       - velaris-loader.user.js
       - theme.css
@@ -50,6 +51,7 @@ jobs:
         run: |
           ROOT="Velaris-v${VERSION}"
           mkdir -p "release/${ROOT}"
+          cp -R assets "release/${ROOT}/assets"
           cp -R dist "release/${ROOT}/dist"
           cp velaris-loader.user.js theme.css README.md LICENSE VERSION package.json "release/${ROOT}/"
           (
