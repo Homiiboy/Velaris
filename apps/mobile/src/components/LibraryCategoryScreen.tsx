@@ -6,6 +6,7 @@ import { getLibraryItems, type MediaLibraryKind } from '@/services/jellyfin';
 import { MediaCard } from '@/components/MediaCard';
 import type { JellyfinItem } from '@/types/jellyfin';
 import { colors } from '@/theme';
+import { VelarisHeader } from '@/components/VelarisHeader';
 
 export function LibraryCategoryScreen({kind,title,description}:{kind:MediaLibraryKind;title:string;description:string}) {
  const {session}=useAuth();
@@ -22,17 +23,17 @@ export function LibraryCategoryScreen({kind,title,description}:{kind:MediaLibrar
    return ()=>{cancelled=true};
  },[session,kind]));
  if(!session)return <Redirect href="/connect"/>;
- return <FlatList style={styles.page} contentContainerStyle={styles.content}
+ return <View style={{flex:1,backgroundColor:colors.background}}><VelarisHeader scope={kind}/><FlatList style={styles.page} contentContainerStyle={styles.content}
    data={items} numColumns={3} columnWrapperStyle={styles.row}
    ListHeaderComponent={<View style={styles.header}><Text style={styles.eyebrow}>VELARIS</Text>
       <View style={styles.titleRow}><Text style={styles.title}>{title}</Text><Text style={styles.count}>{items.length}</Text></View>
       <Text style={styles.sub}>{description}</Text></View>}
    ListEmptyComponent={!loading?<Text style={styles.empty}>Noch keine Titel gefunden. Prüfe, ob in Jellyfin eine Bibliothek namens „{title}“ vorhanden ist.</Text>:<Text style={styles.empty}>Wird geladen …</Text>}
    renderItem={({item})=><MediaCard item={item} session={session} width={cardWidth}/>}
-   keyExtractor={item=>item.Id}/>;
+   keyExtractor={item=>item.Id}/></View>;
 }
 const styles=StyleSheet.create({
- page:{backgroundColor:colors.background},content:{padding:12,paddingTop:52,paddingBottom:30},
+ page:{backgroundColor:colors.background},content:{padding:12,paddingTop:10,paddingBottom:30},
  row:{justifyContent:'space-between',marginBottom:17},header:{marginBottom:22},
  eyebrow:{color:colors.muted,fontSize:9,fontWeight:'900',letterSpacing:2.5,marginBottom:4},
  titleRow:{flexDirection:'row',alignItems:'center',gap:9},

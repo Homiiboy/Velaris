@@ -53,11 +53,27 @@ export function getPlayedItems(s:Session){return getItems(s,{Recursive:'true',In
 export function getRecommendations(s:Session,genres:string[],excludeId?:string){const genreIds=genres.slice(0,2).join('|');return getItems(s,{Recursive:'true',IncludeItemTypes:'Movie,Series',SortBy:'CommunityRating,Random',SortOrder:'Descending',Limit:'30',...(genreIds?{Genres:genreIds}:{}),...(excludeId?{ExcludeItemIds:excludeId}:{})});}
 export function getCollections(s:Session){return getItems(s,{IncludeItemTypes:'BoxSet',Recursive:'true',SortBy:'SortName',SortOrder:'Ascending',Limit:'200'});}
 export async function getCollectionItems(s:Session,id:string){
- // Jellyfin BoxSet children may be Movies, Series or home-video entries.
- const members=await getItems(s,{ParentId:id,Recursive:'true',IncludeItemTypes:'Movie,Series,Video',SortBy:'SortName',SortOrder:'Ascending',Limit:'500'});
- if(members.Items.length)return members;
- // Some Jellyfin versions store BoxSet members as linked rather than direct items.
- return getItems(s,{ParentId:id,Recursive:'true',SortBy:'SortName',SortOrder:'Ascending',Limit:'500'});
+ // Match Jellyfin collection ordering by release year (oldest to newest).
+ const params={ParentId:id,Recursive:'true',IncludeItemTypes:'Movie,Series,Video',SortBy:'PremiereDate,SortName',SortOrder:'Ascending',Limit:'500'};
+ const members=await getItems(s,params);
+ const result=members.Items.length?members:await getItems(s,{ParentId:id,Recursive:'true',SortBy:'PremiereDate,SortName',SortOrder:'Ascending',Limit:'500'});
+ const release=(item:JellyfinItem)=> {
+   const time=item.PremiereDate?Date.parse(item.PremiereDate):NaN;
+   return Number.isFinite(time)?time:item.ProductionYear?Date.UTC(item.ProductionYear,0,1):Number.MAX_SAFE_INTEGER;
+ };
+ return {...result,Items:[...result.Items].sort((a,b)=>release(a)-release(b)||a.Name.localeCompare(b.Name,'de'))};
+}
+
+export type SearchArea=MediaLibraryKind|'collections'|'home';
+export async function searchInArea(s:Session,term:string,scope:SearchArea='home',collectionId?:string){
+ if(collectionId)return getItems(s,{ParentId:collectionId,Recursive:'true',SearchTerm:term,IncludeItemTypes:'Movie,Series,Video',Limit:'150'});
+ if(scope==='collections')return getItems(s,{Recursive:'true',SearchTerm:term,IncludeItemTypes:'BoxSet',Limit:'150'});
+ if(scope==='home')return searchItems(s,term);
+ const views=await getMediaLibraries(s);
+ const library=findLibrary(views.Items,scope);
+ if(!library)return {Items:[],TotalRecordCount:0} as JellyfinItemsResponse;
+ const include=scope==='movies'||scope==='animeMovies'?'Movie':scope==='series'||scope==='anime'?'Series':'Movie,Series';
+ return getItems(s,{ParentId:library.Id,Recursive:'true',SearchTerm:term,IncludeItemTypes:include,Limit:'150'});
 }
 export function getResumeItems(s:Session){const p=new URLSearchParams({UserId:s.user.Id,MediaTypes:'Video',Limit:'30',Fields:itemFields(),EnableImages:'true',ImageTypeLimit:'1',EnableImageTypes:'Primary,Backdrop',EnableUserData:'true'});return request<JellyfinItemsResponse>(`${s.serverUrl}/Items/Resume?${p}`,{headers:authHeaders(s)});}
 export function getItem(s:Session,id:string){return request<JellyfinItem>(`${s.serverUrl}/Users/${s.user.Id}/Items/${id}`,{headers:authHeaders(s)});}

@@ -2,11 +2,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Image, ImageBackground, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { Redirect, router, useFocusEffect } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
-import { getBackdropUrl, getFavorites, getGenres, getLatest, getPlayedItems, getRecommendations, getResumeItems } from '@/services/jellyfin';
+import { getBackdropUrl, getFavorites, getLatest, getPlayedItems, getRecommendations, getResumeItems } from '@/services/jellyfin';
 import { MediaRow } from '@/components/MediaRow';
 import type { JellyfinItem } from '@/types/jellyfin';
 import { colors, design } from '@/theme';
-import { getActiveProfile, type VelarisProfile } from '@/services/session';
+import { VelarisHeader } from '@/components/VelarisHeader';
 
 const AVATARS = [
   require('../../assets/AvatarRot.png'),
@@ -24,9 +24,6 @@ export default function HomeScreen() {
   const [recommended, setRecommended] = useState<JellyfinItem[]>([]);
   const [becauseTitle, setBecauseTitle] = useState('');
   const [refreshing, setRefreshing] = useState(false);
-  const [activeProfile, setActiveProfile] = useState<VelarisProfile | null>(null);
-  const [categoryMenu, setCategoryMenu] = useState(false);
-  const [genres, setGenres] = useState<string[]>([]);
   const entrance = useRef(new Animated.Value(0)).current;
 
   const load = useCallback(async () => {
@@ -51,8 +48,6 @@ export default function HomeScreen() {
   useFocusEffect(useCallback(() => {
     // Refresh Jellyfin played flags after returning from the media player.
     load();
-    if (session) getGenres(session).then(setGenres).catch(() => setGenres([]));
-    getActiveProfile().then(p => setActiveProfile(p ?? null));
   }, [load, session]));
   useEffect(() => {
     Animated.timing(entrance, { toValue: 1, duration: 500, useNativeDriver: true }).start();
@@ -100,40 +95,7 @@ export default function HomeScreen() {
           <MediaRow title={design.homeRows.latest} items={latest} session={session} />
         </Animated.View>
       </ScrollView>
-      <View style={styles.header}>
-        <View style={styles.top}>
-          <Text style={styles.brand}>VELARIS<Text style={styles.brandDot}>.</Text></Text>
-          <View style={styles.actions}>
-            <Pressable accessibilityLabel="Downloads" hitSlop={12} onPress={() => router.push('/downloads')}><Text style={styles.action}>⇩</Text></Pressable>
-            <Pressable accessibilityLabel="Sammlungen" hitSlop={12} onPress={() => router.push('/collections')}><Text style={styles.action}>▣</Text></Pressable>
-            <Pressable accessibilityLabel="Suche" hitSlop={12} onPress={() => router.push('/(tabs)/search')}><Text style={styles.search}>⌕</Text></Pressable>
-            <Pressable accessibilityLabel="Profil" hitSlop={12} onPress={() => router.push('/profiles')}>
-              <View style={styles.avatar}><Image source={activeProfile?.photoUri ? { uri: activeProfile.photoUri } : AVATARS[(activeProfile?.avatar ?? 0) % AVATARS.length]} style={styles.avatarPhoto} /></View>
-            </Pressable>
-          </View>
-        </View>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" nestedScrollEnabled style={styles.quickNav} contentContainerStyle={styles.quickNavContent}>
-          <Pressable style={[styles.navChip, categoryMenu && styles.activeChip]} onPress={() => setCategoryMenu(v => !v)}><Text style={styles.navChipText}>Genres  ⌄</Text></Pressable>
-          {[
-            {label:design.navigation.animation,href:'/(tabs)/animation'},
-            {label:design.navigation.anime,href:'/(tabs)/anime'},
-            {label:design.navigation.animeMovies,href:'/(tabs)/anime-movies'},
-            {label:design.navigation.cartoons,href:'/(tabs)/cartoons'},
-            {label:design.navigation.movies,href:'/(tabs)/movies'},
-            {label:design.navigation.collections,href:'/collections'},
-            {label:design.navigation.series,href:'/(tabs)/series'},
-          ].map(destination=><Pressable key={destination.href} style={styles.navChip} onPress={() => router.push(destination.href as any)}><Text style={styles.navChipText}>{destination.label}</Text></Pressable>)}
-        </ScrollView>
-        {categoryMenu && <View style={styles.categoryMenu}>
-          <Text style={styles.categoryHeading}>Genres</Text>
-          <ScrollView style={styles.categoryScroll} nestedScrollEnabled>
-            {genres.map(g => <Pressable key={g} style={styles.categoryItem} onPress={() => {
-              setCategoryMenu(false);
-              router.push({ pathname: '/genre/[name]', params: { name: g } });
-            }}><Text style={styles.categoryText}>{g}</Text><Text style={styles.categoryArrow}>›</Text></Pressable>)}
-          </ScrollView>
-        </View>}
-      </View>
+      <VelarisHeader home overlay />
     </View>
   );
 }
