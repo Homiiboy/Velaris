@@ -39,6 +39,7 @@ class MainActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        VelarisDesign.load(this)
         immersive()
         server = prefs.getString("server_url", "").orEmpty()
         token = prefs.getString("access_token", "").orEmpty()
@@ -108,8 +109,17 @@ class MainActivity : Activity() {
                 val json = request("/Users/AuthenticateByName", "POST", body, false)
                 token = json.getString("AccessToken")
                 userId = json.getJSONObject("User").getString("Id")
-                prefs.edit().putString("access_token", token).putString("user_id", userId).apply()
-                runOnUiThread { showHome() }
+                val accountName = json.getJSONObject("User").optString("Name", username)
+                prefs.edit().putString("access_token", token).putString("user_id", userId)
+                    .putString("active_profile_name", accountName).apply()
+                runOnUiThread {
+                    if (saveJellyfinProfile(server, userId, token, accountName, 0)) {
+                        showProfiles(true)
+                    } else {
+                        toast("Maximal ${VelarisDesign.maxProfiles()} Jellyfin-Profile. Entferne zuerst ein bestehendes Profil.")
+                        showProfiles(true)
+                    }
+                }
             } catch (e: Exception) { runOnUiThread { toast("Anmeldung fehlgeschlagen: ${e.message ?: "Server nicht erreichbar"}") } }
         }
     }
@@ -119,7 +129,7 @@ class MainActivity : Activity() {
 
         val content = LinearLayout(this).apply {
             orientation=LinearLayout.VERTICAL
-            setBackgroundColor(Color.rgb(8,8,13))
+            setBackgroundColor(VelarisDesign.color("background",0xFF08080D.toInt()))
             setPadding(0,0,0,dp(30))
             clipToPadding=false
         }
@@ -128,7 +138,7 @@ class MainActivity : Activity() {
         val scroll=ScrollView(this).apply {
             isVerticalScrollBarEnabled=false; clipToPadding=false; addView(content)
         }
-        val screen=FrameLayout(this).apply { setBackgroundColor(Color.rgb(8,8,13)) }
+        val screen=FrameLayout(this).apply { setBackgroundColor(VelarisDesign.color("background",0xFF08080D.toInt())) }
         screen.addView(scroll,FrameLayout.LayoutParams(-1,-1))
 
         val top=LinearLayout(this).apply {
@@ -141,14 +151,14 @@ class MainActivity : Activity() {
         }
         val nav=LinearLayout(this).apply { orientation=LinearLayout.HORIZONTAL; gravity=Gravity.CENTER_VERTICAL }
         listOf(
-            "Startseite" to navButton("Startseite"){showHome()},
-            "Filme" to navButton("Filme"){showLibrary("Filme","Movie")},
-            "Serien" to navButton("Serien"){showLibrary("Serien","Series")},
-            "Anime" to navButton("Anime"){showMediaFolderLibrary("Anime","Series")},
-            "Animefilme" to navButton("Animefilme"){showMediaFolderLibrary("Animefilme","Movie")},
-            "Sammlungen" to navButton("Sammlungen"){showLibrary("Sammlungen","BoxSet")}
+            VelarisDesign.navigation("home","Start") to navButton(VelarisDesign.navigation("home","Start")){showHome()},
+            VelarisDesign.navigation("movies","Filme") to navButton(VelarisDesign.navigation("movies","Filme")){showLibrary("Filme","Movie")},
+            VelarisDesign.navigation("series","Serien") to navButton(VelarisDesign.navigation("series","Serien")){showLibrary("Serien","Series")},
+            VelarisDesign.navigation("anime","Anime") to navButton(VelarisDesign.navigation("anime","Anime")){showMediaFolderLibrary("Anime","Series")},
+            VelarisDesign.navigation("animeMovies","Anime Filme") to navButton(VelarisDesign.navigation("animeMovies","Anime Filme")){showMediaFolderLibrary("Anime Filme","Movie")},
+            VelarisDesign.navigation("collections","Sammlungen") to navButton(VelarisDesign.navigation("collections","Sammlungen")){showLibrary("Sammlungen","BoxSet")}
         ).forEach { (label,button) ->
-            val width=when(label) { "Startseite"->dp(112); "Animefilme"->dp(122); "Sammlungen"->dp(132); else->dp(88) }
+            val width=when(label) { "Start"->dp(90); "Anime Filme"->dp(122); "Sammlungen"->dp(132); else->dp(88) }
             nav.addView(button,LinearLayout.LayoutParams(width,dp(46)).apply{marginEnd=dp(3)})
         }
         top.addView(nav,LinearLayout.LayoutParams(0,dp(50),1f))
@@ -184,12 +194,14 @@ class MainActivity : Activity() {
                 runOnUiThread {
                     homeRoot?.let { if(it.childCount>2) it.removeViews(2,it.childCount-2) }
                     addHeroCarousel((latest+recommended).distinctBy{it.optString("Id")}.take(5))
+                    addRankedRow(VelarisDesign.homeRow("topTen","Top 10 für dich"),topTen)
                     addContinueRow(resume)
-                    if(becauseTitle.isNotBlank()) addRow("Weil du „$becauseTitle“ gesehen hast",because)
-                    addRow("Meine Liste",favorites); addRow("Für dich",recommended)
-                    addRankedRow("Top 10 in deiner Mediathek",topTen)
+                    addRow(VelarisDesign.homeRow("favorites","Meine Liste"),favorites)
+                    if(becauseTitle.isNotBlank()) addRow("${VelarisDesign.homeRow("becausePrefix","Weil du")} „$becauseTitle“ gesehen hast",because)
+                    addRow(VelarisDesign.homeRow("latest","Kürzlich hinzugefügt"),latest)
+                    addRow(VelarisDesign.homeRow("recommended","Für dich"),recommended)
                     addRow("Action",action); addRow("Komödien",comedy); addRow("Science-Fiction",sciFi)
-                    addRow("Noch einmal ansehen",replay); addRow("Kürzlich hinzugefügt",latest)
+                    addRow("Noch einmal ansehen",replay)
                 }
             } catch(e:Exception) { runOnUiThread {
                 val root=homeRoot ?: return@runOnUiThread
@@ -426,7 +438,7 @@ class MainActivity : Activity() {
 
     private fun showMediaFolderLibrary(title:String, type:String) {
         rememberBack { showHome() }
-        val root=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; setPadding(dp(48),dp(28),dp(48),dp(28)); setBackgroundColor(Color.rgb(8,8,13)) }
+        val root=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; setPadding(dp(48),dp(28),dp(48),dp(28)); setBackgroundColor(VelarisDesign.color("background",0xFF08080D.toInt())) }
         root.addView(TextView(this).apply { text=title; textSize=32f; setTextColor(Color.WHITE); typeface=Typeface.DEFAULT_BOLD })
         root.addView(ProgressBar(this))
         setContentView(ScrollView(this).apply { addView(root) })
@@ -456,7 +468,7 @@ class MainActivity : Activity() {
 
     private fun showGenreLibrary(title:String, type:String) {
         rememberBack { showHome() }
-        val root=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; setPadding(dp(48),dp(28),dp(48),dp(28)); setBackgroundColor(Color.rgb(8,8,13)) }
+        val root=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; setPadding(dp(48),dp(28),dp(48),dp(28)); setBackgroundColor(VelarisDesign.color("background",0xFF08080D.toInt())) }
         root.addView(TextView(this).apply { text=title; textSize=32f; setTextColor(Color.WHITE) })
         root.addView(ProgressBar(this))
         setContentView(ScrollView(this).apply { addView(root) })
@@ -474,7 +486,7 @@ class MainActivity : Activity() {
 
     private fun showLibrary(title:String, type:String) {
         rememberBack { showHome() }
-        val root=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; setPadding(dp(48),dp(28),dp(48),dp(28)); setBackgroundColor(Color.rgb(8,8,13)) }
+        val root=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; setPadding(dp(48),dp(28),dp(48),dp(28)); setBackgroundColor(VelarisDesign.color("background",0xFF08080D.toInt())) }
         root.addView(TextView(this).apply { text=title; textSize=32f; setTextColor(Color.WHITE) })
         root.addView(ProgressBar(this))
         setContentView(ScrollView(this).apply { addView(root) })
@@ -492,7 +504,7 @@ class MainActivity : Activity() {
 
     private fun showFavorites() {
         rememberBack { showHome() }
-        val root=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; setPadding(dp(48),dp(28),dp(48),dp(28)); setBackgroundColor(Color.rgb(8,8,13)) }
+        val root=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; setPadding(dp(48),dp(28),dp(48),dp(28)); setBackgroundColor(VelarisDesign.color("background",0xFF08080D.toInt())) }
         root.addView(TextView(this).apply { text="Meine Liste"; textSize=32f; setTextColor(Color.WHITE) })
         root.addView(ProgressBar(this))
         setContentView(ScrollView(this).apply { addView(root) })
@@ -511,7 +523,7 @@ class MainActivity : Activity() {
 
     private fun showSearch() {
         rememberBack { showHome() }
-        val root=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;setPadding(dp(54),dp(48),dp(54),dp(40));setBackgroundColor(Color.rgb(8,8,13))}
+        val root=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;setPadding(dp(54),dp(48),dp(54),dp(40));setBackgroundColor(VelarisDesign.color("background",0xFF08080D.toInt()))}
         val left=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(0,0,dp(36),0)}
         left.addView(TextView(this).apply{text="Suche";textSize=36f;setTextColor(Color.WHITE);typeface=Typeface.DEFAULT_BOLD})
         val input=EditText(this).apply{
@@ -534,7 +546,7 @@ class MainActivity : Activity() {
             try {
                 val data=items("/Users/$userId/Items?Recursive=true&Limit=50&SearchTerm=$encoded&IncludeItemTypes=Movie,Series&Fields=PrimaryImageAspectRatio")
                 runOnUiThread {
-                    val root=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; setPadding(dp(48),dp(28),dp(48),dp(28)); setBackgroundColor(Color.rgb(8,8,13)) }
+                    val root=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; setPadding(dp(48),dp(28),dp(48),dp(28)); setBackgroundColor(VelarisDesign.color("background",0xFF08080D.toInt())) }
                     root.addView(TextView(this).apply { text="Suchergebnisse für „$query“"; textSize=30f; setTextColor(Color.WHITE) })
                     homeRoot=root
                     addRow("Ergebnisse",data)
@@ -552,7 +564,7 @@ class MainActivity : Activity() {
                 val series=request("/Users/$userId/Items/$seriesId")
                 val seasons=items("/Shows/$seriesId/Seasons?UserId=$userId&Fields=PrimaryImageAspectRatio")
                 runOnUiThread {
-                    val root=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; setBackgroundColor(Color.rgb(8,8,13)) }
+                    val root=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; setBackgroundColor(VelarisDesign.color("background",0xFF08080D.toInt())) }
                     val hero=FrameLayout(this)
                     val bg=ImageView(this).apply{scaleType=ImageView.ScaleType.CENTER_CROP}; hero.addView(bg,FrameLayout.LayoutParams(-1,dp(390))); loadImage(bg,seriesId,"Backdrop",1600)
                     hero.addView(View(this).apply{background=GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,intArrayOf(0xF708080D.toInt(),0xA808080D.toInt(),0x2208080D))},FrameLayout.LayoutParams(-1,-1))
@@ -580,7 +592,7 @@ class MainActivity : Activity() {
             try {
                 val episodes=items("/Shows/$seriesId/Episodes?UserId=$userId&SeasonId=$seasonId&Fields=Overview,PrimaryImageAspectRatio,RunTimeTicks")
                 runOnUiThread {
-                    val root=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; setPadding(dp(48),dp(28),dp(48),dp(28)); setBackgroundColor(Color.rgb(8,8,13)) }
+                    val root=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; setPadding(dp(48),dp(28),dp(48),dp(28)); setBackgroundColor(VelarisDesign.color("background",0xFF08080D.toInt())) }
                     root.addView(TextView(this).apply { text="Episoden"; textSize=32f; setTextColor(Color.WHITE) })
                     episodes.forEach { ep ->
                         val eid=ep.optString("Id")
@@ -615,7 +627,7 @@ class MainActivity : Activity() {
                 val x=request("/Users/$userId/Items/$id")
                 val similar=runCatching { items("/Items/$id/Similar?UserId=$userId&Limit=16&Fields=PrimaryImageAspectRatio") }.getOrDefault(emptyList())
                 runOnUiThread {
-                    val outer=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; setBackgroundColor(Color.rgb(8,8,13)) }
+                    val outer=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; setBackgroundColor(VelarisDesign.color("background",0xFF08080D.toInt())) }
                     val hero=FrameLayout(this)
                     val bg=ImageView(this).apply{scaleType=ImageView.ScaleType.CENTER_CROP}; hero.addView(bg,FrameLayout.LayoutParams(-1,dp(500))); loadImage(bg,id,"Backdrop",1600)
                     hero.addView(View(this).apply{background=GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,intArrayOf(0xF708080D.toInt(),0xB008080D.toInt(),0x2208080D))},FrameLayout.LayoutParams(-1,-1))
@@ -645,7 +657,7 @@ class MainActivity : Activity() {
             try {
                 val data=items("/Items/$id/Similar?UserId=$userId&Limit=20&Fields=PrimaryImageAspectRatio")
                 runOnUiThread {
-                    val root=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; setPadding(dp(48),dp(28),dp(48),dp(28)); setBackgroundColor(Color.rgb(8,8,13)) }
+                    val root=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; setPadding(dp(48),dp(28),dp(48),dp(28)); setBackgroundColor(VelarisDesign.color("background",0xFF08080D.toInt())) }
                     root.addView(TextView(this).apply { text="Ähnliche Titel"; textSize=32f; setTextColor(Color.WHITE) })
                     homeRoot=root; addRow("Das könnte dir gefallen",data)
                     root.addView(button("Zurück") { showDetails(id) },params(220,56,18))
@@ -665,15 +677,58 @@ class MainActivity : Activity() {
         }
     }
 
+    // Profiles are Jellyfin accounts, not independent local display names.
+    // Legacy local-only profiles are intentionally migrated to the one authenticated
+    // account; there is no valid Jellyfin token for the other legacy aliases.
     private fun readProfiles():org.json.JSONArray {
         val stored=prefs.getString("velaris_profiles","").orEmpty()
-        if(stored.isNotBlank()) return runCatching{org.json.JSONArray(stored)}.getOrElse{org.json.JSONArray()}
-        val seed=org.json.JSONArray().apply {
-            put(JSONObject().put("name",prefs.getString("active_profile_name","Sandro") ?: "Sandro")
-                .put("avatar",prefs.getInt("active_profile_avatar",0)))
+        val existing=runCatching{org.json.JSONArray(stored)}.getOrDefault(org.json.JSONArray())
+        if(existing.length()>0 && (0 until existing.length()).all { i ->
+            val p=existing.optJSONObject(i)
+            p!=null && p.optString("userId").isNotBlank() && p.optString("token").isNotBlank()
+        }) return existing
+        if(server.isBlank() || userId.isBlank() || token.isBlank()) return org.json.JSONArray()
+        val oldAvatar=prefs.getInt("active_profile_avatar",0)
+        val avatar=when(oldAvatar){0->2;1->3;else->oldAvatar.coerceIn(0,3)}
+        val migrated=org.json.JSONArray().put(JSONObject()
+            .put("id","$server:$userId")
+            .put("server",server).put("userId",userId).put("token",token)
+            .put("name",prefs.getString("active_profile_name","Jellyfin") ?: "Jellyfin")
+            .put("avatar",avatar))
+        prefs.edit().putString("velaris_profiles",migrated.toString()).apply()
+        return migrated
+    }
+
+    private fun saveJellyfinProfile(serverUrl:String, id:String, accessToken:String, name:String, avatar:Int):Boolean {
+        val profiles=readProfiles()
+        val key="$serverUrl:$id"
+        val existing=(0 until profiles.length()).firstOrNull{profiles.optJSONObject(it)?.optString("id")==key}
+        if(existing==null && profiles.length()>=VelarisDesign.maxProfiles()) return false
+        val account=JSONObject().put("id",key).put("server",serverUrl).put("userId",id)
+            .put("token",accessToken).put("name",name).put("avatar",avatar.coerceIn(0,3))
+        if(existing!=null) {
+            val old=profiles.optJSONObject(existing)
+            if(old!=null)account.put("avatar",old.optInt("avatar",avatar).coerceIn(0,3))
+            profiles.put(existing,account)
+        } else profiles.put(account)
+        prefs.edit().putString("velaris_profiles",profiles.toString()).apply()
+        return true
+    }
+
+    private fun activateJellyfinProfile(profile:JSONObject) {
+        val nextServer=profile.optString("server")
+        val nextUser=profile.optString("userId")
+        val nextToken=profile.optString("token")
+        if(nextServer.isBlank() || nextUser.isBlank() || nextToken.isBlank()) {
+            toast("Bitte dieses Jellyfin-Profil erneut anmelden")
+            return
         }
-        prefs.edit().putString("velaris_profiles",seed.toString()).apply()
-        return seed
+        server=nextServer;userId=nextUser;token=nextToken
+        prefs.edit().putString("server_url",server).putString("user_id",userId)
+            .putString("access_token",token)
+            .putString("active_profile_name",profile.optString("name","Jellyfin"))
+            .putInt("active_profile_avatar",profile.optInt("avatar",0)).apply()
+        showHome()
     }
 
     private fun showProfiles(startup:Boolean=false) {
@@ -681,7 +736,7 @@ class MainActivity : Activity() {
         val profiles=readProfiles()
         val root=LinearLayout(this).apply{
             orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER
-            setPadding(dp(70),dp(34),dp(70),dp(34));setBackgroundColor(Color.rgb(8,8,13))
+            setPadding(dp(70),dp(34),dp(70),dp(34));setBackgroundColor(VelarisDesign.color("background",0xFF08080D.toInt()))
         }
         root.addView(TextView(this).apply{
             text="Wer schaut gerade?";textSize=40f;setTextColor(Color.WHITE)
@@ -712,8 +767,7 @@ class MainActivity : Activity() {
                     }
                 }
                 setOnClickListener{
-                    prefs.edit().putString("active_profile_name",name).putInt("active_profile_avatar",av).apply()
-                    showHome()
+                    activateJellyfinProfile(p)
                 }
             }
             tile.addView(avatarFace(av,name),LinearLayout.LayoutParams(dp(142),dp(142)))
@@ -722,7 +776,7 @@ class MainActivity : Activity() {
             },LinearLayout.LayoutParams(dp(164),dp(42)))
             addTile(tile,i)
         }
-        if(profiles.length()<10){
+        if(profiles.length()<VelarisDesign.maxProfiles()){
             val add=LinearLayout(this).apply{
                 orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER;isFocusable=true;isClickable=true
                 setPadding(dp(8),dp(8),dp(8),dp(4));setOnClickListener{showCreateProfile()}
@@ -744,6 +798,8 @@ class MainActivity : Activity() {
 
     private fun avatarFace(index:Int,initial:String):View {
         val avatars=intArrayOf(
+            R.drawable.velaris_avatar_red,
+            R.drawable.velaris_avatar_blue,
             R.drawable.avatar_seal_white,
             R.drawable.avatar_seal_gray
         )
@@ -761,26 +817,79 @@ class MainActivity : Activity() {
     }
 
     private fun showCreateProfile() {
-        val root=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER;setPadding(dp(80),dp(50),dp(80),dp(50));setBackgroundColor(Color.rgb(8,8,13))}
-        root.addView(TextView(this).apply{text="Profil erstellen";textSize=36f;setTextColor(Color.WHITE);typeface=Typeface.DEFAULT_BOLD},params(-2,-2,0))
-        val name=EditText(this).apply{hint="Profilname";setTextColor(Color.WHITE);setHintTextColor(Color.GRAY);setSingleLine();background=GradientDrawable().apply{setColor(0xFF202026.toInt());cornerRadius=dp(10).toFloat()};setPadding(dp(18),0,dp(18),0)}
-        root.addView(name,params(460,62,26))
-        root.addView(TextView(this).apply{text="Avatar auswählen";textSize=18f;setTextColor(Color.LTGRAY)},params(-2,-2,18))
-        val avatars=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER}
+        val root=LinearLayout(this).apply {
+            orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER
+            setPadding(dp(80),dp(44),dp(80),dp(44))
+            setBackgroundColor(VelarisDesign.color("background",VelarisDesign.color("background",0xFF08080D.toInt())))
+        }
+        root.addView(TextView(this).apply {
+            text="Jellyfin-Profil hinzufügen";textSize=34f;setTextColor(Color.WHITE)
+            typeface=Typeface.DEFAULT_BOLD
+        },params(-2,-2,0))
+        root.addView(TextView(this).apply {
+            text="Melde einen weiteren Jellyfin-Benutzer an, damit Verlauf und Favoriten getrennt bleiben."
+            textSize=16f;setTextColor(Color.LTGRAY)
+        },params(-2,-2,14))
+        val user=EditText(this).apply {
+            hint="Jellyfin-Benutzername";setTextColor(Color.WHITE)
+            setHintTextColor(Color.GRAY);setSingleLine()
+        }
+        val pass=EditText(this).apply {
+            hint="Passwort";setTextColor(Color.WHITE);setHintTextColor(Color.GRAY)
+            setSingleLine()
+            inputType=InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+        }
+        root.addView(user,params(520,62,22))
+        root.addView(pass,params(520,62,12))
+        root.addView(TextView(this).apply {
+            text="Avatar auswählen";textSize=18f;setTextColor(Color.LTGRAY)
+        },params(-2,-2,22))
+        val avatarChoices=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER}
         var selected=0
-        val colors=IntArray(2){it}
-        colors.forEachIndexed{i,_->avatars.addView(avatarFace(i,"").apply{isFocusable=true;isClickable=true;applyCardFocus(this);setOnClickListener{selected=i}},LinearLayout.LayoutParams(dp(82),dp(82)).apply{marginEnd=dp(10)})}
-        root.addView(HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;addView(avatars)},params(-1,86,12))
-        root.addView(actionButton("Profil erstellen",true){
-            val n=name.text.toString().trim();if(n.isBlank())return@actionButton toast("Profilname eingeben")
-            val arr=readProfiles()
-            if(arr.length()>=10)return@actionButton toast("Maximal 10 Profile")
-            if((0 until arr.length()).any{arr.optJSONObject(it)?.optString("name","")?.equals(n,true)==true})return@actionButton toast("Profilname existiert bereits")
-            arr.put(JSONObject().put("name",n).put("avatar",selected));prefs.edit().putString("velaris_profiles",arr.toString()).apply();showProfiles()
-        },params(230,58,24))
-        setContentView(root);name.requestFocus()
+        for(i in 0..3) {
+            avatarChoices.addView(avatarFace(i,"").apply {
+                isFocusable=true;isClickable=true
+                applyCardFocus(this)
+                setOnClickListener { selected=i;toast("Avatar ausgewählt") }
+            },LinearLayout.LayoutParams(dp(82),dp(82)).apply{marginEnd=dp(10)})
+        }
+        root.addView(avatarChoices,params(-2,86,12))
+        root.addView(actionButton("Jellyfin-Profil hinzufügen",true) {
+            val username=user.text.toString().trim()
+            val password=pass.text.toString()
+            if(username.isBlank()) {
+                toast("Jellyfin-Benutzername eingeben")
+            } else {
+                val requestedAvatar=selected
+                val targetServer=server
+                io.execute {
+                    try {
+                        val body=JSONObject().put("Username",username).put("Pw",password).toString()
+                        val response=request("/Users/AuthenticateByName","POST",body,false)
+                        val account=response.getJSONObject("User")
+                        val newId=account.getString("Id")
+                        val newToken=response.getString("AccessToken")
+                        val newName=account.optString("Name",username)
+                        runOnUiThread {
+                            if(targetServer!=server) {
+                                toast("Server hat sich geändert. Bitte erneut anmelden.")
+                            } else if(saveJellyfinProfile(server,newId,newToken,newName,requestedAvatar)) {
+                                val list=readProfiles()
+                                val next=(0 until list.length()).mapNotNull{list.optJSONObject(it)}
+                                    .firstOrNull{it.optString("userId")==newId && it.optString("server")==server}
+                                if(next!=null)activateJellyfinProfile(next) else showProfiles(true)
+                            } else toast("Maximal ${VelarisDesign.maxProfiles()} Jellyfin-Profile")
+                        }
+                    } catch(e:Exception) {
+                        runOnUiThread {toast("Anmeldung fehlgeschlagen: ${e.message ?: "Server nicht erreichbar"}")}
+                    }
+                }
+            }
+        },params(330,58,24))
+        root.addView(actionButton("Zurück",false){showProfiles()},params(180,56,12))
+        setContentView(root)
+        user.requestFocus()
     }
-
 
     private fun setPlayed(id:String, played:Boolean, done:()->Unit) {
         if(id.isBlank()) return
@@ -884,7 +993,7 @@ class MainActivity : Activity() {
 
     private fun showSettingsDialog() {
         rememberBack { showHome() }
-        val root=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(64),dp(44),dp(64),dp(44));setBackgroundColor(Color.rgb(8,8,13))}
+        val root=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(64),dp(44),dp(64),dp(44));setBackgroundColor(VelarisDesign.color("background",0xFF08080D.toInt()))}
         root.addView(TextView(this).apply{text="Einstellungen";textSize=38f;setTextColor(Color.WHITE);typeface=Typeface.DEFAULT_BOLD})
         root.addView(TextView(this).apply{text="Velaris TV";textSize=16f;setTextColor(Color.GRAY);setPadding(0,dp(4),0,dp(24))})
         val playback=settingsCard("▶","Wiedergabe","Autoplay, Intro, Rückblick und Abspann"){showPlaybackSettings()}
@@ -905,7 +1014,7 @@ class MainActivity : Activity() {
     }
 
     private fun showPlaybackSettings() {
-        val root=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(64),dp(44),dp(64),dp(44));setBackgroundColor(Color.rgb(8,8,13))}
+        val root=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(64),dp(44),dp(64),dp(44));setBackgroundColor(VelarisDesign.color("background",0xFF08080D.toInt()))}
         root.addView(TextView(this).apply{text="Wiedergabe";textSize=36f;setTextColor(Color.WHITE);typeface=Typeface.DEFAULT_BOLD})
         val options=listOf("Automatisch nächste Folge" to "auto_next","Intro automatisch überspringen" to "auto_skip_intro","Rückblick automatisch überspringen" to "auto_skip_recap","Abspann automatisch überspringen" to "auto_skip_credits")
         options.forEachIndexed{i,(label,key)->
@@ -918,7 +1027,11 @@ class MainActivity : Activity() {
     }
 
 
-    private fun clearConnection(){ server="";token="";userId="";prefs.edit().clear().apply() }
+    private fun clearConnection(){
+        server="";token="";userId=""
+        prefs.edit().remove("server_url").remove("access_token").remove("user_id")
+            .remove("active_profile_name").remove("active_profile_avatar").apply()
+    }
     private fun setupPage(title:String,sub:String,first:View)=LinearLayout(this).apply {
         orientation=LinearLayout.VERTICAL; gravity=Gravity.CENTER; setPadding(dp(72),dp(36),dp(72),dp(36)); setBackgroundColor(Color.BLACK)
         addView(ImageView(this@MainActivity).apply{setImageResource(R.drawable.velaris_logo);scaleType=ImageView.ScaleType.FIT_CENTER},params(180,180,0))
