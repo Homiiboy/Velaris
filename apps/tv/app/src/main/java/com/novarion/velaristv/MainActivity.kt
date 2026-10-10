@@ -37,6 +37,8 @@ class MainActivity : Activity() {
     private var token = ""
     private var userId = ""
     private var homeRoot: LinearLayout? = null
+    private var activeSection = "Start"
+    private var activeCollectionId = ""
     @Volatile private var destroyed = false
     private val backStack = java.util.ArrayDeque<()->Unit>()
     private var suppressHistory = false
@@ -170,26 +172,8 @@ class MainActivity : Activity() {
         }
     }
 
-    private fun showHome() {
-        if(!suppressHistory) backStack.clear()
-
-        val content = LinearLayout(this).apply {
-            orientation=LinearLayout.VERTICAL
-            setBackgroundColor(VelarisDesign.color("background",0xFF08080D.toInt()))
-            setPadding(0,0,0,dp(30))
-            clipToPadding=false
-        }
-        homeRoot=content
-
-        val scroll=ScrollView(this).apply {
-            isVerticalScrollBarEnabled=false
-            clipChildren=false;clipToPadding=false
-            descendantFocusability=android.view.ViewGroup.FOCUS_AFTER_DESCENDANTS
-            addView(content)
-        }
-        val screen=FrameLayout(this).apply { setBackgroundColor(VelarisDesign.color("background",0xFF08080D.toInt())) }
-        screen.addView(scroll,FrameLayout.LayoutParams(-1,-1))
-
+    /** One navigation strip on every media screen; profile/settings only on Start. */
+    private fun appHeader(home:Boolean):View {
         val top=LinearLayout(this).apply {
             orientation=LinearLayout.HORIZONTAL; gravity=Gravity.CENTER_VERTICAL
             setPadding(dp(48),dp(16),dp(48),dp(8))
@@ -202,7 +186,16 @@ class MainActivity : Activity() {
         }
         top.addView(TextView(this).apply {
             text="VELARIS"; textSize=26f; typeface=Typeface.DEFAULT_BOLD
-            letterSpacing=0.12f; setTextColor(Color.WHITE); gravity=Gravity.CENTER_VERTICAL
+            letterSpacing=0.12f
+            setTextColor(VelarisDesign.color("accent",0xFF7C5CFC.toInt()))
+            gravity=Gravity.CENTER_VERTICAL
+            post {
+                val width=paint.measureText(text.toString())
+                paint.shader=android.graphics.LinearGradient(0f,0f,width,0f,
+                    intArrayOf(0xFFBCA6FF.toInt(),0xFF7C5CFC.toInt(),Color.WHITE),null,
+                    android.graphics.Shader.TileMode.CLAMP)
+                invalidate()
+            }
         },LinearLayout.LayoutParams(dp(152),dp(50)).apply{marginEnd=dp(18)})
         // Keep all destinations reachable with the D-pad, even on smaller/overscanned TVs.
         val nav=LinearLayout(this).apply {
@@ -231,11 +224,65 @@ class MainActivity : Activity() {
             setPadding(dp(12),0,dp(12),0)
             addView(nav,FrameLayout.LayoutParams(-2,-1))
         }
-        top.addView(navScroll,LinearLayout.LayoutParams(0,dp(54),1f))
-        top.addView(navButton("⌕"){showSearch()},LinearLayout.LayoutParams(dp(60),dp(46)).apply{marginEnd=dp(6)})
-        top.addView(navButton("Profil"){showProfiles()},LinearLayout.LayoutParams(dp(82),dp(46)).apply{marginEnd=dp(4)})
-        top.addView(navButton("⚙"){showSettingsDialog()},LinearLayout.LayoutParams(dp(60),dp(46)))
-        screen.addView(top,FrameLayout.LayoutParams(-1,dp(82),Gravity.TOP))
+        val navBox=FrameLayout(this).apply {
+            clipChildren=true;clipToPadding=true
+        }
+        navBox.addView(navScroll,FrameLayout.LayoutParams(-1,-1))
+        val moreArrow=TextView(this).apply {
+            text="›";textSize=29f;gravity=Gravity.CENTER
+            setTextColor(VelarisDesign.color("accent",0xFF7C5CFC.toInt()))
+            contentDescription="Weitere Kategorien nach rechts"
+            isFocusable=true;isClickable=true
+            background=GradientDrawable(
+                GradientDrawable.Orientation.LEFT_RIGHT,
+                intArrayOf(0x0008080D,0xF008080D.toInt(),0xFF08080D.toInt())
+            )
+            setOnClickListener { navScroll.smoothScrollBy(dp(220),0) }
+        }
+        navBox.addView(moreArrow,FrameLayout.LayoutParams(dp(58),-1,Gravity.RIGHT))
+        val updateArrow={ moreArrow.visibility=if(navScroll.canScrollHorizontally(1))View.VISIBLE else View.GONE }
+        navScroll.setOnScrollChangeListener { _,_,_,_,_->updateArrow() }
+        navScroll.post { updateArrow() }
+        top.addView(navBox,LinearLayout.LayoutParams(0,dp(54),1f))
+        top.addView(navButton("⌕"){showSearch()},LinearLayout.LayoutParams(dp(54),dp(46)).apply{marginEnd=dp(4)})
+        if(home) {
+            top.addView(navButton("Profil"){showProfiles()},LinearLayout.LayoutParams(dp(78),dp(46)).apply{marginEnd=dp(4)})
+            top.addView(navButton("⚙"){showSettingsDialog()},LinearLayout.LayoutParams(dp(54),dp(46)))
+        }
+        return top
+    }
+
+    private fun showAppPage(page:View) {
+        val frame=FrameLayout(this).apply{
+            setBackgroundColor(VelarisDesign.color("background",0xFF08080D.toInt()))
+        }
+        frame.addView(page,FrameLayout.LayoutParams(-1,-1).apply{topMargin=dp(82)})
+        frame.addView(appHeader(false),FrameLayout.LayoutParams(-1,dp(82),Gravity.TOP))
+        setContentView(frame)
+    }
+
+    private fun showHome() {
+        activeSection="Start";activeCollectionId=""
+        if(!suppressHistory) backStack.clear()
+
+        val content = LinearLayout(this).apply {
+            orientation=LinearLayout.VERTICAL
+            setBackgroundColor(VelarisDesign.color("background",0xFF08080D.toInt()))
+            setPadding(0,0,0,dp(30))
+            clipToPadding=false
+        }
+        homeRoot=content
+
+        val scroll=ScrollView(this).apply {
+            isVerticalScrollBarEnabled=false
+            clipChildren=false;clipToPadding=false
+            descendantFocusability=android.view.ViewGroup.FOCUS_AFTER_DESCENDANTS
+            addView(content)
+        }
+        val screen=FrameLayout(this).apply { setBackgroundColor(VelarisDesign.color("background",0xFF08080D.toInt())) }
+        screen.addView(scroll,FrameLayout.LayoutParams(-1,-1))
+
+        screen.addView(appHeader(true),FrameLayout.LayoutParams(-1,dp(82),Gravity.TOP))
         setContentView(screen)
         loadHome()
     }
@@ -633,11 +680,12 @@ class MainActivity : Activity() {
     }
 
     private fun showMediaFolderLibrary(title:String, type:String) {
+        activeSection=title;activeCollectionId=""
         rememberBack { showHome() }
         val root=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; setPadding(dp(48),dp(28),dp(48),dp(28)); setBackgroundColor(VelarisDesign.color("background",0xFF08080D.toInt())) }
         root.addView(TextView(this).apply { text=title; textSize=32f; setTextColor(Color.WHITE); typeface=Typeface.DEFAULT_BOLD })
         root.addView(ProgressBar(this))
-        setContentView(ScrollView(this).apply { addView(root) })
+        showAppPage(ScrollView(this).apply { addView(root) })
         io.execute {
             try {
                 val views=items("/Users/$userId/Views")
@@ -666,11 +714,12 @@ class MainActivity : Activity() {
     }
 
     private fun showGenreLibrary(title:String, type:String) {
+        activeSection=title;activeCollectionId=""
         rememberBack { showHome() }
         val root=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; setPadding(dp(48),dp(28),dp(48),dp(28)); setBackgroundColor(VelarisDesign.color("background",0xFF08080D.toInt())) }
         root.addView(TextView(this).apply { text=title; textSize=32f; setTextColor(Color.WHITE) })
         root.addView(ProgressBar(this))
-        setContentView(ScrollView(this).apply { addView(root) })
+        showAppPage(ScrollView(this).apply { addView(root) })
         io.execute {
             try {
                 val data=items("/Users/$userId/Items?Recursive=true&Limit=100&SortBy=SortName&SortOrder=Ascending&IncludeItemTypes=$type&Genres=Anime&Fields=PrimaryImageAspectRatio")
@@ -694,6 +743,7 @@ class MainActivity : Activity() {
     }
 
     private fun showCollection(collectionId:String) {
+        activeSection="Sammlungen";activeCollectionId=collectionId
         rememberBack { showLibrary("Sammlungen","BoxSet") }
         val root=LinearLayout(this).apply {
             orientation=LinearLayout.VERTICAL
@@ -706,7 +756,7 @@ class MainActivity : Activity() {
         })
         val spinner=ProgressBar(this)
         root.addView(spinner,params(60,60,24))
-        setContentView(ScrollView(this).apply{
+        showAppPage(ScrollView(this).apply{
             isVerticalScrollBarEnabled=false;clipChildren=false;clipToPadding=false
             addView(root)
         })
@@ -715,7 +765,7 @@ class MainActivity : Activity() {
                 val collection=request("/Users/$userId/Items/$collectionId")
                 // Jellyfin BoxSets expose their actual member movies as children.
                 // Do not treat the BoxSet as a playable Movie.
-                val children=items("/Users/$userId/Items?ParentId=$collectionId&Recursive=true&IncludeItemTypes=Movie,Series&SortBy=SortName&SortOrder=Ascending&Limit=500&EnableUserData=true&Fields=Overview,PrimaryImageAspectRatio")
+                val children=items("/Users/$userId/Items?ParentId=$collectionId&Recursive=true&IncludeItemTypes=Movie,Series&SortBy=ProductionYear,SortName&SortOrder=Ascending&Limit=500&EnableUserData=true&Fields=Overview,ProductionYear,PrimaryImageAspectRatio")
                 runOnUiThread {
                     root.removeAllViews()
                     root.addView(TextView(this).apply {
@@ -750,11 +800,12 @@ class MainActivity : Activity() {
     }
 
     private fun showLibrary(title:String, type:String) {
+        activeSection=title;activeCollectionId=""
         rememberBack { showHome() }
         val root=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; setPadding(dp(48),dp(28),dp(48),dp(28)); setBackgroundColor(VelarisDesign.color("background",0xFF08080D.toInt())) }
         root.addView(TextView(this).apply { text=title; textSize=32f; setTextColor(Color.WHITE) })
         root.addView(ProgressBar(this))
-        setContentView(ScrollView(this).apply { addView(root) })
+        showAppPage(ScrollView(this).apply { addView(root) })
         io.execute {
             try {
                 val data=items("/Users/$userId/Items?Recursive=true&Limit=100&SortBy=SortName&SortOrder=Ascending&IncludeItemTypes=$type&Fields=PrimaryImageAspectRatio")
@@ -768,11 +819,12 @@ class MainActivity : Activity() {
     }
 
     private fun showFavorites() {
+        activeSection="Meine Liste";activeCollectionId=""
         rememberBack { showHome() }
         val root=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; setPadding(dp(48),dp(28),dp(48),dp(28)); setBackgroundColor(VelarisDesign.color("background",0xFF08080D.toInt())) }
         root.addView(TextView(this).apply { text="Meine Liste"; textSize=32f; setTextColor(Color.WHITE) })
         root.addView(ProgressBar(this))
-        setContentView(ScrollView(this).apply { addView(root) })
+        showAppPage(ScrollView(this).apply { addView(root) })
         io.execute {
             try {
                 val data=items("/Users/$userId/Items?Recursive=true&Limit=100&Filters=IsFavorite&IncludeItemTypes=Movie,Series&Fields=PrimaryImageAspectRatio")
@@ -801,7 +853,7 @@ class MainActivity : Activity() {
         left.addView(actionButton("Suchen",true){val q=input.text.toString().trim();if(q.isNotBlank())search(q)},LinearLayout.LayoutParams(dp(180),dp(58)).apply{topMargin=dp(16)})
         root.addView(left,LinearLayout.LayoutParams(dp(500),-1))
         root.addView(TextView(this).apply{text="Gib einen Film, eine Serie oder einen Anime ein.\nDie Ergebnisse erscheinen als Poster.";textSize=20f;setTextColor(Color.LTGRAY);gravity=Gravity.CENTER},LinearLayout.LayoutParams(0,-1,1f))
-        setContentView(root);input.requestFocus()
+        showAppPage(root);input.requestFocus()
     }
 
     private fun search(query:String) {
@@ -816,7 +868,7 @@ class MainActivity : Activity() {
                     homeRoot=root
                     addRow("Ergebnisse",data)
                     root.addView(button("Neue Suche") { showSearch() },params(220,56,16))
-                    setContentView(ScrollView(this).apply { addView(root) })
+                    showAppPage(ScrollView(this).apply { addView(root) })
                 }
             } catch(e:Exception){ runOnUiThread{toast("Suche fehlgeschlagen")} }
         }
@@ -996,7 +1048,7 @@ class MainActivity : Activity() {
                     } else episodeList.addView(TextView(this).apply{
                         text="Keine Staffeln gefunden.";textSize=16f;setTextColor(Color.LTGRAY)
                     },params(-1,-2,12))
-                    setContentView(ScrollView(this).apply{isVerticalScrollBarEnabled=false;addView(root)})
+                    showAppPage(ScrollView(this).apply{isVerticalScrollBarEnabled=false;addView(root)})
                 }
             } catch(e:Exception){ runOnUiThread{toast("Serie konnte nicht geladen werden")} }
         }
@@ -1041,7 +1093,7 @@ class MainActivity : Activity() {
                         root.addView(card,params(-1,156,8))
                     }
                     root.addView(button("Zurück zur Serie") { showSeries(seriesId) },params(260,56,18))
-                    setContentView(ScrollView(this).apply { addView(root) })
+                    showAppPage(ScrollView(this).apply { addView(root) })
                 }
             } catch(e:Exception){ runOnUiThread{toast("Episoden konnten nicht geladen werden")} }
         }
@@ -1080,7 +1132,7 @@ class MainActivity : Activity() {
                     info.addView(actions); hero.addView(info,FrameLayout.LayoutParams(-1,-1)); outer.addView(hero,LinearLayout.LayoutParams(-1,dp(500)))
                     homeRoot=outer
                     addRow("Ähnliche Titel",similar)
-                    setContentView(ScrollView(this).apply{isVerticalScrollBarEnabled=false;addView(outer)})
+                    showAppPage(ScrollView(this).apply{isVerticalScrollBarEnabled=false;addView(outer)})
                 }
             } catch(e:Exception){ runOnUiThread{toast("Details konnten nicht geladen werden")} }
         }
@@ -1096,7 +1148,7 @@ class MainActivity : Activity() {
                     root.addView(TextView(this).apply { text="Ähnliche Titel"; textSize=32f; setTextColor(Color.WHITE) })
                     homeRoot=root; addRow("Das könnte dir gefallen",data)
                     root.addView(button("Zurück") { showDetails(id) },params(220,56,18))
-                    setContentView(ScrollView(this).apply { addView(root) })
+                    showAppPage(ScrollView(this).apply { addView(root) })
                 }
             } catch(e:Exception) { runOnUiThread { toast("Ähnliche Titel konnten nicht geladen werden") } }
         }
@@ -1519,7 +1571,7 @@ class MainActivity : Activity() {
             setBackgroundColor(VelarisDesign.color("background",0xFF08080D.toInt()))
             addView(root)
         }
-        setContentView(page)
+        showAppPage(page)
         page.post { playback.requestFocus() }
     }
 
@@ -1558,7 +1610,7 @@ class MainActivity : Activity() {
             root.addView(row,LinearLayout.LayoutParams(-1,dp(82)).apply{topMargin=dp(10)})
         }
         root.addView(actionButton("Zurück",false){showSettingsDialog()},params(180,56,22))
-        setContentView(ScrollView(this).apply{
+        showAppPage(ScrollView(this).apply{
             isVerticalScrollBarEnabled=false;isFillViewport=true
             clipChildren=false;clipToPadding=false
             addView(root)
