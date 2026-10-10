@@ -318,7 +318,9 @@ class MainActivity : Activity() {
         },LinearLayout.LayoutParams(dp(220),dp(58)).apply { marginEnd=dp(12) })
         val isFav=item.optJSONObject("UserData")?.optBoolean("IsFavorite",false)?:false
         actions.addView(actionButton(if(isFav)"✓  Meine Liste" else "+  Meine Liste",false) { setFavorite(id,!isFav){showHome()} },
-            LinearLayout.LayoutParams(dp(210),dp(58)))
+            LinearLayout.LayoutParams(dp(210),dp(58)).apply{marginEnd=dp(12)})
+        actions.addView(actionButton("ⓘ  Mehr Infos",false){showDetails(id)},
+            LinearLayout.LayoutParams(dp(195),dp(58)))
         info.addView(actions)
         hero.addView(info,FrameLayout.LayoutParams(-1,-1))
         homeRoot?.addView(hero,LinearLayout.LayoutParams(-1,dp(515)).apply { bottomMargin=dp(8) })
@@ -337,16 +339,33 @@ class MainActivity : Activity() {
                 setOnClickListener { playNative(id,ticks) }; applyCardFocus(this)
             }
             val img=ImageView(this).apply { scaleType=ImageView.ScaleType.CENTER_CROP }
-            card.addView(img,LinearLayout.LayoutParams(dp(310),dp(174))); loadImage(img,id,"Backdrop",620)
+            val thumb=FrameLayout(this).apply {
+                background=GradientDrawable().apply {
+                    setColor(VelarisDesign.color("surface",0xFF15151B.toInt()))
+                    cornerRadius=dp(9).toFloat()
+                }
+                clipToOutline=true
+            }
+            thumb.addView(img,FrameLayout.LayoutParams(-1,-1));loadImage(img,id,"Backdrop",620)
+            thumb.addView(TextView(this).apply {
+                text="▶";textSize=22f;setTextColor(Color.WHITE);gravity=Gravity.CENTER
+                background=GradientDrawable().apply {
+                    setColor(0x88000000.toInt())
+                    cornerRadius=dp(26).toFloat()
+                    setStroke(dp(2),0xCCFFFFFF.toInt())
+                }
+            },FrameLayout.LayoutParams(dp(52),dp(52),Gravity.CENTER))
+            if(ticks>0 && total>0)thumb.addView(ProgressBar(this,null,android.R.attr.progressBarStyleHorizontal).apply {
+                max=1000;progress=((ticks.toDouble()/total)*1000).toInt().coerceIn(0,1000)
+                progressTintList=android.content.res.ColorStateList.valueOf(VelarisDesign.color("progress",0xFFE50914.toInt()))
+                progressBackgroundTintList=android.content.res.ColorStateList.valueOf(0xAA888888.toInt())
+            },FrameLayout.LayoutParams(-1,dp(5),Gravity.BOTTOM))
+            card.addView(thumb,LinearLayout.LayoutParams(dp(310),dp(174)))
             card.addView(TextView(this).apply { text=item.optString("Name"); setTextColor(Color.WHITE); textSize=15f; maxLines=1; setPadding(dp(4),dp(7),0,0) },LinearLayout.LayoutParams(dp(310),dp(30)))
             val remaining=((total-ticks).coerceAtLeast(0L)/600_000_000L)
             val ep=item.optInt("IndexNumber",0); val season=item.optInt("ParentIndexNumber",0)
             val resumeMeta=listOfNotNull(if(season>0&&ep>0)"S$season:E$ep" else null,if(remaining>0)"Noch $remaining Min." else null).joinToString("  •  ")
             if(resumeMeta.isNotBlank()) card.addView(TextView(this).apply{text=resumeMeta;textSize=12f;setTextColor(Color.GRAY);setPadding(dp(4),0,0,0)},LinearLayout.LayoutParams(dp(310),dp(24)))
-            if(ticks>0 && total>0) card.addView(ProgressBar(this,null,android.R.attr.progressBarStyleHorizontal).apply {
-                max=1000; progress=((ticks.toDouble()/total)*1000).toInt().coerceIn(0,1000)
-                progressTintList=android.content.res.ColorStateList.valueOf(VelarisDesign.color("progress",0xFFE50914.toInt()))
-            },LinearLayout.LayoutParams(dp(310),dp(5)))
             row.addView(card,LinearLayout.LayoutParams(dp(322),dp(230)).apply{marginEnd=dp(12)})
         }
         homeRoot?.addView(HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;clipChildren=false;addView(row)},LinearLayout.LayoutParams(-1,dp(268)))
