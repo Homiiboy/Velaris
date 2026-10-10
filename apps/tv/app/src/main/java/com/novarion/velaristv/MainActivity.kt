@@ -696,7 +696,22 @@ class MainActivity : Activity() {
         io.execute {
             try {
                 val series=request("/Users/$userId/Items/$seriesId")
-                val seasons=items("/Shows/$seriesId/Seasons?UserId=$userId&Fields=PrimaryImageAspectRatio")
+                val seasons=items("/Shows/$seriesId/Seasons?UserId=$userId&Fields=PrimaryImageAspectRatio&EnableUserData=true&Limit=500")
+                // Query per-season episodes once, in parallel, and only award a
+                // complete season/series checkmark when all returned episodes are played.
+                val seasonQueries=seasons.map { season ->
+                    java.util.concurrent.CompletableFuture.supplyAsync({
+                        runCatching {
+                            items("/Shows/$seriesId/Episodes?UserId=$userId&SeasonId=${season.optString("Id")}&Limit=1000&EnableUserData=true")
+                        }.getOrNull()
+                    },io)
+                }
+                val finishedSeasons=seasons.mapIndexed { index,season ->
+                    val episodes=runCatching { seasonQueries[index].get() }.getOrNull()
+                    season.optString("Id") to (episodes!=null && episodes.isNotEmpty() &&
+                        episodes.all { it.optJSONObject("UserData")?.optBoolean("Played",false)==true })
+                }.toMap()
+                val seriesComplete=seasons.isNotEmpty() && finishedSeasons.values.all { it }
                 runOnUiThread {
                     val root=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; setBackgroundColor(VelarisDesign.color("background",0xFF08080D.toInt())) }
                     val hero=FrameLayout(this)
@@ -704,6 +719,12 @@ class MainActivity : Activity() {
                     hero.addView(View(this).apply{background=GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,intArrayOf(0xF708080D.toInt(),0xA808080D.toInt(),0x2208080D))},FrameLayout.LayoutParams(-1,-1))
                     val info=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;gravity=Gravity.BOTTOM;setPadding(dp(54),dp(80),dp(54),dp(38))}
                     info.addView(TextView(this).apply{text=series.optString("Name");textSize=40f;setTextColor(Color.WHITE);typeface=Typeface.DEFAULT_BOLD})
+                    if(seriesComplete)info.addView(TextView(this).apply {
+                        text="✓ SERIE VOLLSTÄNDIG GESEHEN"
+                        textSize=16f;typeface=Typeface.DEFAULT_BOLD
+                        setTextColor(VelarisDesign.color("success",0xFF46D369.toInt()))
+                        setPadding(0,dp(9),0,0)
+                    })
                     info.addView(TextView(this).apply{text=series.optString("Overview");textSize=16f;setTextColor(Color.LTGRAY);maxLines=3;setPadding(0,dp(10),0,0)},LinearLayout.LayoutParams(dp(720),-2))
                     val favorite=series.optJSONObject("UserData")?.optBoolean("IsFavorite",false)?:false
                     val acts=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;setPadding(0,dp(16),0,0)}
@@ -712,7 +733,12 @@ class MainActivity : Activity() {
                     info.addView(acts); hero.addView(info,FrameLayout.LayoutParams(-1,-1)); root.addView(hero,LinearLayout.LayoutParams(-1,dp(390)))
                     root.addView(sectionTitle("Staffeln"))
                     val seasonRow=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;setPadding(dp(52),dp(8),dp(52),dp(22))}
-                    seasons.forEach { season -> seasonRow.addView(actionButton(season.optString("Name","Staffel"),false){showSeason(seriesId,season.optString("Id"))},LinearLayout.LayoutParams(dp(180),dp(56)).apply{marginEnd=dp(10)}) }
+                    seasons.forEach { season ->
+                        val id=season.optString("Id")
+                        val label=(if(finishedSeasons[id]==true)"✓  " else "")+season.optString("Name","Staffel")
+                        seasonRow.addView(actionButton(label,false){showSeason(seriesId,id)},
+                            LinearLayout.LayoutParams(dp(205),dp(56)).apply{marginEnd=dp(10)})
+                    }
                     root.addView(HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;addView(seasonRow)})
                     setContentView(ScrollView(this).apply{isVerticalScrollBarEnabled=false;addView(root)})
                 }
@@ -724,10 +750,16 @@ class MainActivity : Activity() {
         rememberBack { showSeries(seriesId) }
         io.execute {
             try {
-                val episodes=items("/Shows/$seriesId/Episodes?UserId=$userId&SeasonId=$seasonId&Fields=Overview,PrimaryImageAspectRatio,RunTimeTicks")
+                val episodes=items("/Shows/$seriesId/Episodes?UserId=$userId&SeasonId=$seasonId&Fields=Overview,PrimaryImageAspectRatio,RunTimeTicks&EnableUserData=true&Limit=1000")
+                val seasonComplete=episodes.isNotEmpty() && episodes.all{it.optJSONObject("UserData")?.optBoolean("Played",false)==true}
                 runOnUiThread {
                     val root=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; setPadding(dp(48),dp(28),dp(48),dp(28)); setBackgroundColor(VelarisDesign.color("background",0xFF08080D.toInt())) }
                     root.addView(TextView(this).apply { text="Episoden"; textSize=32f; setTextColor(Color.WHITE) })
+                    if(seasonComplete)root.addView(TextView(this).apply {
+                        text="✓ STAFFEL VOLLSTÄNDIG GESEHEN"
+                        textSize=16f;typeface=Typeface.DEFAULT_BOLD
+                        setTextColor(VelarisDesign.color("success",0xFF46D369.toInt()))
+                    },params(-1,-2,9))
                     episodes.forEach { ep ->
                         val eid=ep.optString("Id")
                         val ticks=ep.optJSONObject("UserData")?.optLong("PlaybackPositionTicks",0L) ?: 0L
@@ -735,10 +767,17 @@ class MainActivity : Activity() {
                         val name=ep.optString("Name")
                         val nextId=episodes.getOrNull(episodes.indexOf(ep)+1)?.optString("Id").orEmpty()
                         val card=LinearLayout(this).apply { orientation=LinearLayout.HORIZONTAL; gravity=Gravity.CENTER_VERTICAL; isFocusable=true; isClickable=true; setPadding(dp(8),dp(8),dp(8),dp(8)); setOnClickListener { startEpisode(eid,ticks,nextId) }; applyCardFocus(this) }
-                        val thumb=ImageView(this).apply { scaleType=ImageView.ScaleType.CENTER_CROP }
-                        card.addView(thumb,LinearLayout.LayoutParams(dp(250),dp(140))); loadImage(thumb,eid,"Primary",500)
+                        card.addView(watchedPoster(ep,250,140,"Primary",500),
+                            LinearLayout.LayoutParams(dp(250),dp(140)))
                         val info=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; setPadding(dp(18),0,0,0) }
-                        info.addView(TextView(this).apply { text=(if(number>0) "$number. " else "")+name; textSize=20f; setTextColor(Color.WHITE); typeface=Typeface.DEFAULT_BOLD })
+                        info.addView(TextView(this).apply {
+                            text=(if(number>0) "$number. " else "")+name
+                            textSize=20f;setTextColor(Color.WHITE);typeface=Typeface.DEFAULT_BOLD
+                        })
+                        if(watchedLabel(ep)!=null)info.addView(TextView(this).apply{
+                            text="✓ FOLGE GESEHEN";textSize=12f;typeface=Typeface.DEFAULT_BOLD
+                            setTextColor(VelarisDesign.color("success",0xFF46D369.toInt()))
+                        },params(-1,-2,4))
                         val runtime=ep.optLong("RunTimeTicks",0L)/600_000_000L
                         if(runtime>0) info.addView(TextView(this).apply { text="$runtime Min."; textSize=13f; setTextColor(Color.GRAY) },params(-1,-2,3))
                         info.addView(TextView(this).apply { text=ep.optString("Overview"); textSize=14f; setTextColor(Color.LTGRAY); maxLines=2 },params(-1,-2,5))
@@ -770,6 +809,12 @@ class MainActivity : Activity() {
                     val year=x.optInt("ProductionYear",0); val rating=x.optDouble("CommunityRating",0.0); val runtime=x.optLong("RunTimeTicks",0L)/600_000_000L
                     val meta=listOfNotNull(if(year>0)year.toString()else null,if(runtime>0)"$runtime Min."else null,if(rating>0)"★ %.1f".format(rating)else null).joinToString("  •  ")
                     if(meta.isNotBlank()) info.addView(TextView(this).apply{text=meta;textSize=16f;setTextColor(Color.LTGRAY)})
+                    watchedLabel(x)?.let { label ->
+                        info.addView(TextView(this).apply {
+                            text=label;typeface=Typeface.DEFAULT_BOLD;textSize=16f
+                            setTextColor(VelarisDesign.color("success",0xFF46D369.toInt()))
+                        },params(-1,-2,9))
+                    }
                     info.addView(TextView(this).apply{text=x.optString("Overview");textSize=17f;setTextColor(Color.WHITE);maxLines=4;setPadding(0,dp(12),0,0)},LinearLayout.LayoutParams(dp(700),-2))
                     val ud=x.optJSONObject("UserData"); val ticks=ud?.optLong("PlaybackPositionTicks",0L)?:0L; val fav=ud?.optBoolean("IsFavorite",false)?:false
                     val actions=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;setPadding(0,dp(20),0,0)}
