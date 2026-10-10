@@ -8,6 +8,9 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.text.InputType
+import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.InputMethodManager
+import android.view.WindowManager
 import android.view.Gravity
 import android.view.View
 import android.view.KeyEvent
@@ -40,6 +43,9 @@ class MainActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         VelarisDesign.load(this)
+        // Keep the on-screen keyboard hidden until the user chooses a text field.
+        window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN or
+            WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
         immersive()
         server = prefs.getString("server_url", "").orEmpty()
         token = prefs.getString("access_token", "").orEmpty()
@@ -72,6 +78,38 @@ class MainActivity : Activity() {
         if(!suppressHistory) backStack.addLast(action)
     }
 
+    // TV keyboards vary: handle the IME Next/Done button AND D-pad down.
+    // Moving focus after hiding the IME allows continued remote navigation.
+    private fun hideTvKeyboardAndFocus(field:EditText,next:View) {
+        val ime=getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
+        ime.hideSoftInputFromWindow(field.windowToken,0)
+        field.clearFocus()
+        next.post {
+            if(!isFinishing && !isDestroyed) {
+                next.requestFocus()
+                ime.hideSoftInputFromWindow(next.windowToken,0)
+            }
+        }
+    }
+
+    private fun configureTvInput(field:EditText,next:View,done:Boolean=false) {
+        field.imeOptions=if(done) EditorInfo.IME_ACTION_DONE else EditorInfo.IME_ACTION_NEXT
+        field.setOnEditorActionListener { _,action,event->
+            val imeAction=action==EditorInfo.IME_ACTION_NEXT || action==EditorInfo.IME_ACTION_DONE
+            val enter=event?.keyCode==KeyEvent.KEYCODE_ENTER && event.action==KeyEvent.ACTION_DOWN
+            if(imeAction || enter) {
+                hideTvKeyboardAndFocus(field,next)
+                true
+            } else false
+        }
+        field.setOnKeyListener { _,code,event->
+            if(code==KeyEvent.KEYCODE_DPAD_DOWN && event.action==KeyEvent.ACTION_DOWN) {
+                hideTvKeyboardAndFocus(field,next)
+                true
+            } else false
+        }
+    }
+
     private fun showServer() {
         val input = EditText(this).apply {
             hint = "http://192.168.1.50:8096"; setText(server); setTextColor(Color.WHITE)
@@ -79,12 +117,14 @@ class MainActivity : Activity() {
             inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI
         }
         val root = setupPage("Velaris verbinden", "Adresse deines Jellyfin-Servers", input)
-        root.addView(button("Verbinden") {
+        val connectButton=button("Verbinden") {
             val value = normalize(input.text.toString())
             if (value == null) toast("Ungültige Server-Adresse") else {
                 server = value; prefs.edit().putString("server_url", server).apply(); showLogin()
             }
-        }, params(260, 64, 18))
+        }
+        root.addView(connectButton, params(260, 64, 18))
+        configureTvInput(input,connectButton,done=true)
         setContentView(root)
     }
 
@@ -96,9 +136,13 @@ class MainActivity : Activity() {
         }
         val root = setupPage("Willkommen bei Velaris", "Mit deinem Jellyfin-Konto anmelden", user)
         root.addView(pass, params(600, 62, 12))
-        root.addView(button("Anmelden") { login(user.text.toString(), pass.text.toString()) }, params(260,64,18))
+        val signInButton=button("Anmelden") { login(user.text.toString(), pass.text.toString()) }
+        root.addView(signInButton, params(260,64,18))
         root.addView(button("Server ändern") { clearConnection(); showServer() }, params(260,58,10))
-        setContentView(root); user.requestFocus()
+        configureTvInput(user,pass)
+        configureTvInput(pass,signInButton,done=true)
+        setContentView(root)
+        root.post{user.requestFocus()}
     }
 
     private fun login(username: String, password: String) {
@@ -136,14 +180,18 @@ class MainActivity : Activity() {
         homeRoot=content
 
         val scroll=ScrollView(this).apply {
-            isVerticalScrollBarEnabled=false; clipToPadding=false; addView(content)
+            isVerticalScrollBarEnabled=false
+            clipChildren=false;clipToPadding=false
+            descendantFocusability=android.view.ViewGroup.FOCUS_AFTER_DESCENDANTS
+            addView(content)
         }
         val screen=FrameLayout(this).apply { setBackgroundColor(VelarisDesign.color("background",0xFF08080D.toInt())) }
         screen.addView(scroll,FrameLayout.LayoutParams(-1,-1))
 
         val top=LinearLayout(this).apply {
             orientation=LinearLayout.HORIZONTAL; gravity=Gravity.CENTER_VERTICAL
-            setPadding(dp(42),dp(16),dp(40),dp(8))
+            setPadding(dp(48),dp(16),dp(48),dp(8))
+            clipChildren=false;clipToPadding=false
             background=GradientDrawable(
                 GradientDrawable.Orientation.TOP_BOTTOM,
                 intArrayOf(0xE608080D.toInt(),0x9908080D.toInt(),0x0008080D)
@@ -152,8 +200,12 @@ class MainActivity : Activity() {
         top.addView(TextView(this).apply {
             text="VELARIS"; textSize=26f; typeface=Typeface.DEFAULT_BOLD
             letterSpacing=0.12f; setTextColor(Color.WHITE); gravity=Gravity.CENTER_VERTICAL
-        },LinearLayout.LayoutParams(dp(160),dp(50)).apply{marginEnd=dp(24)})
-        val nav=LinearLayout(this).apply { orientation=LinearLayout.HORIZONTAL; gravity=Gravity.CENTER_VERTICAL }
+        },LinearLayout.LayoutParams(dp(152),dp(50)).apply{marginEnd=dp(18)})
+        // Keep all destinations reachable with the D-pad, even on smaller/overscanned TVs.
+        val nav=LinearLayout(this).apply {
+            orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL
+            clipChildren=false;clipToPadding=false
+        }
         listOf(
             VelarisDesign.navigation("home","Start") to navButton(VelarisDesign.navigation("home","Start")){showHome()},
             VelarisDesign.navigation("movies","Filme") to navButton(VelarisDesign.navigation("movies","Filme")){showLibrary("Filme","Movie")},
@@ -165,7 +217,16 @@ class MainActivity : Activity() {
             val width=when(label) { "Start"->dp(78); "Anime Filme"->dp(114); "Sammlungen"->dp(126); else->dp(84) }
             nav.addView(button,LinearLayout.LayoutParams(width,dp(46)).apply{marginEnd=dp(3)})
         }
-        top.addView(nav,LinearLayout.LayoutParams(0,dp(50),1f))
+        val navScroll=HorizontalScrollView(this).apply {
+            isHorizontalScrollBarEnabled=false
+            isFillViewport=false
+            isFocusable=false
+            clipChildren=false;clipToPadding=false
+            overScrollMode=View.OVER_SCROLL_NEVER
+            setPadding(dp(10),0,dp(14),0)
+            addView(nav,FrameLayout.LayoutParams(-2,-1))
+        }
+        top.addView(navScroll,LinearLayout.LayoutParams(0,dp(54),1f))
         top.addView(navButton("⌕"){showSearch()},LinearLayout.LayoutParams(dp(60),dp(46)).apply{marginEnd=dp(6)})
         top.addView(navButton("Profil"){showProfiles()},LinearLayout.LayoutParams(dp(82),dp(46)).apply{marginEnd=dp(4)})
         top.addView(navButton("⚙"){showSettingsDialog()},LinearLayout.LayoutParams(dp(60),dp(46)))
@@ -765,6 +826,26 @@ class MainActivity : Activity() {
         showHome()
     }
 
+    private fun avatarFrame(index:Int,description:String):FrameLayout {
+        return FrameLayout(this).apply {
+            clipChildren=false;clipToPadding=false
+            addView(avatarFace(index,description),FrameLayout.LayoutParams(-1,-1).apply {
+                setMargins(dp(4),dp(4),dp(4),dp(4))
+            })
+        }
+    }
+
+    private fun highlightAvatar(frame:View,focused:Boolean,selected:Boolean=false) {
+        frame.background=GradientDrawable().apply {
+            setColor(Color.TRANSPARENT)
+            cornerRadius=dp(20).toFloat()
+            if(focused)setStroke(dp(3),Color.WHITE)
+            else if(selected)setStroke(dp(2),VelarisDesign.color("accent",0xFF7C5CFC.toInt()))
+        }
+        frame.animate().scaleX(if(focused)1.045f else 1f).scaleY(if(focused)1.045f else 1f)
+            .setDuration(120).start()
+    }
+
     private fun showProfiles(startup:Boolean=false) {
         if(!startup) rememberBack { showHome() }
         val profiles=readProfiles()
@@ -780,54 +861,77 @@ class MainActivity : Activity() {
             text="Wähle dein Profil";textSize=17f;setTextColor(0xFF9B9BA4.toInt());gravity=Gravity.CENTER
         },params(-1,-2,8))
 
-        val grid=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER;setPadding(0,dp(26),0,0)}
-        var row=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER}
+        val grid=LinearLayout(this).apply{
+            orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER
+            clipChildren=false;clipToPadding=false
+            setPadding(dp(12),dp(26),dp(12),dp(12))
+        }
+        var firstProfile:View?=null
+        var row=LinearLayout(this).apply{
+            orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER
+            clipChildren=false;clipToPadding=false
+        }
         fun addTile(tile:View,index:Int){
-            if(index>0 && index%5==0){grid.addView(row);row=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER}}
+            if(index>0 && index%5==0){
+                grid.addView(row)
+                row=LinearLayout(this).apply{
+                    orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER
+                    clipChildren=false;clipToPadding=false
+                }
+            }
             row.addView(tile,LinearLayout.LayoutParams(dp(180),dp(205)).apply{marginEnd=dp(12)})
         }
         for(i in 0 until profiles.length()) {
             val p=profiles.optJSONObject(i) ?: continue
             val name=p.optString("name","Profil");val av=p.optInt("avatar",i)
+            val picture=avatarFrame(av,name)
             val tile=LinearLayout(this).apply{
-                orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER;isFocusable=true;isClickable=true
+                orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER
+                isFocusable=true;isClickable=true
+                clipChildren=false;clipToPadding=false
                 setPadding(dp(8),dp(8),dp(8),dp(4))
-                setOnFocusChangeListener{v,focused->
-                    v.animate().scaleX(if(focused)1.08f else 1f).scaleY(if(focused)1.08f else 1f).setDuration(120).start()
-                    background=GradientDrawable().apply{
-                        setColor(if(focused)VelarisDesign.color("surfaceAlt",0xFF222229.toInt()) else Color.TRANSPARENT)
-                        cornerRadius=dp(12).toFloat()
-                        if(focused)setStroke(dp(2),Color.WHITE)
-                    }
-                }
-                setOnClickListener{
-                    activateJellyfinProfile(p)
-                }
+                setOnFocusChangeListener{_,focused->highlightAvatar(picture,focused)}
+                setOnClickListener{activateJellyfinProfile(p)}
             }
-            tile.addView(avatarFace(av,name),LinearLayout.LayoutParams(dp(142),dp(142)))
+            tile.addView(picture,LinearLayout.LayoutParams(dp(142),dp(142)))
             tile.addView(TextView(this).apply{
-                text=name;textSize=17f;setTextColor(0xFFBDBDC4.toInt());gravity=Gravity.CENTER;maxLines=1
+                text=name;textSize=17f;setTextColor(0xFFBDBDC4.toInt())
+                gravity=Gravity.CENTER;maxLines=1
             },LinearLayout.LayoutParams(dp(164),dp(42)))
+            if(firstProfile==null)firstProfile=tile
             addTile(tile,i)
         }
         if(profiles.length()<VelarisDesign.maxProfiles()){
-            val add=LinearLayout(this).apply{
-                orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER;isFocusable=true;isClickable=true
-                setPadding(dp(8),dp(8),dp(8),dp(4));setOnClickListener{showCreateProfile()}
-                setOnFocusChangeListener{v,focused->
-                    v.animate().scaleX(if(focused)1.08f else 1f).scaleY(if(focused)1.08f else 1f).setDuration(120).start()
-                    background=GradientDrawable().apply{setColor(if(focused)VelarisDesign.color("surfaceAlt",0xFF222229.toInt()) else Color.TRANSPARENT);cornerRadius=dp(12).toFloat();if(focused)setStroke(dp(2),Color.WHITE)}
-                }
+            val addPicture=FrameLayout(this).apply{
+                clipChildren=false;clipToPadding=false
+                addView(TextView(this@MainActivity).apply{
+                    text="+";textSize=54f;setTextColor(0xFFBDBDC4.toInt());gravity=Gravity.CENTER
+                    background=GradientDrawable().apply{
+                        setColor(VelarisDesign.color("surfaceAlt",0xFF222229.toInt()))
+                        cornerRadius=dp(14).toFloat()
+                    }
+                },FrameLayout.LayoutParams(-1,-1).apply{setMargins(dp(4),dp(4),dp(4),dp(4))})
             }
+            val add=LinearLayout(this).apply{
+                orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER
+                isFocusable=true;isClickable=true
+                clipChildren=false;clipToPadding=false
+                setPadding(dp(8),dp(8),dp(8),dp(4))
+                setOnClickListener{showCreateProfile()}
+                setOnFocusChangeListener{_,focused->highlightAvatar(addPicture,focused)}
+            }
+            add.addView(addPicture,LinearLayout.LayoutParams(dp(142),dp(142)))
             add.addView(TextView(this).apply{
-                text="+";textSize=54f;setTextColor(0xFFBDBDC4.toInt());gravity=Gravity.CENTER
-                background=GradientDrawable().apply{setColor(0xFF24242A.toInt());cornerRadius=dp(14).toFloat()}
-            },LinearLayout.LayoutParams(dp(142),dp(142)))
-            add.addView(TextView(this).apply{text="Profil hinzufügen";textSize=15f;setTextColor(0xFFBDBDC4.toInt());gravity=Gravity.CENTER},LinearLayout.LayoutParams(dp(164),dp(42)))
+                text="Profil hinzufügen";textSize=15f
+                setTextColor(0xFFBDBDC4.toInt())
+                gravity=Gravity.CENTER
+            },LinearLayout.LayoutParams(dp(164),dp(42)))
+            if(firstProfile==null)firstProfile=add
             addTile(add,profiles.length())
         }
-        grid.addView(row);root.addView(grid);setContentView(root)
-        root.post{root.focusSearch(View.FOCUS_DOWN)?.requestFocus()}
+        grid.addView(row);root.addView(grid)
+        setContentView(root)
+        root.post{firstProfile?.requestFocus()}
     }
 
     private fun avatarFace(index:Int,initial:String):View {
@@ -878,16 +982,30 @@ class MainActivity : Activity() {
         root.addView(TextView(this).apply {
             text="Avatar auswählen";textSize=18f;setTextColor(Color.LTGRAY)
         },params(-2,-2,22))
-        val avatarChoices=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER}
-        var selected=0
-        for(i in 0..3) {
-            avatarChoices.addView(avatarFace(i,"").apply {
-                isFocusable=true;isClickable=true
-                applyCardFocus(this)
-                setOnClickListener { selected=i;toast("Avatar ausgewählt") }
-            },LinearLayout.LayoutParams(dp(82),dp(82)).apply{marginEnd=dp(10)})
+        val avatarChoices=LinearLayout(this).apply{
+            orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER
+            clipChildren=false;clipToPadding=false
         }
-        root.addView(avatarChoices,params(-2,86,12))
+        var selected=0
+        val choices=mutableListOf<FrameLayout>()
+        for(i in 0..3) {
+            val picture=avatarFrame(i,"").apply {
+                isFocusable=true;isClickable=true
+            }
+            picture.setOnFocusChangeListener{_,focused->highlightAvatar(picture,focused,selected==i)}
+            picture.setOnClickListener {
+                selected=i
+                choices.forEachIndexed { index,frame ->
+                    highlightAvatar(frame,frame.hasFocus(),selected==index)
+                }
+            }
+            choices.add(picture)
+            avatarChoices.addView(picture,LinearLayout.LayoutParams(dp(90),dp(90)).apply{marginEnd=dp(10)})
+        }
+        highlightAvatar(choices.first(),false,true)
+        root.addView(avatarChoices,params(-2,100,12))
+        configureTvInput(user,pass)
+        configureTvInput(pass,choices.first(),done=true)
         root.addView(actionButton("Jellyfin-Profil hinzufügen",true) {
             val username=user.text.toString().trim()
             val password=pass.text.toString()
@@ -921,8 +1039,12 @@ class MainActivity : Activity() {
             }
         },params(330,58,24))
         root.addView(actionButton("Zurück",false){showProfiles()},params(180,56,12))
-        setContentView(root)
-        user.requestFocus()
+        setContentView(ScrollView(this).apply{
+            isFillViewport=true;isVerticalScrollBarEnabled=false
+            clipChildren=false;clipToPadding=false
+            addView(root)
+        })
+        root.post{user.requestFocus()}
     }
 
     private fun setPlayed(id:String, played:Boolean, done:()->Unit) {
@@ -1027,7 +1149,12 @@ class MainActivity : Activity() {
 
     private fun showSettingsDialog() {
         rememberBack { showHome() }
-        val root=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(64),dp(44),dp(64),dp(44));setBackgroundColor(VelarisDesign.color("background",0xFF08080D.toInt()))}
+        val root=LinearLayout(this).apply{
+            orientation=LinearLayout.VERTICAL
+            setPadding(dp(52),dp(38),dp(52),dp(82))
+            setBackgroundColor(VelarisDesign.color("background",0xFF08080D.toInt()))
+            clipChildren=false;clipToPadding=false
+        }
         root.addView(TextView(this).apply{text="Einstellungen";textSize=38f;setTextColor(Color.WHITE);typeface=Typeface.DEFAULT_BOLD})
         root.addView(TextView(this).apply{text="Velaris TV";textSize=16f;setTextColor(Color.GRAY);setPadding(0,dp(4),0,dp(24))})
         val playback=settingsCard("▶","Wiedergabe","Autoplay, Intro, Rückblick und Abspann"){showPlaybackSettings()}
@@ -1035,7 +1162,15 @@ class MainActivity : Activity() {
         val serverCard=settingsCard("◉","Server",server.ifBlank{"Nicht verbunden"}){clearConnection();showServer()}
         val logout=settingsCard("↪","Abmelden","Jellyfin-Sitzung auf diesem TV beenden"){token="";userId="";prefs.edit().remove("access_token").remove("user_id").apply();showLogin()}
         listOf(playback,profiles,serverCard,logout).forEach{root.addView(it,LinearLayout.LayoutParams(-1,dp(86)).apply{bottomMargin=dp(12)})}
-        setContentView(root)
+        val page=ScrollView(this).apply {
+            isVerticalScrollBarEnabled=false
+            isFillViewport=true
+            clipChildren=false;clipToPadding=false
+            setBackgroundColor(VelarisDesign.color("background",0xFF08080D.toInt()))
+            addView(root)
+        }
+        setContentView(page)
+        page.post { playback.requestFocus() }
     }
 
     private fun settingsCard(icon:String,title:String,sub:String,click:()->Unit)=LinearLayout(this).apply{
@@ -1044,11 +1179,26 @@ class MainActivity : Activity() {
         addView(TextView(this@MainActivity).apply{text=icon;textSize=26f;setTextColor(Color.WHITE);gravity=Gravity.CENTER},LinearLayout.LayoutParams(dp(54),dp(54)))
         addView(LinearLayout(this@MainActivity).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(18),0,0,0);addView(TextView(this@MainActivity).apply{text=title;textSize=20f;setTextColor(Color.WHITE);typeface=Typeface.DEFAULT_BOLD});addView(TextView(this@MainActivity).apply{text=sub;textSize=14f;setTextColor(Color.GRAY)})},LinearLayout.LayoutParams(0,-2,1f))
         addView(TextView(this@MainActivity).apply{text="›";textSize=30f;setTextColor(Color.LTGRAY)})
-        setOnClickListener{click()};setOnFocusChangeListener{v,f->background=GradientDrawable().apply{setColor(if(f)0xFF303038.toInt() else VelarisDesign.color("surface",0xFF18181E.toInt()));cornerRadius=dp(12).toFloat()};v.animate().scaleX(if(f)1.015f else 1f).scaleY(if(f)1.015f else 1f).setDuration(120).start()}
+        stateListAnimator=null
+        setOnClickListener{click()}
+        setOnFocusChangeListener{_,focused->
+            background=GradientDrawable().apply{
+                setColor(if(focused)VelarisDesign.color("surfaceAlt",0xFF202027.toInt()) else VelarisDesign.color("surface",0xFF18181E.toInt()))
+                cornerRadius=dp(12).toFloat()
+                if(focused)setStroke(dp(2),Color.WHITE)
+            }
+            // Borders provide focus feedback without scaling/cropping the full-width row.
+            animate().scaleX(1f).scaleY(1f).setDuration(100).start()
+        }
     }
 
     private fun showPlaybackSettings() {
-        val root=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(64),dp(44),dp(64),dp(44));setBackgroundColor(VelarisDesign.color("background",0xFF08080D.toInt()))}
+        val root=LinearLayout(this).apply{
+            orientation=LinearLayout.VERTICAL
+            setPadding(dp(52),dp(38),dp(52),dp(82))
+            setBackgroundColor(VelarisDesign.color("background",0xFF08080D.toInt()))
+            clipChildren=false;clipToPadding=false
+        }
         root.addView(TextView(this).apply{text="Wiedergabe";textSize=36f;setTextColor(Color.WHITE);typeface=Typeface.DEFAULT_BOLD})
         val options=listOf("Automatisch nächste Folge" to "auto_next","Intro automatisch überspringen" to "auto_skip_intro","Rückblick automatisch überspringen" to "auto_skip_recap","Abspann automatisch überspringen" to "auto_skip_credits")
         options.forEachIndexed{i,(label,key)->
@@ -1057,7 +1207,13 @@ class MainActivity : Activity() {
             }
             root.addView(row,LinearLayout.LayoutParams(-1,dp(82)).apply{topMargin=dp(10)})
         }
-        root.addView(actionButton("Zurück",false){showSettingsDialog()},params(180,56,22));setContentView(root)
+        root.addView(actionButton("Zurück",false){showSettingsDialog()},params(180,56,22))
+        setContentView(ScrollView(this).apply{
+            isVerticalScrollBarEnabled=false;isFillViewport=true
+            clipChildren=false;clipToPadding=false
+            addView(root)
+        })
+        root.post{(root.getChildAt(1) as? View)?.requestFocus()}
     }
 
 
@@ -1090,10 +1246,13 @@ class MainActivity : Activity() {
                 cornerRadius=dp(10).toFloat()
                 if(focused)setStroke(dp(1),0xCCFFFFFF.toInt())
             }
-            v.animate()
-                .scaleX(if(focused)1.03f else 1f)
-                .scaleY(if(focused)1.03f else 1f)
-                .setDuration(110).start()
+            // The HorizontalScrollView follows D-pad focus to "Sammlungen".
+            if(focused) post {
+                val strip=parent as? LinearLayout
+                val scroll=strip?.parent as? HorizontalScrollView
+                if(scroll!=null)scroll.smoothScrollTo((left - dp(30)).coerceAtLeast(0),0)
+            }
+            v.animate().scaleX(1f).scaleY(1f).setDuration(110).start()
         }
     }
 
