@@ -408,7 +408,7 @@ class MainActivity : Activity() {
         }
     }
 
-    private fun watchedPoster(item:JSONObject,w:Int,h:Int,imageType:String,requestedWidth:Int):FrameLayout {
+    private fun watchedPoster(item:JSONObject,w:Int,h:Int,imageType:String,requestedWidth:Int,landscape:Boolean=false):FrameLayout {
         val frame=FrameLayout(this).apply {
             background=GradientDrawable().apply{
                 setColor(VelarisDesign.color("surface",0xFF15151B.toInt()))
@@ -417,8 +417,9 @@ class MainActivity : Activity() {
             clipToOutline=true
         }
         val poster=ImageView(this).apply{
-            // Letterbox odd Jellyfin poster sizes instead of losing artwork at edges.
-            scaleType=ImageView.ScaleType.FIT_CENTER
+            // Only cinematic 16:9 previews crop; vertical posters stay complete.
+            scaleType=if(landscape)ImageView.ScaleType.CENTER_CROP else ImageView.ScaleType.FIT_CENTER
+            setBackgroundColor(VelarisDesign.color("surface",0xFF15151B.toInt()))
         }
         frame.addView(poster,FrameLayout.LayoutParams(-1,-1))
         loadImage(poster,item.optString("Id"),imageType,requestedWidth)
@@ -439,50 +440,82 @@ class MainActivity : Activity() {
     }
 
     private fun addContinueRow(data:List<JSONObject>) {
-        if(data.isEmpty()) return
+        if(data.isEmpty())return
         homeRoot?.addView(sectionTitle(VelarisDesign.homeRow("resume","Weiterschauen")))
-        val row=LinearLayout(this).apply { orientation=LinearLayout.HORIZONTAL; setPadding(dp(52),dp(12),dp(40),dp(44)); clipChildren=false; clipToPadding=false }
-        data.forEach { item ->
-            val id=item.optString("Id"); if(id.isBlank()) return@forEach
-            val ticks=item.optJSONObject("UserData")?.optLong("PlaybackPositionTicks",0L) ?: 0L
+        val row=LinearLayout(this).apply{
+            orientation=LinearLayout.HORIZONTAL
+            setPadding(dp(52),dp(12),dp(48),dp(34))
+            clipChildren=false;clipToPadding=false
+        }
+        data.forEach{item->
+            val id=item.optString("Id")
+            if(id.isBlank())return@forEach
+            val progressTicks=item.optJSONObject("UserData")?.optLong("PlaybackPositionTicks",0L)?:0L
             val total=item.optLong("RunTimeTicks",0L)
-            val card=LinearLayout(this).apply {
-                orientation=LinearLayout.VERTICAL; isFocusable=true; isClickable=true
-                setOnClickListener { playNative(id,ticks) }; applyCardFocus(this)
-            }
-            val img=ImageView(this).apply { scaleType=ImageView.ScaleType.CENTER_CROP }
-            val thumb=FrameLayout(this).apply {
-                background=GradientDrawable().apply {
+            val thumb=FrameLayout(this).apply{
+                background=GradientDrawable().apply{
                     setColor(VelarisDesign.color("surface",0xFF15151B.toInt()))
-                    cornerRadius=dp(9).toFloat()
+                    cornerRadius=dp(10).toFloat()
                 }
                 clipToOutline=true
             }
-            thumb.addView(img,FrameLayout.LayoutParams(-1,-1));loadImage(img,id,"Backdrop",620)
-            thumb.addView(TextView(this).apply {
-                text="▶";textSize=22f;setTextColor(Color.WHITE);gravity=Gravity.CENTER
-                background=GradientDrawable().apply {
-                    setColor(0x88000000.toInt())
-                    cornerRadius=dp(26).toFloat()
-                    setStroke(dp(2),0xCCFFFFFF.toInt())
+            val imageType=if((item.optJSONArray("BackdropImageTags")?.length()?:0)>0)"Backdrop" else "Primary"
+            val poster=ImageView(this).apply{
+                scaleType=if(imageType=="Backdrop")ImageView.ScaleType.CENTER_CROP else ImageView.ScaleType.FIT_CENTER
+                setBackgroundColor(VelarisDesign.color("surfaceAlt",0xFF202027.toInt()))
+            }
+            thumb.addView(poster,FrameLayout.LayoutParams(-1,-1))
+            loadImage(poster,id,imageType,720)
+            thumb.addView(TextView(this).apply{
+                text="▶";gravity=Gravity.CENTER;textSize=21f;setTextColor(Color.WHITE)
+                background=GradientDrawable().apply{
+                    setColor(0xAA101016.toInt())
+                    cornerRadius=dp(23).toFloat()
+                    setStroke(dp(2),Color.WHITE)
                 }
-            },FrameLayout.LayoutParams(dp(52),dp(52),Gravity.CENTER))
-            if(ticks>0 && total>0)thumb.addView(ProgressBar(this,null,android.R.attr.progressBarStyleHorizontal).apply {
-                max=1000;progress=((ticks.toDouble()/total)*1000).toInt().coerceIn(0,1000)
-                progressTintList=android.content.res.ColorStateList.valueOf(VelarisDesign.color("progress",0xFFE50914.toInt()))
-                progressBackgroundTintList=android.content.res.ColorStateList.valueOf(0xAA888888.toInt())
-            },FrameLayout.LayoutParams(-1,dp(5),Gravity.BOTTOM))
+            },FrameLayout.LayoutParams(dp(46),dp(46),Gravity.CENTER))
+            if(total>0 && progressTicks>0)thumb.addView(
+                ProgressBar(this,null,android.R.attr.progressBarStyleHorizontal).apply{
+                    max=1000
+                    progress=((progressTicks.toDouble()/total)*1000).toInt().coerceIn(0,1000)
+                    progressTintList=android.content.res.ColorStateList.valueOf(
+                        VelarisDesign.color("progress",0xFFE50914.toInt()))
+                    progressBackgroundTintList=android.content.res.ColorStateList.valueOf(0xAA888888.toInt())
+                },FrameLayout.LayoutParams(-1,dp(5),Gravity.BOTTOM)
+            )
+            val card=LinearLayout(this).apply {
+                orientation=LinearLayout.VERTICAL;isFocusable=true;isClickable=true
+                clipChildren=false;clipToPadding=false
+                setPadding(dp(3),dp(3),dp(3),dp(3))
+                setOnClickListener{playNative(id,progressTicks)}
+                applyCardFocus(this,thumb)
+            }
             card.addView(thumb,LinearLayout.LayoutParams(dp(310),dp(174)))
-            card.addView(TextView(this).apply { text=item.optString("Name"); setTextColor(Color.WHITE); textSize=15f; maxLines=1; setPadding(dp(4),dp(7),0,0) },LinearLayout.LayoutParams(dp(310),dp(30)))
-            val remaining=((total-ticks).coerceAtLeast(0L)/600_000_000L)
-            val ep=item.optInt("IndexNumber",0); val season=item.optInt("ParentIndexNumber",0)
-            val resumeMeta=listOfNotNull(if(season>0&&ep>0)"S$season:E$ep" else null,if(remaining>0)"Noch $remaining Min." else null).joinToString("  •  ")
-            if(resumeMeta.isNotBlank()) card.addView(TextView(this).apply{text=resumeMeta;textSize=12f;setTextColor(Color.GRAY);setPadding(dp(4),0,0,0)},LinearLayout.LayoutParams(dp(310),dp(24)))
-            row.addView(card,LinearLayout.LayoutParams(dp(322),dp(230)).apply{marginEnd=dp(12)})
+            card.addView(TextView(this).apply{
+                text=item.optString("Name");textSize=16f;maxLines=1
+                typeface=Typeface.DEFAULT_BOLD;setTextColor(Color.WHITE)
+                setPadding(dp(4),dp(8),0,0)
+            },LinearLayout.LayoutParams(dp(310),dp(34)))
+            val episode=item.optInt("IndexNumber",0)
+            val season=item.optInt("ParentIndexNumber",0)
+            val remaining=if(total>0)((total-progressTicks).coerceAtLeast(0L)/600_000_000L)else 0L
+            val description=listOfNotNull(
+                if(season>0&&episode>0)"S$season:E$episode" else null,
+                if(remaining>0)"Noch $remaining Min." else null
+            ).joinToString("  •  ")
+            if(description.isNotBlank())card.addView(TextView(this).apply{
+                text=description;textSize=13f;setTextColor(Color.LTGRAY)
+                setPadding(dp(4),0,0,0)
+            },LinearLayout.LayoutParams(dp(310),dp(27)))
+            row.addView(card,LinearLayout.LayoutParams(dp(326),dp(251)).apply{
+                marginEnd=dp(16)
+            })
         }
         homeRoot?.addView(HorizontalScrollView(this).apply{
-            isHorizontalScrollBarEnabled=false;clipChildren=false;clipToPadding=false;addView(row)
-        },LinearLayout.LayoutParams(-1,dp(300)))
+            isHorizontalScrollBarEnabled=false
+            clipChildren=false;clipToPadding=false
+            addView(row)
+        },LinearLayout.LayoutParams(-1,dp(320)))
     }
 
     private fun addRankedRow(title:String,data:List<JSONObject>) {
@@ -527,9 +560,10 @@ class MainActivity : Activity() {
                     if(focused)setStroke(dp(2),Color.WHITE)
                 }
             }
-            target.animate().scaleX(if(focused)1.025f else 1f)
-                .scaleY(if(focused)1.025f else 1f)
-                .translationZ(if(focused)dp(10).toFloat() else 0f).setDuration(130).start()
+            // Keep posters at their true size, with a border-only D-pad focus.
+            // Enlarging image cards clipped the first, last and bottom pixels.
+            target.animate().scaleX(1f).scaleY(1f)
+                .translationZ(if(focused)dp(8).toFloat() else 0f).setDuration(100).start()
         }
     }
 
@@ -857,7 +891,7 @@ class MainActivity : Activity() {
                         val seasonId=selected.optString("Id")
                         val episodes=episodesBySeason[seasonId]
                         seasonButton.text=(if(finishedSeasons[seasonId]==true)"✓  " else "")+
-                            selected.optString("Name","Staffel ${index+1}")+"  ⌄"
+                            selected.optString("Name","Staffel ${index+1}")
                         chooser.visibility=View.GONE
                         episodeList.removeAllViews()
                         if(finishedSeasons[seasonId]==true) episodeList.addView(TextView(this).apply{
@@ -877,7 +911,7 @@ class MainActivity : Activity() {
                             val eid=ep.optString("Id")
                             val ticks=ep.optJSONObject("UserData")?.optLong("PlaybackPositionTicks",0L)?:0L
                             val nextId=episodes.getOrNull(i+1)?.optString("Id").orEmpty()
-                            val cover=watchedPoster(ep,246,138,"Primary",520)
+                            val cover=watchedPoster(ep,246,138,"Primary",520,landscape=true)
                             val card=LinearLayout(this).apply {
                                 orientation=LinearLayout.HORIZONTAL
                                 gravity=Gravity.CENTER_VERTICAL
@@ -908,10 +942,10 @@ class MainActivity : Activity() {
                                 setTextColor(Color.LTGRAY)
                             },params(-1,-2,8))
                             card.addView(detail,LinearLayout.LayoutParams(0,-2,1f))
-                            episodeList.addView(card,params(-1,162,8))
+                            episodeList.addView(card,params(-1,172,12))
                         }
                     }
-                    seasonButton=actionButton("Staffel wählen  ⌄",false) {
+                    seasonButton=actionButton("Staffel wählen",false) {
                         chooser.visibility=if(chooser.visibility==View.VISIBLE)View.GONE else View.VISIBLE
                         if(chooser.visibility==View.VISIBLE)chooser.post{chooser.getChildAt(0)?.requestFocus()}
                     }
@@ -962,7 +996,7 @@ class MainActivity : Activity() {
                         val name=ep.optString("Name")
                         val nextId=episodes.getOrNull(episodes.indexOf(ep)+1)?.optString("Id").orEmpty()
                         val card=LinearLayout(this).apply { orientation=LinearLayout.HORIZONTAL; gravity=Gravity.CENTER_VERTICAL; isFocusable=true; isClickable=true; setPadding(dp(8),dp(8),dp(8),dp(8)); setOnClickListener { startEpisode(eid,ticks,nextId) }; applyCardFocus(this) }
-                        card.addView(watchedPoster(ep,250,140,"Primary",500),
+                        card.addView(watchedPoster(ep,250,140,"Primary",500,landscape=true),
                             LinearLayout.LayoutParams(dp(250),dp(140)))
                         val info=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; setPadding(dp(18),0,0,0) }
                         info.addView(TextView(this).apply {
