@@ -5,7 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { getBackdropUrl, getFavorites, getGenres, getLatest, getPlayedItems, getRecommendations, getResumeItems } from '@/services/jellyfin';
 import { MediaRow } from '@/components/MediaRow';
 import type { JellyfinItem } from '@/types/jellyfin';
-import { colors } from '@/theme';
+import { colors, design } from '@/theme';
 import { getActiveProfile, type VelarisProfile } from '@/services/session';
 
 export default function HomeScreen() {
@@ -43,11 +43,11 @@ export default function HomeScreen() {
       <Pressable style={styles.info} onPress={()=>router.push({pathname:'/details/[id]',params:{id:hero.Id}})}><Text style={styles.infoText}>ⓘ  Mehr Infos</Text></Pressable></View></View></View>
     </ImageBackground>}
     <View style={styles.rows}>
-      <MediaRow title="Top 10 für dich" items={recommended.length?recommended:latest} session={session} topTen/>
-      <MediaRow title="Weiterschauen" items={resume} session={session} continueWatching/>
-      <MediaRow title="Meine Liste" items={favorites} session={session}/>
-      {!!becauseTitle&&<MediaRow title={`Weil du „${becauseTitle}“ gesehen hast`} items={recommended} session={session}/>}
-      <MediaRow title="Kürzlich hinzugefügt" items={latest} session={session}/>
+      <MediaRow title={design.homeRows.topTen} items={recommended.length?recommended:latest} session={session} topTen/>
+      <MediaRow title={design.homeRows.resume} items={resume} session={session} continueWatching/>
+      <MediaRow title={design.homeRows.favorites} items={favorites} session={session}/>
+      {!!becauseTitle&&<MediaRow title={`${design.homeRows.becausePrefix} „${becauseTitle}“ gesehen hast`} items={recommended} session={session}/>}
+      <MediaRow title={design.homeRows.latest} items={latest} session={session}/>
     </View></Animated.View>
   </ScrollView>;
 }

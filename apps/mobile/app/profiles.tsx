@@ -1,9 +1,14 @@
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Redirect, router } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
-import { colors } from '@/theme';
+import { colors, profileLimit } from '@/theme';
 
-const AVATARS=[require('../assets/AvatarRot.png'),require('../assets/AvatarBlau.png')];
+const AVATARS=[
+ require('../assets/AvatarRot.png'),
+ require('../assets/AvatarBlau.png'),
+ require('../assets/AvatarRobbeWeiss.png'),
+ require('../assets/AvatarRobbeGrau.png')
+];
 export default function ProfilesScreen(){
  const {session,profiles,switchProfile}=useAuth();
  if(!session)return <Redirect href="/connect"/>;
@@ -12,8 +17,8 @@ export default function ProfilesScreen(){
   <View style={styles.avatar}>{p.photoUri?<Image source={{uri:p.photoUri}} style={styles.photo}/>:<Image source={AVATARS[p.avatar%AVATARS.length]} style={styles.photo}/>}</View>
   <Text numberOfLines={1} style={styles.name}>{p.name}</Text>
  </Pressable>)}
- {profiles.length<5&&<Pressable style={styles.profile} onPress={()=>router.push({pathname:'/login',params:{serverUrl:session.serverUrl,serverName:'Jellyfin',addingProfile:'1'}})}><View style={[styles.avatar,styles.add]}><Text style={styles.plus}>＋</Text></View><Text style={styles.name}>Profil hinzufügen</Text></Pressable>}</View>
+ {profiles.length<profileLimit&&<Pressable style={styles.profile} onPress={()=>router.push({pathname:'/login',params:{serverUrl:session.serverUrl,serverName:'Jellyfin',addingProfile:'1'}})}><View style={[styles.avatar,styles.add]}><Text style={styles.plus}>＋</Text></View><Text style={styles.name}>Profil hinzufügen</Text></Pressable>}</View>
  <Pressable style={styles.manage} onPress={()=>router.push('/(tabs)/profile')}><Text style={styles.manageText}>Profile verwalten</Text></Pressable>
  </View>
 }
-const styles=StyleSheet.create({page:{flex:1,backgroundColor:'#000',paddingHorizontal:24,paddingTop:70,alignItems:'center'},brand:{color:'#fff',fontSize:16,fontWeight:'900',letterSpacing:5},title:{color:'#fff',fontSize:27,fontWeight:'900',marginTop:50,marginBottom:38},grid:{width:'100%',flexDirection:'row',flexWrap:'wrap',justifyContent:'center',gap:24},profile:{width:128,alignItems:'center'},avatar:{width:112,height:112,borderRadius:12,backgroundColor:'#1c1c1c',borderWidth:2,borderColor:'transparent',alignItems:'center',justifyContent:'center',overflow:'hidden'},photo:{width:'100%',height:'100%'},symbol:{fontSize:48},name:{color:'#ddd',fontSize:14,fontWeight:'700',marginTop:10,maxWidth:128},add:{borderColor:'#444',borderStyle:'dashed'},plus:{color:'#aaa',fontSize:48,fontWeight:'300'},manage:{marginTop:46,borderWidth:1,borderColor:'#777',paddingHorizontal:22,height:42,justifyContent:'center'},manageText:{color:'#ddd',fontSize:12,fontWeight:'800',letterSpacing:1}});
+const styles=StyleSheet.create({page:{flex:1,backgroundColor:colors.background,paddingHorizontal:24,paddingTop:70,alignItems:'center'},brand:{color:'#fff',fontSize:16,fontWeight:'900',letterSpacing:5},title:{color:'#fff',fontSize:27,fontWeight:'900',marginTop:50,marginBottom:38},grid:{width:'100%',flexDirection:'row',flexWrap:'wrap',justifyContent:'center',gap:24},profile:{width:128,alignItems:'center'},avatar:{width:112,height:112,borderRadius:colors.radius,backgroundColor:colors.surface,borderWidth:2,borderColor:'transparent',alignItems:'center',justifyContent:'center',overflow:'hidden'},photo:{width:'100%',height:'100%'},symbol:{fontSize:48},name:{color:'#ddd',fontSize:14,fontWeight:'700',marginTop:10,maxWidth:128},add:{borderColor:'#444',borderStyle:'dashed'},plus:{color:'#aaa',fontSize:48,fontWeight:'300'},manage:{marginTop:46,borderWidth:1,borderColor:'#777',paddingHorizontal:22,height:42,justifyContent:'center'},manageText:{color:'#ddd',fontSize:12,fontWeight:'800',letterSpacing:1}});
