@@ -28,6 +28,7 @@ const AVATARS=[
 /** Same visual/navigation contract on every mobile media screen. */
 export function VelarisHeader({scope='home',collectionId,home=false,overlay=false,back=false}:Props) {
   const scroller=useRef<ScrollView>(null);
+  const tabEnds=useRef<number[]>([]);
   const {session}=useAuth();
   const [profile,setProfile]=useState<VelarisProfile | null>(null);
   const [genres,setGenres]=useState<string[]>([]);
@@ -35,7 +36,16 @@ export function VelarisHeader({scope='home',collectionId,home=false,overlay=fals
   const [contentWidth,setContentWidth]=useState(0);
   const [viewportWidth,setViewportWidth]=useState(0);
   const [scrollX,setScrollX]=useState(0);
-  const rightAvailable=contentWidth-viewportWidth-scrollX>12;
+  const rightAvailable=contentWidth-viewportWidth-scrollX>8;
+  const scrollToNextTab=()=>{
+    const maxX=Math.max(0,contentWidth-viewportWidth);
+    const rightEdge=scrollX+viewportWidth-14;
+    const nextEnd=tabEnds.current.find(end=>end>rightEdge);
+    // Move by whole pills; when reaching the last tab, expose its right edge.
+    const target=nextEnd==null?maxX:
+      Math.min(maxX,Math.max(scrollX+1,nextEnd-viewportWidth+28));
+    scroller.current?.scrollTo({x:target,animated:true});
+  };
   const sectionName=scope==='home'?'Velaris':design.navigation[scope];
   useEffect(()=>{
     if(!home)return;
@@ -84,21 +94,28 @@ export function VelarisHeader({scope='home',collectionId,home=false,overlay=fals
         onScroll={e=>setScrollX(e.nativeEvent.contentOffset.x)}
         scrollEventThrottle={40}
         contentContainerStyle={styles.stripContent}>
-        {menu.map(item=><Pressable key={item.key}
+        {menu.map((item,index)=><Pressable key={item.key}
+          onLayout={e=>{const {x,width}=e.nativeEvent.layout;tabEnds.current[index]=x+width;}}
           accessibilityRole="button" accessibilityState={{selected:scope===item.key}}
           onPress={()=>router.push(item.href as any)}
           style={[styles.chip,scope===item.key&&styles.activeChip]}>
           <Text style={[styles.chipText,scope===item.key&&styles.activeChipText]}>{item.label}</Text>
         </Pressable>)}
-        {home&&<Pressable style={[styles.chip,genresOpen&&styles.activeChip]} onPress={()=>setGenresOpen(v=>!v)}>
+        {home&&<Pressable style={[styles.chip,genresOpen&&styles.activeChip]}
+          onLayout={e=>{const {x,width}=e.nativeEvent.layout;tabEnds.current[menu.length]=x+width;}}
+          onPress={()=>setGenresOpen(v=>!v)}>
           <Text style={[styles.chipText,genresOpen&&styles.activeChipText]}>Genres</Text>
         </Pressable>}
+        <View style={styles.trailingGap} accessible={false}/>
       </ScrollView>
       <Pressable accessibilityLabel="Weitere Kategorien" accessibilityRole="button"
         disabled={!rightAvailable}
         style={[styles.more,{opacity:rightAvailable?1:0}]}
-        onPress={()=>scroller.current?.scrollTo({x:Math.min(Math.max(0,contentWidth-viewportWidth),scrollX+200),animated:true})}>
-        <Text style={styles.moreText}>›</Text>
+        onPress={scrollToNextTab}>
+        <View style={styles.chevron} pointerEvents="none">
+          <View style={[styles.chevronArm,styles.chevronTop]}/>
+          <View style={[styles.chevronArm,styles.chevronBottom]}/>
+        </View>
       </Pressable>
     </View>
     {home&&genresOpen&&<View style={styles.genreDropdown}>
@@ -127,13 +144,17 @@ const styles=StyleSheet.create({
   avatarImage:{width:'100%',height:'100%'},
   strip:{marginTop:14,height:46,flexDirection:'row',alignItems:'center',paddingRight:14},
   stripScroll:{flex:1},
-  stripContent:{paddingLeft:18,paddingRight:20,gap:16,alignItems:'center'},
+  stripContent:{paddingLeft:18,paddingRight:12,gap:16,alignItems:'center'},
+  trailingGap:{width:20,height:1},
   chip:{height:36,borderRadius:20,paddingHorizontal:15,justifyContent:'center',alignItems:'center',backgroundColor:'transparent'},
   activeChip:{backgroundColor:colors.accent,shadowColor:colors.accent,shadowOpacity:0.24,shadowRadius:8,elevation:3},
   chipText:{color:'rgba(255,255,255,0.78)',fontWeight:'700',fontSize:13},
   activeChipText:{color:colors.text,fontWeight:'900'},
-  more:{width:39,height:39,marginLeft:5,borderRadius:22,alignItems:'center',justifyContent:'center',backgroundColor:'#242132',borderWidth:1,borderColor:'rgba(160,140,255,0.22)'},
-  moreText:{fontSize:29,fontWeight:'700',color:colors.text,lineHeight:35},
+  more:{width:42,height:42,marginLeft:8,borderRadius:21,alignItems:'center',justifyContent:'center',flexShrink:0,backgroundColor:'#242132',borderWidth:1,borderColor:'rgba(160,140,255,0.22)'},
+  chevron:{width:22,height:22,alignItems:'center',justifyContent:'center'},
+  chevronArm:{position:'absolute',left:5,width:11,height:2.5,borderRadius:2,backgroundColor:colors.text},
+  chevronTop:{top:7,transform:[{rotate:'45deg'}]},
+  chevronBottom:{top:13,transform:[{rotate:'-45deg'}]},
   genreDropdown:{position:'absolute',right:16,top:130,width:240,borderWidth:1,borderColor:colors.border,backgroundColor:colors.surface,borderRadius:12,maxHeight:340,zIndex:30},
   genreHeading:{color:colors.text,padding:13,fontWeight:'800'},
   genreScroll:{maxHeight:290},
