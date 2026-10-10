@@ -9,7 +9,7 @@ export async function authenticate(u:string,username:string,password:string):Pro
 async function getItems(s:Session,v:Record<string,string>){const p=new URLSearchParams({Fields:itemFields(),EnableImages:'true',ImageTypeLimit:'1',EnableImageTypes:'Primary,Backdrop',EnableUserData:'true',...v});return request<JellyfinItemsResponse>(`${s.serverUrl}/Users/${s.user.Id}/Items?${p}`,{headers:authHeaders(s)});}
 export function getLibrary(s:Session){return getItems(s,{Recursive:'true',IncludeItemTypes:'Movie,Series',SortBy:'SortName',SortOrder:'Ascending',Limit:'300'});}
 export function getLatest(s:Session){return getItems(s,{Recursive:'true',IncludeItemTypes:'Movie,Series',SortBy:'DateCreated',SortOrder:'Descending',Limit:'30'});}
-export type MediaLibraryKind='movies'|'series'|'anime'|'animeMovies';
+export type MediaLibraryKind='movies'|'series'|'anime'|'animeMovies'|'animation'|'cartoons';
 type JellyfinView={Id:string;Name:string;CollectionType?:string};
 type JellyfinViewsResponse={Items:JellyfinView[];TotalRecordCount?:number};
 
@@ -23,6 +23,8 @@ function libraryAliases(kind:MediaLibraryKind){
   case 'series': return ['serien','series','tvshows','shows'];
   case 'anime': return ['anime','animes','animeserien','animeseries'];
   case 'animeMovies': return ['animemovies','animefilme','animefilms','animefilme'];
+  case 'animation': return ['animation','animations','animationsfilme'];
+  case 'cartoons': return ['cartoons','cartoon','zeichentrick','zeichentrickfilme'];
  }
 }
 function findLibrary(views:JellyfinView[],kind:MediaLibraryKind){
@@ -33,13 +35,15 @@ export async function getLibraryItems(s:Session,kind:MediaLibraryKind){
  const views=await getMediaLibraries(s);
  const library=findLibrary(views.Items,kind);
  if(!library) return {Items:[],TotalRecordCount:0} as JellyfinItemsResponse;
- const include=kind==='movies'||kind==='animeMovies'?'Movie':'Series';
+ const include=kind==='movies'||kind==='animeMovies'?'Movie':kind==='animation'||kind==='cartoons'?'Movie,Series':'Series';
  return getItems(s,{ParentId:library.Id,Recursive:'true',IncludeItemTypes:include,SortBy:'SortName',SortOrder:'Ascending',Limit:'300'});
 }
 export function getMovies(s:Session){return getLibraryItems(s,'movies');}
 export function getSeries(s:Session){return getLibraryItems(s,'series');}
 export function getAnime(s:Session){return getLibraryItems(s,'anime');}
 export function getAnimeMovies(s:Session){return getLibraryItems(s,'animeMovies');}
+export function getAnimation(s:Session){return getLibraryItems(s,'animation');}
+export function getCartoons(s:Session){return getLibraryItems(s,'cartoons');}
 export function searchItems(s:Session,t:string){return getItems(s,{Recursive:'true',IncludeItemTypes:'Movie,Series,Episode',SearchTerm:t,Limit:'60'});}
 export async function getGenres(s:Session){const r=await getItems(s,{Recursive:'true',IncludeItemTypes:'Movie,Series',Limit:'500'});return [...new Set(r.Items.flatMap(i=>i.Genres??[]))].filter(Boolean).sort((a,b)=>a.localeCompare(b));}
 export function getGenreItems(s:Session,genre:string){return getItems(s,{Recursive:'true',IncludeItemTypes:'Movie,Series',Genres:genre,SortBy:'CommunityRating,SortName',SortOrder:'Descending',Limit:'200'});}
@@ -51,8 +55,8 @@ export function getCollections(s:Session){return getItems(s,{IncludeItemTypes:'B
 export function getCollectionItems(s:Session,id:string){return getItems(s,{ParentId:id,Recursive:'true',IncludeItemTypes:'Movie',SortBy:'SortName',SortOrder:'Ascending',Limit:'300'});}
 export function getResumeItems(s:Session){const p=new URLSearchParams({UserId:s.user.Id,MediaTypes:'Video',Limit:'30',Fields:itemFields(),EnableImages:'true',ImageTypeLimit:'1',EnableImageTypes:'Primary,Backdrop',EnableUserData:'true'});return request<JellyfinItemsResponse>(`${s.serverUrl}/Items/Resume?${p}`,{headers:authHeaders(s)});}
 export function getItem(s:Session,id:string){return request<JellyfinItem>(`${s.serverUrl}/Users/${s.user.Id}/Items/${id}`,{headers:authHeaders(s)});}
-export function getSeasons(s:Session,id:string){const p=new URLSearchParams({UserId:s.user.Id,Fields:itemFields(),EnableImages:'true'});return request<JellyfinItemsResponse>(`${s.serverUrl}/Shows/${id}/Seasons?${p}`,{headers:authHeaders(s)});}
-export function getEpisodes(s:Session,seriesId:string,seasonId:string){const p=new URLSearchParams({UserId:s.user.Id,SeasonId:seasonId,Fields:itemFields(),EnableImages:'true'});return request<JellyfinItemsResponse>(`${s.serverUrl}/Shows/${seriesId}/Episodes?${p}`,{headers:authHeaders(s)});}
+export function getSeasons(s:Session,id:string){const p=new URLSearchParams({UserId:s.user.Id,Fields:itemFields(),EnableImages:'true',EnableUserData:'true',Limit:'500'});return request<JellyfinItemsResponse>(`${s.serverUrl}/Shows/${id}/Seasons?${p}`,{headers:authHeaders(s)});}
+export function getEpisodes(s:Session,seriesId:string,seasonId:string){const p=new URLSearchParams({UserId:s.user.Id,SeasonId:seasonId,Fields:itemFields(),EnableImages:'true',EnableUserData:'true',Limit:'1000'});return request<JellyfinItemsResponse>(`${s.serverUrl}/Shows/${seriesId}/Episodes?${p}`,{headers:authHeaders(s)});}
 export type MediaSegment={Id?:string;ItemId?:string;Type:string;StartTicks:number;EndTicks:number};
 export async function getMediaSegments(s:Session,id:string){try{return await request<{Items?:MediaSegment[]} | MediaSegment[]>(`${s.serverUrl}/MediaSegments/${id}`,{headers:authHeaders(s)});}catch{return [] as MediaSegment[]}}
 export function normalizeMediaSegments(value:{Items?:MediaSegment[]}|MediaSegment[]){return Array.isArray(value)?value:(value.Items??[])}

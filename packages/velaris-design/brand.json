@@ -30,7 +30,9 @@
     "series": "Serien",
     "anime": "Anime",
     "animeMovies": "Anime Filme",
-    "collections": "Sammlungen"
+    "collections": "Sammlungen",
+    "animation": "Animation",
+    "cartoons": "Cartoons"
   },
   "homeRows": {
     "topTen": "Top 10 für dich",
@@ -57,5 +59,16 @@
       "id": "sealGray",
       "label": "Graue Robbe"
     }
+  ],
+  "defaultServerUrl": "http://192.168.0.74:8097",
+  "navigationOrder": [
+    "home",
+    "anime",
+    "animeMovies",
+    "animation",
+    "cartoons",
+    "movies",
+    "collections",
+    "series"
   ]
 }
