@@ -36,6 +36,7 @@ export function VelarisHeader({scope='home',collectionId,home=false,overlay=fals
   const [viewportWidth,setViewportWidth]=useState(0);
   const [scrollX,setScrollX]=useState(0);
   const rightAvailable=contentWidth-viewportWidth-scrollX>12;
+  const sectionName=scope==='home'?'Velaris':design.navigation[scope];
   useEffect(()=>{
     if(!home)return;
     getActiveProfile().then(p=>setProfile(p??null));
@@ -57,7 +58,7 @@ export function VelarisHeader({scope='home',collectionId,home=false,overlay=fals
         </Pressable>
       </View>
       <View style={styles.actions}>
-        <Pressable accessibilityLabel={`Suche in ${scope==='home'?'Velaris':scope}`} hitSlop={10} onPress={search}>
+        <Pressable accessibilityLabel={`Suche in ${sectionName}`} hitSlop={10} onPress={search}>
           <Text style={styles.action}>⌕</Text>
         </Pressable>
         {home&&<>
