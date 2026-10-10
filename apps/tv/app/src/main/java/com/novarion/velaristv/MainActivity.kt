@@ -825,11 +825,11 @@ class MainActivity : Activity() {
     // Jellyfin may return a placeholder Name even when it knows the episode's
     // real EpisodeTitle or OriginalTitle. Do not invent unavailable metadata.
     private fun episodeTitle(item:JSONObject):String {
-        val generic=Regex("""^(?:(?:folge|episode|ep\\.?|teil|part)\\s*#?\\s*\\d+|s\\d{1,2}\\s*e\\d{1,3}|\\d+)$""",RegexOption.IGNORE_CASE)
-        val prefix=Regex("""^(?:(?:folge|episode|ep\\.?)\\s*\\d+|s\\d{1,2}\\s*e\\d{1,3}|\\d+\\s*[.):])\\s*[-:–—]\\s*""",RegexOption.IGNORE_CASE)
-        val numbered=Regex("""^\\d+\\s*[.):]\\s*""")
+        val generic=Regex("""^(?:(?:folge|episode|ep\.?|teil|part)\s*#?\s*\d+|s\d{1,2}\s*e\d{1,3}|\d+)$""",RegexOption.IGNORE_CASE)
+        val prefix=Regex("""^(?:(?:folge|episode|ep\.?)\s*\d+|s\d{1,2}\s*e\d{1,3}|\d+\s*[.):])\s*[-:–—]\s*""",RegexOption.IGNORE_CASE)
+        val numbered=Regex("""^\d+\s*[.):]\s*""")
         val candidates=listOf("Name","EpisodeTitle","OriginalTitle").map{
-            item.optString(it).trim().replace(Regex("""\\s+""")," ")
+            item.optString(it).trim().replace(Regex("""\s+""")," ")
         }.filter(String::isNotBlank)
         candidates.forEach { candidate ->
             val stripped=candidate.replace(prefix,"")
@@ -843,7 +843,7 @@ class MainActivity : Activity() {
 
     private fun episodeHeading(item:JSONObject):String {
         val title=episodeTitle(item)
-        if(Regex("""^(?:folge|episode)\\s*\\d+$""",RegexOption.IGNORE_CASE).matches(title))return title
+        if(Regex("""^(?:folge|episode)\s*\d+$""",RegexOption.IGNORE_CASE).matches(title))return title
         val num=item.optInt("IndexNumber",0)
         return if(num>0)"$num. $title" else title
     }
