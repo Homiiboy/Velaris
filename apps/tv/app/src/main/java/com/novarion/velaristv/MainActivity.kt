@@ -192,7 +192,8 @@ class MainActivity : Activity() {
         val top=LinearLayout(this).apply {
             orientation=LinearLayout.HORIZONTAL; gravity=Gravity.CENTER_VERTICAL
             setPadding(dp(48),dp(16),dp(48),dp(8))
-            clipChildren=false;clipToPadding=false
+            // Keep the scrolling navigation strictly inside its own viewport.
+            clipChildren=true;clipToPadding=true
             background=GradientDrawable(
                 GradientDrawable.Orientation.TOP_BOTTOM,
                 intArrayOf(0xE608080D.toInt(),0x9908080D.toInt(),0x0008080D)
@@ -205,7 +206,7 @@ class MainActivity : Activity() {
         // Keep all destinations reachable with the D-pad, even on smaller/overscanned TVs.
         val nav=LinearLayout(this).apply {
             orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL
-            clipChildren=false;clipToPadding=false
+            clipChildren=true;clipToPadding=true
         }
         listOf(
             VelarisDesign.navigation("home","Start") to navButton(VelarisDesign.navigation("home","Start")){showHome()},
@@ -224,9 +225,9 @@ class MainActivity : Activity() {
             isHorizontalScrollBarEnabled=false
             isFillViewport=false
             isFocusable=false
-            clipChildren=false;clipToPadding=false
+            clipChildren=true;clipToPadding=true
             overScrollMode=View.OVER_SCROLL_NEVER
-            setPadding(dp(10),0,dp(14),0)
+            setPadding(dp(12),0,dp(12),0)
             addView(nav,FrameLayout.LayoutParams(-2,-1))
         }
         top.addView(navScroll,LinearLayout.LayoutParams(0,dp(54),1f))
@@ -415,7 +416,10 @@ class MainActivity : Activity() {
             }
             clipToOutline=true
         }
-        val poster=ImageView(this).apply{scaleType=ImageView.ScaleType.CENTER_CROP}
+        val poster=ImageView(this).apply{
+            // Letterbox odd Jellyfin poster sizes instead of losing artwork at edges.
+            scaleType=ImageView.ScaleType.FIT_CENTER
+        }
         frame.addView(poster,FrameLayout.LayoutParams(-1,-1))
         loadImage(poster,item.optString("Id"),imageType,requestedWidth)
         watchedLabel(item)?.let{label->
@@ -476,7 +480,9 @@ class MainActivity : Activity() {
             if(resumeMeta.isNotBlank()) card.addView(TextView(this).apply{text=resumeMeta;textSize=12f;setTextColor(Color.GRAY);setPadding(dp(4),0,0,0)},LinearLayout.LayoutParams(dp(310),dp(24)))
             row.addView(card,LinearLayout.LayoutParams(dp(322),dp(230)).apply{marginEnd=dp(12)})
         }
-        homeRoot?.addView(HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;clipChildren=false;addView(row)},LinearLayout.LayoutParams(-1,dp(268)))
+        homeRoot?.addView(HorizontalScrollView(this).apply{
+            isHorizontalScrollBarEnabled=false;clipChildren=false;clipToPadding=false;addView(row)
+        },LinearLayout.LayoutParams(-1,dp(300)))
     }
 
     private fun addRankedRow(title:String,data:List<JSONObject>) {
@@ -484,10 +490,15 @@ class MainActivity : Activity() {
         homeRoot?.addView(sectionTitle(title))
         val row=LinearLayout(this).apply { orientation=LinearLayout.HORIZONTAL; setPadding(dp(52),dp(12),dp(40),dp(44)); clipChildren=false; clipToPadding=false }
         data.take(10).forEachIndexed { index,item ->
-            val wrap=LinearLayout(this).apply { orientation=LinearLayout.HORIZONTAL; gravity=Gravity.BOTTOM; isFocusable=true; isClickable=true
-                setOnClickListener { if(item.optString("Type")=="Series") showSeries(item.optString("Id")) else showDetails(item.optString("Id")) }; applyCardFocus(this) }
+            val cover=watchedPoster(item,154,218,"Primary",380)
+            val wrap=LinearLayout(this).apply {
+                orientation=LinearLayout.HORIZONTAL;gravity=Gravity.BOTTOM
+                isFocusable=true;isClickable=true
+                setOnClickListener { if(item.optString("Type")=="Series") showSeries(item.optString("Id")) else showDetails(item.optString("Id")) }
+                applyCardFocus(this,cover)
+            }
             wrap.addView(TextView(this).apply { text="${index+1}"; textSize=68f; typeface=Typeface.DEFAULT_BOLD; setTextColor(VelarisDesign.color("surfaceAlt",0xFF202027.toInt())); gravity=Gravity.BOTTOM },LinearLayout.LayoutParams(dp(58),dp(218)))
-            wrap.addView(watchedPoster(item,154,218,"Primary",380),LinearLayout.LayoutParams(dp(154),dp(218)))
+            wrap.addView(cover,LinearLayout.LayoutParams(dp(154),dp(218)))
             row.addView(wrap,LinearLayout.LayoutParams(dp(220),dp(228)).apply{marginEnd=dp(4)})
         }
         homeRoot?.addView(HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;clipChildren=false;addView(row)},LinearLayout.LayoutParams(-1,dp(300)))
@@ -498,15 +509,27 @@ class MainActivity : Activity() {
         setPadding(dp(52),dp(18),0,dp(12))
     }
 
-    private fun applyCardFocus(v:View) {
-        v.setOnFocusChangeListener { view,focused ->
-            view.background=GradientDrawable().apply {
-                setColor(if(focused) 0x302E2E38 else Color.TRANSPARENT)
-                cornerRadius=dp(12).toFloat()
-                if(focused)setStroke(dp(2),Color.WHITE)
+    private fun applyCardFocus(v:View, poster:View?=null) {
+        v.setOnFocusChangeListener { _,focused ->
+            val target=poster ?: v
+            if(poster is FrameLayout) {
+                // Foreground draws above the poster artwork; background borders
+                // were hidden behind the full-size ImageView.
+                poster.foreground=if(focused)GradientDrawable().apply{
+                    setColor(Color.TRANSPARENT)
+                    cornerRadius=dp(10).toFloat()
+                    setStroke(dp(3),Color.WHITE)
+                } else null
+            } else {
+                v.background=GradientDrawable().apply {
+                    setColor(if(focused) 0x302E2E38 else Color.TRANSPARENT)
+                    cornerRadius=dp(12).toFloat()
+                    if(focused)setStroke(dp(2),Color.WHITE)
+                }
             }
-            view.animate().scaleX(if(focused)1.065f else 1f).scaleY(if(focused)1.065f else 1f)
-                .translationZ(if(focused)dp(14).toFloat() else 0f).setDuration(140).start()
+            target.animate().scaleX(if(focused)1.025f else 1f)
+                .scaleY(if(focused)1.025f else 1f)
+                .translationZ(if(focused)dp(10).toFloat() else 0f).setDuration(130).start()
         }
     }
 
@@ -523,13 +546,14 @@ class MainActivity : Activity() {
             val id=item.optString("Id")
             val type=item.optString("Type")
             if(id.isBlank()) return@forEach
+            val cover=watchedPoster(item,176,248,"Primary",420)
             val card=LinearLayout(this).apply {
                 orientation=LinearLayout.VERTICAL; isFocusable=true; isClickable=true
-                setPadding(dp(3),dp(3),dp(3),dp(3))
+                setPadding(dp(4),dp(4),dp(4),dp(4))
                 setOnClickListener { if(type=="Series") showSeries(id) else showDetails(id) }
-                applyCardFocus(this)
+                applyCardFocus(this,cover)
             }
-            card.addView(watchedPoster(item,176,248,"Primary",420),LinearLayout.LayoutParams(dp(176),dp(248)))
+            card.addView(cover,LinearLayout.LayoutParams(dp(176),dp(248)))
             card.setOnLongClickListener { showDetails(id); true }
             val progress=item.optJSONObject("UserData")?.optLong("PlaybackPositionTicks",0L) ?: 0L
             val total=item.optLong("RunTimeTicks",0L)
@@ -541,24 +565,30 @@ class MainActivity : Activity() {
         }
         homeRoot?.addView(HorizontalScrollView(this).apply {
             isHorizontalScrollBarEnabled=false; clipChildren=false; clipToPadding=false; addView(row)
-        },LinearLayout.LayoutParams(-1,dp(334)))
+        },LinearLayout.LayoutParams(-1,dp(350)))
     }
 
 
     private fun addLibraryGrid(data:List<JSONObject>) {
         if(data.isEmpty()) return
-        val grid=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; clipChildren=false; clipToPadding=false; setPadding(dp(12),dp(20),dp(12),dp(42)) }
-        data.chunked(5).forEach { items ->
+        val grid=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; clipChildren=false; clipToPadding=false; setPadding(dp(16),dp(20),dp(16),dp(42)) }
+        // Respect the available TV viewport instead of forcing five posters
+        // across devices that are narrower (or use larger accessibility scaling).
+        val available=(resources.displayMetrics.widthPixels-dp(128)).coerceAtLeast(dp(228))
+        val columns=(available/dp(228)).coerceIn(1,5)
+        data.chunked(columns).forEach { items ->
             val row=LinearLayout(this).apply { orientation=LinearLayout.HORIZONTAL; gravity=Gravity.START; clipChildren=false; clipToPadding=false }
             items.forEach { item ->
                 val id=item.optString("Id"); if(id.isBlank()) return@forEach
                 val type=item.optString("Type")
+                val cover=watchedPoster(item,196,276,"Primary",460)
                 val card=LinearLayout(this).apply {
-                    orientation=LinearLayout.VERTICAL; isFocusable=true; isClickable=true; clipChildren=false
+                    orientation=LinearLayout.VERTICAL; isFocusable=true; isClickable=true
+                    clipChildren=false;clipToPadding=false
                     setOnClickListener { if(type=="Series") showSeries(id) else showDetails(id) }
-                    applyCardFocus(this)
+                    applyCardFocus(this,cover)
                 }
-                card.addView(watchedPoster(item,196,276,"Primary",460),LinearLayout.LayoutParams(dp(196),dp(276)))
+                card.addView(cover,LinearLayout.LayoutParams(dp(196),dp(276)))
                 card.addView(TextView(this).apply { text=item.optString("Name"); textSize=15f; setTextColor(Color.WHITE); maxLines=1; setPadding(dp(4),dp(7),dp(4),0) },LinearLayout.LayoutParams(dp(196),dp(30)))
                 row.addView(card,LinearLayout.LayoutParams(dp(212),dp(326)).apply { marginEnd=dp(16); bottomMargin=dp(18) })
             }
@@ -706,11 +736,14 @@ class MainActivity : Activity() {
                         }.getOrNull()
                     },io)
                 }
-                val finishedSeasons=seasons.mapIndexed { index,season ->
-                    val episodes=runCatching { seasonQueries[index].get() }.getOrNull()
+                val episodesBySeason=seasons.mapIndexed { index,season ->
+                    season.optString("Id") to runCatching { seasonQueries[index].get() }.getOrNull()
+                }.toMap()
+                val finishedSeasons=seasons.associate { season ->
+                    val episodes=episodesBySeason[season.optString("Id")]
                     season.optString("Id") to (episodes!=null && episodes.isNotEmpty() &&
                         episodes.all { it.optJSONObject("UserData")?.optBoolean("Played",false)==true })
-                }.toMap()
+                }
                 val seriesComplete=seasons.isNotEmpty() && finishedSeasons.values.all { it }
                 runOnUiThread {
                     val root=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; setBackgroundColor(VelarisDesign.color("background",0xFF08080D.toInt())) }
@@ -731,15 +764,111 @@ class MainActivity : Activity() {
                     acts.addView(actionButton(if(favorite)"✓  Meine Liste" else "+  Meine Liste",false){setFavorite(seriesId,!favorite){showSeries(seriesId)}},LinearLayout.LayoutParams(dp(220),dp(56)).apply{marginEnd=dp(10)})
                     acts.addView(actionButton("Zufällige Folge",false){playRandomEpisode(seriesId)},LinearLayout.LayoutParams(dp(200),dp(56)))
                     info.addView(acts); hero.addView(info,FrameLayout.LayoutParams(-1,-1)); root.addView(hero,LinearLayout.LayoutParams(-1,dp(390)))
-                    root.addView(sectionTitle("Staffeln"))
-                    val seasonRow=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;setPadding(dp(52),dp(8),dp(52),dp(22))}
-                    seasons.forEach { season ->
-                        val id=season.optString("Id")
-                        val label=(if(finishedSeasons[id]==true)"✓  " else "")+season.optString("Name","Staffel")
-                        seasonRow.addView(actionButton(label,false){showSeason(seriesId,id)},
-                            LinearLayout.LayoutParams(dp(205),dp(56)).apply{marginEnd=dp(10)})
+                    // Netflix-style season selector: show season 1 episodes immediately
+                    // under the same series page, without routing to a separate screen.
+                    val selector=LinearLayout(this).apply {
+                        orientation=LinearLayout.VERTICAL
+                        setPadding(dp(54),dp(16),dp(54),dp(8))
+                        clipChildren=false;clipToPadding=false
                     }
-                    root.addView(HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;addView(seasonRow)})
+                    selector.addView(TextView(this).apply {
+                        text="Episoden";textSize=27f;typeface=Typeface.DEFAULT_BOLD
+                        setTextColor(Color.WHITE)
+                    })
+                    val chooser=LinearLayout(this).apply {
+                        orientation=LinearLayout.VERTICAL
+                        visibility=View.GONE
+                        setPadding(0,dp(4),0,dp(6))
+                    }
+                    val episodeList=LinearLayout(this).apply{
+                        orientation=LinearLayout.VERTICAL
+                        setPadding(0,dp(14),0,dp(36))
+                        clipChildren=false;clipToPadding=false
+                    }
+                    lateinit var seasonButton:Button
+                    fun renderSeason(index:Int) {
+                        val selected=seasons.getOrNull(index) ?: return
+                        val seasonId=selected.optString("Id")
+                        val episodes=episodesBySeason[seasonId]
+                        seasonButton.text=(if(finishedSeasons[seasonId]==true)"✓  " else "")+
+                            selected.optString("Name","Staffel ${index+1}")+"  ⌄"
+                        chooser.visibility=View.GONE
+                        episodeList.removeAllViews()
+                        if(finishedSeasons[seasonId]==true) episodeList.addView(TextView(this).apply{
+                            text="✓ STAFFEL VOLLSTÄNDIG GESEHEN"
+                            textSize=14f;typeface=Typeface.DEFAULT_BOLD
+                            setTextColor(VelarisDesign.color("success",0xFF46D369.toInt()))
+                        },params(-1,-2,10))
+                        if(episodes==null) episodeList.addView(TextView(this).apply {
+                            text="Folgen konnten nicht geladen werden."
+                            textSize=16f;setTextColor(Color.LTGRAY)
+                        },params(-1,-2,12))
+                        else if(episodes.isEmpty()) episodeList.addView(TextView(this).apply {
+                            text="Keine Episoden in dieser Staffel."
+                            textSize=16f;setTextColor(Color.LTGRAY)
+                        },params(-1,-2,12))
+                        else episodes.forEachIndexed { i,ep ->
+                            val eid=ep.optString("Id")
+                            val ticks=ep.optJSONObject("UserData")?.optLong("PlaybackPositionTicks",0L)?:0L
+                            val nextId=episodes.getOrNull(i+1)?.optString("Id").orEmpty()
+                            val cover=watchedPoster(ep,246,138,"Primary",520)
+                            val card=LinearLayout(this).apply {
+                                orientation=LinearLayout.HORIZONTAL
+                                gravity=Gravity.CENTER_VERTICAL
+                                isFocusable=true;isClickable=true
+                                setPadding(dp(10),dp(10),dp(10),dp(10))
+                                setOnClickListener { startEpisode(eid,ticks,nextId) }
+                                applyCardFocus(this,cover)
+                            }
+                            card.addView(cover,LinearLayout.LayoutParams(dp(246),dp(138)))
+                            val detail=LinearLayout(this).apply{
+                                orientation=LinearLayout.VERTICAL
+                                setPadding(dp(22),0,dp(12),0)
+                            }
+                            detail.addView(TextView(this).apply {
+                                text=(if(ep.optInt("IndexNumber",0)>0)"${ep.optInt("IndexNumber")}. " else "")+ep.optString("Name")
+                                textSize=19f;typeface=Typeface.DEFAULT_BOLD;setTextColor(Color.WHITE)
+                            })
+                            if(watchedLabel(ep)!=null)detail.addView(TextView(this).apply {
+                                text="✓ FOLGE GESEHEN";textSize=13f
+                                setTextColor(VelarisDesign.color("success",0xFF46D369.toInt()))
+                            },params(-1,-2,5))
+                            val duration=ep.optLong("RunTimeTicks",0L)/600_000_000L
+                            if(duration>0)detail.addView(TextView(this).apply {
+                                text="$duration Min.";textSize=13f;setTextColor(Color.LTGRAY)
+                            },params(-1,-2,5))
+                            detail.addView(TextView(this).apply {
+                                text=ep.optString("Overview");textSize=14f;maxLines=2
+                                setTextColor(Color.LTGRAY)
+                            },params(-1,-2,8))
+                            card.addView(detail,LinearLayout.LayoutParams(0,-2,1f))
+                            episodeList.addView(card,params(-1,162,8))
+                        }
+                    }
+                    seasonButton=actionButton("Staffel wählen  ⌄",false) {
+                        chooser.visibility=if(chooser.visibility==View.VISIBLE)View.GONE else View.VISIBLE
+                        if(chooser.visibility==View.VISIBLE)chooser.post{chooser.getChildAt(0)?.requestFocus()}
+                    }
+                    selector.addView(seasonButton,params(265,54,16))
+                    seasons.forEachIndexed { index,season ->
+                        val id=season.optString("Id")
+                        val label=(if(finishedSeasons[id]==true)"✓  " else "")+
+                            season.optString("Name","Staffel ${index+1}")
+                        chooser.addView(actionButton(label,false){
+                            renderSeason(index)
+                            seasonButton.requestFocus()
+                        },params(265,50,6))
+                    }
+                    selector.addView(chooser)
+                    selector.addView(episodeList)
+                    root.addView(selector)
+                    if(seasons.isNotEmpty()) {
+                        // Season 0 ("Specials") must not replace season 1 on first open.
+                        val firstRegular=seasons.indexOfFirst{it.optInt("IndexNumber",-1)==1}
+                        renderSeason(if(firstRegular>=0)firstRegular else 0)
+                    } else episodeList.addView(TextView(this).apply{
+                        text="Keine Staffeln gefunden.";textSize=16f;setTextColor(Color.LTGRAY)
+                    },params(-1,-2,12))
                     setContentView(ScrollView(this).apply{isVerticalScrollBarEnabled=false;addView(root)})
                 }
             } catch(e:Exception){ runOnUiThread{toast("Serie konnte nicht geladen werden")} }
@@ -1314,7 +1443,7 @@ class MainActivity : Activity() {
         addView(first,params(600,62,22))
     }
     private fun navButton(label:String, click:()->Unit)=Button(this).apply {
-        text=label; contentDescription=label; isAllCaps=false; textSize=15f; setSingleLine(true); includeFontPadding=false
+        text=label; contentDescription=label; isAllCaps=false; textSize=14f; setSingleLine(true); includeFontPadding=false
         setTextColor(Color.WHITE); isFocusable=true; isClickable=true
         setPadding(dp(9),0,dp(9),0)
         background=GradientDrawable().apply {
@@ -1330,11 +1459,14 @@ class MainActivity : Activity() {
                 cornerRadius=dp(10).toFloat()
                 if(focused)setStroke(dp(1),0xCCFFFFFF.toInt())
             }
-            // The HorizontalScrollView follows D-pad focus to "Sammlungen".
+            // Android scrolls the focused child without drawing into search/profile.
             if(focused) post {
                 val strip=parent as? LinearLayout
                 val scroll=strip?.parent as? HorizontalScrollView
-                if(scroll!=null)scroll.smoothScrollTo((left - dp(30)).coerceAtLeast(0),0)
+                if(scroll!=null) {
+                    val rect=android.graphics.Rect(left-dp(8),top,right+dp(8),bottom)
+                    scroll.requestChildRectangleOnScreen(strip,rect,false)
+                }
             }
             v.animate().scaleX(1f).scaleY(1f).setDuration(110).start()
         }
@@ -1351,9 +1483,11 @@ class MainActivity : Activity() {
             background=GradientDrawable().apply {
                 setColor(if(focused) VelarisDesign.color("focus",0xFF7E57FF.toInt()) else if(primary) Color.WHITE else 0x99282830.toInt())
                 cornerRadius=dp(8).toFloat()
+                if(focused)setStroke(dp(2),Color.WHITE)
             }
             setTextColor(if(focused || !primary) Color.WHITE else Color.BLACK)
-            v.animate().scaleX(if(focused)1.05f else 1f).scaleY(if(focused)1.05f else 1f).setDuration(100).start()
+            // No zoom on edge-aligned buttons: prevents clipping at the TV safe area.
+            v.animate().scaleX(1f).scaleY(1f).setDuration(100).start()
         }
     }
 
