@@ -8,6 +8,9 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.text.InputType
+import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.InputMethodManager
+import android.view.WindowManager
 import android.view.Gravity
 import android.view.View
 import android.view.KeyEvent
@@ -40,6 +43,9 @@ class MainActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         VelarisDesign.load(this)
+        // Keep the on-screen keyboard hidden until the user chooses a text field.
+        window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN or
+            WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
         immersive()
         server = prefs.getString("server_url", "").orEmpty()
         token = prefs.getString("access_token", "").orEmpty()
@@ -72,6 +78,38 @@ class MainActivity : Activity() {
         if(!suppressHistory) backStack.addLast(action)
     }
 
+    // TV keyboards vary: handle the IME Next/Done button AND D-pad down.
+    // Moving focus after hiding the IME allows continued remote navigation.
+    private fun hideTvKeyboardAndFocus(field:EditText,next:View) {
+        val ime=getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
+        ime.hideSoftInputFromWindow(field.windowToken,0)
+        field.clearFocus()
+        next.post {
+            if(!isFinishing && !isDestroyed) {
+                next.requestFocus()
+                ime.hideSoftInputFromWindow(next.windowToken,0)
+            }
+        }
+    }
+
+    private fun configureTvInput(field:EditText,next:View,done:Boolean=false) {
+        field.imeOptions=if(done) EditorInfo.IME_ACTION_DONE else EditorInfo.IME_ACTION_NEXT
+        field.setOnEditorActionListener { _,action,event->
+            val imeAction=action==EditorInfo.IME_ACTION_NEXT || action==EditorInfo.IME_ACTION_DONE
+            val enter=event?.keyCode==KeyEvent.KEYCODE_ENTER && event.action==KeyEvent.ACTION_DOWN
+            if(imeAction || enter) {
+                hideTvKeyboardAndFocus(field,next)
+                true
+            } else false
+        }
+        field.setOnKeyListener { _,code,event->
+            if(code==KeyEvent.KEYCODE_DPAD_DOWN && event.action==KeyEvent.ACTION_DOWN) {
+                hideTvKeyboardAndFocus(field,next)
+                true
+            } else false
+        }
+    }
+
     private fun showServer() {
         val input = EditText(this).apply {
             hint = "http://192.168.1.50:8096"; setText(server); setTextColor(Color.WHITE)
@@ -79,12 +117,14 @@ class MainActivity : Activity() {
             inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI
         }
         val root = setupPage("Velaris verbinden", "Adresse deines Jellyfin-Servers", input)
-        root.addView(button("Verbinden") {
+        val connectButton=button("Verbinden") {
             val value = normalize(input.text.toString())
             if (value == null) toast("Ungültige Server-Adresse") else {
                 server = value; prefs.edit().putString("server_url", server).apply(); showLogin()
             }
-        }, params(260, 64, 18))
+        }
+        root.addView(connectButton, params(260, 64, 18))
+        configureTvInput(input,connectButton,done=true)
         setContentView(root)
     }
 
@@ -96,9 +136,13 @@ class MainActivity : Activity() {
         }
         val root = setupPage("Willkommen bei Velaris", "Mit deinem Jellyfin-Konto anmelden", user)
         root.addView(pass, params(600, 62, 12))
-        root.addView(button("Anmelden") { login(user.text.toString(), pass.text.toString()) }, params(260,64,18))
+        val signInButton=button("Anmelden") { login(user.text.toString(), pass.text.toString()) }
+        root.addView(signInButton, params(260,64,18))
         root.addView(button("Server ändern") { clearConnection(); showServer() }, params(260,58,10))
-        setContentView(root); user.requestFocus()
+        configureTvInput(user,pass)
+        configureTvInput(pass,signInButton,done=true)
+        setContentView(root)
+        root.post{user.requestFocus()}
     }
 
     private fun login(username: String, password: String) {
@@ -938,16 +982,30 @@ class MainActivity : Activity() {
         root.addView(TextView(this).apply {
             text="Avatar auswählen";textSize=18f;setTextColor(Color.LTGRAY)
         },params(-2,-2,22))
-        val avatarChoices=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER}
-        var selected=0
-        for(i in 0..3) {
-            avatarChoices.addView(avatarFace(i,"").apply {
-                isFocusable=true;isClickable=true
-                applyCardFocus(this)
-                setOnClickListener { selected=i;toast("Avatar ausgewählt") }
-            },LinearLayout.LayoutParams(dp(82),dp(82)).apply{marginEnd=dp(10)})
+        val avatarChoices=LinearLayout(this).apply{
+            orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER
+            clipChildren=false;clipToPadding=false
         }
-        root.addView(avatarChoices,params(-2,86,12))
+        var selected=0
+        val choices=mutableListOf<FrameLayout>()
+        for(i in 0..3) {
+            val picture=avatarFrame(i,"").apply {
+                isFocusable=true;isClickable=true
+            }
+            picture.setOnFocusChangeListener{_,focused->highlightAvatar(picture,focused,selected==i)}
+            picture.setOnClickListener {
+                selected=i
+                choices.forEachIndexed { index,frame ->
+                    highlightAvatar(frame,frame.hasFocus(),selected==index)
+                }
+            }
+            choices.add(picture)
+            avatarChoices.addView(picture,LinearLayout.LayoutParams(dp(90),dp(90)).apply{marginEnd=dp(10)})
+        }
+        highlightAvatar(choices.first(),false,true)
+        root.addView(avatarChoices,params(-2,100,12))
+        configureTvInput(user,pass)
+        configureTvInput(pass,choices.first(),done=true)
         root.addView(actionButton("Jellyfin-Profil hinzufügen",true) {
             val username=user.text.toString().trim()
             val password=pass.text.toString()
@@ -981,8 +1039,12 @@ class MainActivity : Activity() {
             }
         },params(330,58,24))
         root.addView(actionButton("Zurück",false){showProfiles()},params(180,56,12))
-        setContentView(root)
-        user.requestFocus()
+        setContentView(ScrollView(this).apply{
+            isFillViewport=true;isVerticalScrollBarEnabled=false
+            clipChildren=false;clipToPadding=false
+            addView(root)
+        })
+        root.post{user.requestFocus()}
     }
 
     private fun setPlayed(id:String, played:Boolean, done:()->Unit) {
