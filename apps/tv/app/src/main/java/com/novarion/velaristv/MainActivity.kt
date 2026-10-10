@@ -689,7 +689,7 @@ class MainActivity : Activity() {
         }) return existing
         if(server.isBlank() || userId.isBlank() || token.isBlank()) return org.json.JSONArray()
         val oldAvatar=prefs.getInt("active_profile_avatar",0)
-        val avatar=when(oldAvatar){0->2;1->3;else->oldAvatar.coerceIn(0,3)}
+        val avatar=if(stored.isBlank()) 0 else when(oldAvatar){0->2;1->3;else->oldAvatar.coerceIn(0,3)}
         val migrated=org.json.JSONArray().put(JSONObject()
             .put("id","$server:$userId")
             .put("server",server).put("userId",userId).put("token",token)
