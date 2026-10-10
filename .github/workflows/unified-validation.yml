@@ -42,3 +42,9 @@ jobs:
       - name: Typecheck mobile
         working-directory: apps/mobile
         run: npm run typecheck
+      - name: Bundle Android smartphone JavaScript
+        working-directory: apps/mobile
+        run: npx expo export --platform android --output-dir dist/ci-android
+      - name: Bundle iOS JavaScript
+        working-directory: apps/mobile
+        run: npx expo export --platform ios --output-dir dist/ci-ios
