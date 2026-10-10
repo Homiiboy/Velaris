@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Image, ImageBackground, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
-import { Redirect, router } from 'expo-router';
+import { Redirect, router, useFocusEffect } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
 import { getBackdropUrl, getFavorites, getGenres, getLatest, getPlayedItems, getRecommendations, getResumeItems } from '@/services/jellyfin';
 import { MediaRow } from '@/components/MediaRow';
@@ -48,12 +48,15 @@ export default function HomeScreen() {
     }
   }, [session]);
 
-  useEffect(() => {
+  useFocusEffect(useCallback(() => {
+    // Refresh Jellyfin played flags after returning from the media player.
     load();
     if (session) getGenres(session).then(setGenres).catch(() => setGenres([]));
     getActiveProfile().then(p => setActiveProfile(p ?? null));
+  }, [load, session]));
+  useEffect(() => {
     Animated.timing(entrance, { toValue: 1, duration: 500, useNativeDriver: true }).start();
-  }, [load, session, entrance]);
+  }, [entrance]);
 
   const hero = useMemo(() => latest.find(i => i.BackdropImageTags?.length) ?? latest[0], [latest]);
   if (!session) return <Redirect href="/connect" />;
