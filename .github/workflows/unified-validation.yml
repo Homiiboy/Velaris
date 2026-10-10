@@ -1,0 +1,44 @@
+name: Unified Velaris Validation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/mobile/**"
+      - "apps/tv/**"
+      - "assets/**"
+      - "packages/**"
+      - "scripts/**"
+      - ".github/workflows/unified-validation.yml"
+  pull_request:
+    paths:
+      - "apps/mobile/**"
+      - "apps/tv/**"
+      - "assets/**"
+      - "packages/**"
+      - "scripts/**"
+      - ".github/workflows/unified-validation.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  shared-and-mobile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: apps/mobile/package-lock.json
+      - name: Validate shared contract and assets
+        run: node scripts/check-unified.cjs
+      - name: Install mobile dependencies
+        working-directory: apps/mobile
+        run: npm ci --include=dev
+      - name: Typecheck mobile
+        working-directory: apps/mobile
+        run: npm run typecheck
