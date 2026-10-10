@@ -728,11 +728,14 @@ class MainActivity : Activity() {
                         }.getOrNull()
                     },io)
                 }
-                val finishedSeasons=seasons.mapIndexed { index,season ->
-                    val episodes=runCatching { seasonQueries[index].get() }.getOrNull()
+                val episodesBySeason=seasons.mapIndexed { index,season ->
+                    season.optString("Id") to runCatching { seasonQueries[index].get() }.getOrNull()
+                }.toMap()
+                val finishedSeasons=seasons.associate { season ->
+                    val episodes=episodesBySeason[season.optString("Id")]
                     season.optString("Id") to (episodes!=null && episodes.isNotEmpty() &&
                         episodes.all { it.optJSONObject("UserData")?.optBoolean("Played",false)==true })
-                }.toMap()
+                }
                 val seriesComplete=seasons.isNotEmpty() && finishedSeasons.values.all { it }
                 runOnUiThread {
                     val root=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; setBackgroundColor(VelarisDesign.color("background",0xFF08080D.toInt())) }
@@ -753,15 +756,108 @@ class MainActivity : Activity() {
                     acts.addView(actionButton(if(favorite)"✓  Meine Liste" else "+  Meine Liste",false){setFavorite(seriesId,!favorite){showSeries(seriesId)}},LinearLayout.LayoutParams(dp(220),dp(56)).apply{marginEnd=dp(10)})
                     acts.addView(actionButton("Zufällige Folge",false){playRandomEpisode(seriesId)},LinearLayout.LayoutParams(dp(200),dp(56)))
                     info.addView(acts); hero.addView(info,FrameLayout.LayoutParams(-1,-1)); root.addView(hero,LinearLayout.LayoutParams(-1,dp(390)))
-                    root.addView(sectionTitle("Staffeln"))
-                    val seasonRow=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;setPadding(dp(52),dp(8),dp(52),dp(22))}
-                    seasons.forEach { season ->
-                        val id=season.optString("Id")
-                        val label=(if(finishedSeasons[id]==true)"✓  " else "")+season.optString("Name","Staffel")
-                        seasonRow.addView(actionButton(label,false){showSeason(seriesId,id)},
-                            LinearLayout.LayoutParams(dp(205),dp(56)).apply{marginEnd=dp(10)})
+                    // Netflix-style season selector: show season 1 episodes immediately
+                    // under the same series page, without routing to a separate screen.
+                    val selector=LinearLayout(this).apply {
+                        orientation=LinearLayout.VERTICAL
+                        setPadding(dp(54),dp(16),dp(54),dp(8))
+                        clipChildren=false;clipToPadding=false
                     }
-                    root.addView(HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;addView(seasonRow)})
+                    selector.addView(TextView(this).apply {
+                        text="Episoden";textSize=27f;typeface=Typeface.DEFAULT_BOLD
+                        setTextColor(Color.WHITE)
+                    })
+                    val chooser=LinearLayout(this).apply {
+                        orientation=LinearLayout.VERTICAL
+                        visibility=View.GONE
+                        setPadding(0,dp(4),0,dp(6))
+                    }
+                    val episodeList=LinearLayout(this).apply{
+                        orientation=LinearLayout.VERTICAL
+                        setPadding(0,dp(14),0,dp(36))
+                        clipChildren=false;clipToPadding=false
+                    }
+                    lateinit var seasonButton:Button
+                    fun renderSeason(index:Int) {
+                        val selected=seasons.getOrNull(index) ?: return
+                        val seasonId=selected.optString("Id")
+                        val episodes=episodesBySeason[seasonId]
+                        seasonButton.text=(if(finishedSeasons[seasonId]==true)"✓  " else "")+
+                            selected.optString("Name","Staffel ${index+1}")+"  ⌄"
+                        chooser.visibility=View.GONE
+                        episodeList.removeAllViews()
+                        if(finishedSeasons[seasonId]==true) episodeList.addView(TextView(this).apply{
+                            text="✓ STAFFEL VOLLSTÄNDIG GESEHEN"
+                            textSize=14f;typeface=Typeface.DEFAULT_BOLD
+                            setTextColor(VelarisDesign.color("success",0xFF46D369.toInt()))
+                        },params(-1,-2,10))
+                        if(episodes==null) episodeList.addView(TextView(this).apply {
+                            text="Folgen konnten nicht geladen werden."
+                            textSize=16f;setTextColor(Color.LTGRAY)
+                        },params(-1,-2,12))
+                        else if(episodes.isEmpty()) episodeList.addView(TextView(this).apply {
+                            text="Keine Episoden in dieser Staffel."
+                            textSize=16f;setTextColor(Color.LTGRAY)
+                        },params(-1,-2,12))
+                        else episodes.forEachIndexed { i,ep ->
+                            val eid=ep.optString("Id")
+                            val ticks=ep.optJSONObject("UserData")?.optLong("PlaybackPositionTicks",0L)?:0L
+                            val nextId=episodes.getOrNull(i+1)?.optString("Id").orEmpty()
+                            val cover=watchedPoster(ep,246,138,"Primary",520)
+                            val card=LinearLayout(this).apply {
+                                orientation=LinearLayout.HORIZONTAL
+                                gravity=Gravity.CENTER_VERTICAL
+                                isFocusable=true;isClickable=true
+                                setPadding(dp(10),dp(10),dp(10),dp(10))
+                                setOnClickListener { startEpisode(eid,ticks,nextId) }
+                                applyCardFocus(this,cover)
+                            }
+                            card.addView(cover,LinearLayout.LayoutParams(dp(246),dp(138)))
+                            val detail=LinearLayout(this).apply{
+                                orientation=LinearLayout.VERTICAL
+                                setPadding(dp(22),0,dp(12),0)
+                            }
+                            detail.addView(TextView(this).apply {
+                                text=(if(ep.optInt("IndexNumber",0)>0)"${ep.optInt("IndexNumber")}. " else "")+ep.optString("Name")
+                                textSize=19f;typeface=Typeface.DEFAULT_BOLD;setTextColor(Color.WHITE)
+                            })
+                            if(watchedLabel(ep)!=null)detail.addView(TextView(this).apply {
+                                text="✓ FOLGE GESEHEN";textSize=13f
+                                setTextColor(VelarisDesign.color("success",0xFF46D369.toInt()))
+                            },params(-1,-2,5))
+                            val duration=ep.optLong("RunTimeTicks",0L)/600_000_000L
+                            if(duration>0)detail.addView(TextView(this).apply {
+                                text="$duration Min.";textSize=13f;setTextColor(Color.LTGRAY)
+                            },params(-1,-2,5))
+                            detail.addView(TextView(this).apply {
+                                text=ep.optString("Overview");textSize=14f;maxLines=2
+                                setTextColor(Color.LTGRAY)
+                            },params(-1,-2,8))
+                            card.addView(detail,LinearLayout.LayoutParams(0,-2,1f))
+                            episodeList.addView(card,params(-1,162,8))
+                        }
+                    }
+                    seasonButton=actionButton("Staffel wählen  ⌄",false) {
+                        chooser.visibility=if(chooser.visibility==View.VISIBLE)View.GONE else View.VISIBLE
+                        if(chooser.visibility==View.VISIBLE)chooser.post{chooser.getChildAt(0)?.requestFocus()}
+                    }
+                    selector.addView(seasonButton,params(265,54,16))
+                    seasons.forEachIndexed { index,season ->
+                        val id=season.optString("Id")
+                        val label=(if(finishedSeasons[id]==true)"✓  " else "")+
+                            season.optString("Name","Staffel ${index+1}")
+                        chooser.addView(actionButton(label,false){
+                            renderSeason(index)
+                            seasonButton.requestFocus()
+                        },params(265,50,6))
+                    }
+                    selector.addView(chooser)
+                    selector.addView(episodeList)
+                    root.addView(selector)
+                    if(seasons.isNotEmpty()) renderSeason(0)
+                    else episodeList.addView(TextView(this).apply{
+                        text="Keine Staffeln gefunden.";textSize=16f;setTextColor(Color.LTGRAY)
+                    },params(-1,-2,12))
                     setContentView(ScrollView(this).apply{isVerticalScrollBarEnabled=false;addView(root)})
                 }
             } catch(e:Exception){ runOnUiThread{toast("Serie konnte nicht geladen werden")} }
