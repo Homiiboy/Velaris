@@ -77,7 +77,7 @@ export function VelarisHeader({scope='home',collectionId,home=false,overlay=fals
       </View>
     </View>
     <View style={styles.strip}>
-      <ScrollView ref={scroller} horizontal showsHorizontalScrollIndicator={false}
+      <ScrollView ref={scroller} style={styles.stripScroll} horizontal showsHorizontalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         onLayout={e=>setViewportWidth(e.nativeEvent.layout.width)}
         onContentSizeChange={(w)=>setContentWidth(w)}
@@ -88,16 +88,18 @@ export function VelarisHeader({scope='home',collectionId,home=false,overlay=fals
           accessibilityRole="button" accessibilityState={{selected:scope===item.key}}
           onPress={()=>router.push(item.href as any)}
           style={[styles.chip,scope===item.key&&styles.activeChip]}>
-          <Text style={styles.chipText}>{item.label}</Text>
+          <Text style={[styles.chipText,scope===item.key&&styles.activeChipText]}>{item.label}</Text>
         </Pressable>)}
         {home&&<Pressable style={[styles.chip,genresOpen&&styles.activeChip]} onPress={()=>setGenresOpen(v=>!v)}>
-          <Text style={styles.chipText}>Genres</Text>
+          <Text style={[styles.chipText,genresOpen&&styles.activeChipText]}>Genres</Text>
         </Pressable>}
       </ScrollView>
-      {rightAvailable&&<Pressable accessibilityLabel="Weitere Kategorien" style={styles.more}
-        onPress={()=>scroller.current?.scrollTo({x:Math.min(contentWidth-viewportWidth,scrollX+195),animated:true})}>
+      <Pressable accessibilityLabel="Weitere Kategorien" accessibilityRole="button"
+        disabled={!rightAvailable}
+        style={[styles.more,{opacity:rightAvailable?1:0}]}
+        onPress={()=>scroller.current?.scrollTo({x:Math.min(Math.max(0,contentWidth-viewportWidth),scrollX+200),animated:true})}>
         <Text style={styles.moreText}>›</Text>
-      </Pressable>}
+      </Pressable>
     </View>
     {home&&genresOpen&&<View style={styles.genreDropdown}>
       <Text style={styles.genreHeading}>Genres</Text>
@@ -123,13 +125,15 @@ const styles=StyleSheet.create({
   smallAction:{fontSize:20,color:colors.text,fontWeight:'700'},
   avatar:{width:31,height:31,borderRadius:7,overflow:'hidden',borderWidth:1,borderColor:colors.border},
   avatarImage:{width:'100%',height:'100%'},
-  strip:{marginTop:13,height:40,position:'relative'},
-  stripContent:{paddingLeft:16,paddingRight:65,gap:9,alignItems:'center'},
-  chip:{height:32,borderRadius:18,paddingHorizontal:13,borderWidth:1,borderColor:'rgba(255,255,255,.36)',justifyContent:'center',backgroundColor:'rgba(20,20,27,.45)'},
-  activeChip:{borderColor:colors.accent,backgroundColor:colors.surfaceAlt},
-  chipText:{color:colors.text,fontWeight:'700',fontSize:12},
-  more:{position:'absolute',right:0,top:0,bottom:0,width:48,alignItems:'center',justifyContent:'center',backgroundColor:'rgba(8,8,13,.97)',borderLeftWidth:1,borderLeftColor:colors.border},
-  moreText:{fontSize:32,fontWeight:'700',color:colors.accent,lineHeight:35},
+  strip:{marginTop:14,height:46,flexDirection:'row',alignItems:'center',paddingRight:14},
+  stripScroll:{flex:1},
+  stripContent:{paddingLeft:18,paddingRight:20,gap:16,alignItems:'center'},
+  chip:{height:36,borderRadius:20,paddingHorizontal:15,justifyContent:'center',alignItems:'center',backgroundColor:'transparent'},
+  activeChip:{backgroundColor:colors.accent,shadowColor:colors.accent,shadowOpacity:0.24,shadowRadius:8,elevation:3},
+  chipText:{color:'rgba(255,255,255,0.78)',fontWeight:'700',fontSize:13},
+  activeChipText:{color:colors.text,fontWeight:'900'},
+  more:{width:39,height:39,marginLeft:5,borderRadius:22,alignItems:'center',justifyContent:'center',backgroundColor:'#242132',borderWidth:1,borderColor:'rgba(160,140,255,0.22)'},
+  moreText:{fontSize:29,fontWeight:'700',color:colors.text,lineHeight:35},
   genreDropdown:{position:'absolute',right:16,top:130,width:240,borderWidth:1,borderColor:colors.border,backgroundColor:colors.surface,borderRadius:12,maxHeight:340,zIndex:30},
   genreHeading:{color:colors.text,padding:13,fontWeight:'800'},
   genreScroll:{maxHeight:290},
