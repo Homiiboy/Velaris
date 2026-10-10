@@ -493,7 +493,7 @@ class MainActivity : Activity() {
             }
             card.addView(thumb,LinearLayout.LayoutParams(dp(310),dp(174)))
             card.addView(TextView(this).apply{
-                text=item.optString("Name");textSize=16f;maxLines=1
+                text=if(item.optString("Type")=="Episode")episodeTitle(item) else item.optString("Name");textSize=16f;maxLines=1
                 typeface=Typeface.DEFAULT_BOLD;setTextColor(Color.WHITE)
                 setPadding(dp(4),dp(8),0,0)
             },LinearLayout.LayoutParams(dp(310),dp(34)))
@@ -822,6 +822,32 @@ class MainActivity : Activity() {
         }
     }
 
+    // Jellyfin may return a placeholder Name even when it knows the episode's
+    // real EpisodeTitle or OriginalTitle. Do not invent unavailable metadata.
+    private fun episodeTitle(item:JSONObject):String {
+        val generic=Regex("""^(?:(?:folge|episode|ep\\.?|teil|part)\\s*#?\\s*\\d+|s\\d{1,2}\\s*e\\d{1,3}|\\d+)$""",RegexOption.IGNORE_CASE)
+        val prefix=Regex("""^(?:(?:folge|episode|ep\\.?)\\s*\\d+|s\\d{1,2}\\s*e\\d{1,3}|\\d+\\s*[.):])\\s*[-:–—]\\s*""",RegexOption.IGNORE_CASE)
+        val numbered=Regex("""^\\d+\\s*[.):]\\s*""")
+        val candidates=listOf("Name","EpisodeTitle","OriginalTitle").map{
+            item.optString(it).trim().replace(Regex("""\\s+""")," ")
+        }.filter(String::isNotBlank)
+        candidates.forEach { candidate ->
+            val stripped=candidate.replace(prefix,"")
+            if(stripped.isNotBlank() && !generic.matches(stripped))return stripped
+            val withoutNumber=candidate.replace(numbered,"")
+            if(withoutNumber.isNotBlank() && !generic.matches(withoutNumber))return withoutNumber
+        }
+        val num=item.optInt("IndexNumber",0)
+        return if(num>0)"Folge $num" else candidates.firstOrNull().orEmpty().ifBlank{"Folge"}
+    }
+
+    private fun episodeHeading(item:JSONObject):String {
+        val title=episodeTitle(item)
+        if(Regex("""^(?:folge|episode)\\s*\\d+$""",RegexOption.IGNORE_CASE).matches(title))return title
+        val num=item.optInt("IndexNumber",0)
+        return if(num>0)"$num. $title" else title
+    }
+
     private fun showSeries(seriesId:String) {
         rememberBack { showHome() }
         io.execute {
@@ -833,7 +859,7 @@ class MainActivity : Activity() {
                 val seasonQueries=seasons.map { season ->
                     java.util.concurrent.CompletableFuture.supplyAsync({
                         runCatching {
-                            items("/Shows/$seriesId/Episodes?UserId=$userId&SeasonId=${season.optString("Id")}&Limit=1000&EnableUserData=true")
+                            items("/Shows/$seriesId/Episodes?UserId=$userId&SeasonId=${season.optString("Id")}&Limit=1000&EnableUserData=true&Fields=Overview,OriginalTitle,RunTimeTicks")
                         }.getOrNull()
                     },io)
                 }
@@ -927,7 +953,7 @@ class MainActivity : Activity() {
                                 setPadding(dp(22),0,dp(12),0)
                             }
                             detail.addView(TextView(this).apply {
-                                text=(if(ep.optInt("IndexNumber",0)>0)"${ep.optInt("IndexNumber")}. " else "")+ep.optString("Name")
+                                text=episodeHeading(ep)
                                 textSize=19f;typeface=Typeface.DEFAULT_BOLD;setTextColor(Color.WHITE)
                             })
                             if(watchedLabel(ep)!=null)detail.addView(TextView(this).apply {
@@ -980,7 +1006,7 @@ class MainActivity : Activity() {
         rememberBack { showSeries(seriesId) }
         io.execute {
             try {
-                val episodes=items("/Shows/$seriesId/Episodes?UserId=$userId&SeasonId=$seasonId&Fields=Overview,PrimaryImageAspectRatio,RunTimeTicks&EnableUserData=true&Limit=1000")
+                val episodes=items("/Shows/$seriesId/Episodes?UserId=$userId&SeasonId=$seasonId&Fields=Overview,OriginalTitle,PrimaryImageAspectRatio,RunTimeTicks&EnableUserData=true&Limit=1000")
                 val seasonComplete=episodes.isNotEmpty() && episodes.all{it.optJSONObject("UserData")?.optBoolean("Played",false)==true}
                 runOnUiThread {
                     val root=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; setPadding(dp(48),dp(28),dp(48),dp(28)); setBackgroundColor(VelarisDesign.color("background",0xFF08080D.toInt())) }
@@ -994,14 +1020,14 @@ class MainActivity : Activity() {
                         val eid=ep.optString("Id")
                         val ticks=ep.optJSONObject("UserData")?.optLong("PlaybackPositionTicks",0L) ?: 0L
                         val number=ep.optInt("IndexNumber",0)
-                        val name=ep.optString("Name")
+                        val name=episodeHeading(ep)
                         val nextId=episodes.getOrNull(episodes.indexOf(ep)+1)?.optString("Id").orEmpty()
                         val card=LinearLayout(this).apply { orientation=LinearLayout.HORIZONTAL; gravity=Gravity.CENTER_VERTICAL; isFocusable=true; isClickable=true; setPadding(dp(8),dp(8),dp(8),dp(8)); setOnClickListener { startEpisode(eid,ticks,nextId) }; applyCardFocus(this) }
                         card.addView(watchedPoster(ep,250,140,"Primary",500,landscape=true),
                             LinearLayout.LayoutParams(dp(250),dp(140)))
                         val info=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; setPadding(dp(18),0,0,0) }
                         info.addView(TextView(this).apply {
-                            text=(if(number>0) "$number. " else "")+name
+                            text=name
                             textSize=20f;setTextColor(Color.WHITE);typeface=Typeface.DEFAULT_BOLD
                         })
                         if(watchedLabel(ep)!=null)info.addView(TextView(this).apply{
@@ -1035,7 +1061,7 @@ class MainActivity : Activity() {
                     val bg=ImageView(this).apply{scaleType=ImageView.ScaleType.CENTER_CROP}; hero.addView(bg,FrameLayout.LayoutParams(-1,dp(500))); loadImage(bg,id,"Backdrop",1600)
                     hero.addView(View(this).apply{background=GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,intArrayOf(0xF708080D.toInt(),0xB008080D.toInt(),0x2208080D))},FrameLayout.LayoutParams(-1,-1))
                     val info=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;gravity=Gravity.BOTTOM;setPadding(dp(58),dp(90),dp(58),dp(42))}
-                    info.addView(TextView(this).apply{text=x.optString("Name");textSize=42f;setTextColor(Color.WHITE);typeface=Typeface.DEFAULT_BOLD})
+                    info.addView(TextView(this).apply{text=if(x.optString("Type")=="Episode")episodeTitle(x) else x.optString("Name");textSize=42f;setTextColor(Color.WHITE);typeface=Typeface.DEFAULT_BOLD})
                     val year=x.optInt("ProductionYear",0); val rating=x.optDouble("CommunityRating",0.0); val runtime=x.optLong("RunTimeTicks",0L)/600_000_000L
                     val meta=listOfNotNull(if(year>0)year.toString()else null,if(runtime>0)"$runtime Min."else null,if(rating>0)"★ %.1f".format(rating)else null).joinToString("  •  ")
                     if(meta.isNotBlank()) info.addView(TextView(this).apply{text=meta;textSize=16f;setTextColor(Color.LTGRAY)})
