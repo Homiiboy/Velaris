@@ -31,7 +31,8 @@ class MainActivity : Activity() {
     private val imageCache = object: android.util.LruCache<String,android.graphics.Bitmap>(imageCacheMaxKb) {
         override fun sizeOf(key:String, value:android.graphics.Bitmap):Int = (value.byteCount / 1024).coerceAtLeast(1)
     }
-    private val imageLoads = java.util.Collections.synchronizedSet(mutableSetOf<String>())
+    // Every card requesting the same artwork must be updated when one fetch finishes.
+    private val pendingImages = mutableMapOf<String,MutableList<ImageView>>()
     private var server = ""
     private var token = ""
     private var userId = ""
@@ -1408,7 +1409,12 @@ class MainActivity : Activity() {
             val bmp=runCatching{android.graphics.BitmapFactory.decodeFile(disk.absolutePath)}.getOrNull()
             if(bmp!=null) { imageCache.put(cacheKey,bmp); view.setImageBitmap(bmp); return } else disk.delete()
         }
-        if(!imageLoads.add(cacheKey)) return
+        val shouldFetch=synchronized(pendingImages) {
+            val waiting=pendingImages[cacheKey]
+            if(waiting!=null){waiting.add(view);false}
+            else{pendingImages[cacheKey]=mutableListOf(view);true}
+        }
+        if(!shouldFetch)return
         io.execute {
             try {
                 val conn=URL("$server/Items/$id/Images/$type?maxWidth=$width&quality=82").openConnection() as HttpURLConnection
@@ -1420,11 +1426,16 @@ class MainActivity : Activity() {
                         if(bmp!=null && !destroyed) {
                             imageCache.put(cacheKey,bmp)
                             runCatching{disk.writeBytes(bytes)}
-                            runOnUiThread{if(!isFinishing&&!isDestroyed)view.setImageBitmap(bmp)}
+                            val waiting=synchronized(pendingImages){pendingImages[cacheKey]?.toList().orEmpty()}
+                            runOnUiThread{
+                                if(!isFinishing&&!isDestroyed)waiting.forEach{it.setImageBitmap(bmp)}
+                            }
                         }
                     }
                 } finally { conn.disconnect() }
-            } catch(_:Exception) {} finally { imageLoads.remove(cacheKey) }
+            } catch(_:Exception) {} finally {
+                synchronized(pendingImages){pendingImages.remove(cacheKey)}
+            }
         }
     }
 
