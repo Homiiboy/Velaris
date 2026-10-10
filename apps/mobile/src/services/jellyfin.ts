@@ -52,7 +52,13 @@ export async function setFavorite(s:Session,id:string,favorite:boolean){return r
 export function getPlayedItems(s:Session){return getItems(s,{Recursive:'true',IncludeItemTypes:'Movie,Series',Filters:'IsPlayed',SortBy:'DatePlayed',SortOrder:'Descending',Limit:'20'});}
 export function getRecommendations(s:Session,genres:string[],excludeId?:string){const genreIds=genres.slice(0,2).join('|');return getItems(s,{Recursive:'true',IncludeItemTypes:'Movie,Series',SortBy:'CommunityRating,Random',SortOrder:'Descending',Limit:'30',...(genreIds?{Genres:genreIds}:{}),...(excludeId?{ExcludeItemIds:excludeId}:{})});}
 export function getCollections(s:Session){return getItems(s,{IncludeItemTypes:'BoxSet',Recursive:'true',SortBy:'SortName',SortOrder:'Ascending',Limit:'200'});}
-export function getCollectionItems(s:Session,id:string){return getItems(s,{ParentId:id,Recursive:'true',IncludeItemTypes:'Movie',SortBy:'SortName',SortOrder:'Ascending',Limit:'300'});}
+export async function getCollectionItems(s:Session,id:string){
+ // Jellyfin BoxSet children may be Movies, Series or home-video entries.
+ const members=await getItems(s,{ParentId:id,Recursive:'true',IncludeItemTypes:'Movie,Series,Video',SortBy:'SortName',SortOrder:'Ascending',Limit:'500'});
+ if(members.Items.length)return members;
+ // Some Jellyfin versions store BoxSet members as linked rather than direct items.
+ return getItems(s,{ParentId:id,Recursive:'true',SortBy:'SortName',SortOrder:'Ascending',Limit:'500'});
+}
 export function getResumeItems(s:Session){const p=new URLSearchParams({UserId:s.user.Id,MediaTypes:'Video',Limit:'30',Fields:itemFields(),EnableImages:'true',ImageTypeLimit:'1',EnableImageTypes:'Primary,Backdrop',EnableUserData:'true'});return request<JellyfinItemsResponse>(`${s.serverUrl}/Items/Resume?${p}`,{headers:authHeaders(s)});}
 export function getItem(s:Session,id:string){return request<JellyfinItem>(`${s.serverUrl}/Users/${s.user.Id}/Items/${id}`,{headers:authHeaders(s)});}
 export function getSeasons(s:Session,id:string){const p=new URLSearchParams({UserId:s.user.Id,Fields:itemFields(),EnableImages:'true',EnableUserData:'true',Limit:'500'});return request<JellyfinItemsResponse>(`${s.serverUrl}/Shows/${id}/Seasons?${p}`,{headers:authHeaders(s)});}

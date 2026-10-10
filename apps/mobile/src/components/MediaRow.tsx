@@ -1,7 +1,7 @@
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { MediaCard } from '@/components/MediaCard';
-import { getPrimaryImageUrl } from '@/services/jellyfin';
+import { getPrimaryImageUrl, getBackdropUrl } from '@/services/jellyfin';
 import type { JellyfinItem, Session } from '@/types/jellyfin';
 import { colors } from '@/theme';
 
@@ -10,12 +10,14 @@ function ContinueCard({item,session}:{item:JellyfinItem;session:Session}){
   item.RunTimeTicks && item.UserData?.PlaybackPositionTicks
    ? item.UserData.PlaybackPositionTicks/item.RunTimeTicks*100 : 0
  )));
+ const hasBackdrop=!!item.BackdropImageTags?.length;
+ const thumbnailUri=hasBackdrop?getBackdropUrl(session,item):getPrimaryImageUrl(session,item.Id,item.PrimaryImageTag??item.ImageTags?.Primary);
  const subtitle=item.Type==='Episode'
   ? [item.SeriesName,item.ParentIndexNumber!=null&&item.IndexNumber!=null?`S${item.ParentIndexNumber} · E${item.IndexNumber}`:undefined].filter(Boolean).join('  •  ')
   : item.Name;
  return <Pressable style={({pressed})=>[styles.continueCard,{opacity:pressed?.75:1}]} onPress={()=>router.push({pathname:'/player/[id]',params:{id:item.Id}})}>
   <View style={styles.thumbWrap}>
-   <Image source={{uri:getPrimaryImageUrl(session,item.Id,item.PrimaryImageTag??item.ImageTags?.Primary)}} style={styles.thumb} resizeMode="contain"/>
+   <Image source={{uri:thumbnailUri}} style={styles.thumb} resizeMode={hasBackdrop?'cover':'contain'}/>
    <View style={styles.playBubble}><Text style={styles.playIcon}>▶</Text></View>
    <View style={styles.progressTrack}><View style={[styles.progressFill,{width:`${progress}%`}]} /></View>
   </View>
@@ -41,9 +43,9 @@ export function MediaRow({ title, items, session, continueWatching=false, topTen
 const styles = StyleSheet.create({
   section:{marginBottom:30},
   title:{color:colors.text,fontSize:20,fontWeight:'900',paddingHorizontal:18,marginBottom:14,letterSpacing:-0.35},
-  row:{paddingHorizontal:18,paddingBottom:4,gap:12},
-  continueCard:{width:240},
-  thumbWrap:{width:240,aspectRatio:16/9,backgroundColor:colors.surfaceAlt,borderRadius:8,overflow:'hidden',borderWidth:1,borderColor:'rgba(255,255,255,.12)'},
+  row:{paddingHorizontal:18,paddingTop:3,paddingBottom:13,gap:14},
+  continueCard:{width:238},
+  thumbWrap:{width:238,aspectRatio:16/9,backgroundColor:colors.surfaceAlt,borderRadius:8,overflow:'hidden',borderWidth:1,borderColor:'rgba(255,255,255,.12)'},
   thumb:{width:'100%',height:'100%'},
   playBubble:{position:'absolute',left:'50%',top:'50%',marginLeft:-19,marginTop:-19,width:38,height:38,borderRadius:19,borderWidth:2,borderColor:'rgba(255,255,255,.9)',backgroundColor:'rgba(0,0,0,.48)',alignItems:'center',justifyContent:'center'},
   playIcon:{color:'#fff',fontSize:15,marginLeft:2},
