@@ -765,7 +765,7 @@ class MainActivity : Activity() {
                 val collection=request("/Users/$userId/Items/$collectionId")
                 // Jellyfin BoxSets expose their actual member movies as children.
                 // Do not treat the BoxSet as a playable Movie.
-                val children=items("/Users/$userId/Items?ParentId=$collectionId&Recursive=true&IncludeItemTypes=Movie,Series&SortBy=ProductionYear,SortName&SortOrder=Ascending&Limit=500&EnableUserData=true&Fields=Overview,ProductionYear,PrimaryImageAspectRatio")
+                val children=items("/Users/$userId/Items?ParentId=$collectionId&Recursive=true&IncludeItemTypes=Movie,Series&SortBy=PremiereDate,SortName&SortOrder=Ascending&Limit=500&EnableUserData=true&Fields=Overview,PremiereDate,ProductionYear,PrimaryImageAspectRatio")
                 runOnUiThread {
                     root.removeAllViews()
                     root.addView(TextView(this).apply {

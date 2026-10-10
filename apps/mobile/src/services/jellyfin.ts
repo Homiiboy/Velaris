@@ -54,10 +54,14 @@ export function getRecommendations(s:Session,genres:string[],excludeId?:string){
 export function getCollections(s:Session){return getItems(s,{IncludeItemTypes:'BoxSet',Recursive:'true',SortBy:'SortName',SortOrder:'Ascending',Limit:'200'});}
 export async function getCollectionItems(s:Session,id:string){
  // Match Jellyfin collection ordering by release year (oldest to newest).
- const params={ParentId:id,Recursive:'true',IncludeItemTypes:'Movie,Series,Video',SortBy:'ProductionYear,SortName',SortOrder:'Ascending',Limit:'500'};
+ const params={ParentId:id,Recursive:'true',IncludeItemTypes:'Movie,Series,Video',SortBy:'PremiereDate,SortName',SortOrder:'Ascending',Limit:'500'};
  const members=await getItems(s,params);
- const result=members.Items.length?members:await getItems(s,{ParentId:id,Recursive:'true',SortBy:'ProductionYear,SortName',SortOrder:'Ascending',Limit:'500'});
- return {...result,Items:[...result.Items].sort((a,b)=>(a.ProductionYear??9999)-(b.ProductionYear??9999)||a.Name.localeCompare(b.Name,'de'))};
+ const result=members.Items.length?members:await getItems(s,{ParentId:id,Recursive:'true',SortBy:'PremiereDate,SortName',SortOrder:'Ascending',Limit:'500'});
+ const release=(item:JellyfinItem)=> {
+   const time=item.PremiereDate?Date.parse(item.PremiereDate):NaN;
+   return Number.isFinite(time)?time:item.ProductionYear?Date.UTC(item.ProductionYear,0,1):Number.MAX_SAFE_INTEGER;
+ };
+ return {...result,Items:[...result.Items].sort((a,b)=>release(a)-release(b)||a.Name.localeCompare(b.Name,'de'))};
 }
 
 export type SearchArea=MediaLibraryKind|'collections'|'home';
