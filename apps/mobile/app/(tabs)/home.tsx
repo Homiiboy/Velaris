@@ -109,11 +109,18 @@ export default function HomeScreen() {
             </Pressable>
           </View>
         </View>
-        <View style={styles.quickNav}>
-          <Pressable style={styles.navChip} onPress={() => router.push('/(tabs)/series')}><Text style={styles.navChipText}>Serien</Text></Pressable>
-          <Pressable style={styles.navChip} onPress={() => router.push('/(tabs)/movies')}><Text style={styles.navChipText}>Filme</Text></Pressable>
-          <Pressable style={[styles.navChip, categoryMenu && styles.activeChip]} onPress={() => setCategoryMenu(v => !v)}><Text style={styles.navChipText}>Kategorien  ⌄</Text></Pressable>
-        </View>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" style={styles.quickNav} contentContainerStyle={styles.quickNavContent}>
+          <Pressable style={[styles.navChip, categoryMenu && styles.activeChip]} onPress={() => setCategoryMenu(v => !v)}><Text style={styles.navChipText}>Genres  ⌄</Text></Pressable>
+          {[
+            {label:design.navigation.anime,href:'/(tabs)/anime'},
+            {label:design.navigation.animeMovies,href:'/(tabs)/anime-movies'},
+            {label:design.navigation.animation,href:'/(tabs)/animation'},
+            {label:design.navigation.cartoons,href:'/(tabs)/cartoons'},
+            {label:design.navigation.movies,href:'/(tabs)/movies'},
+            {label:design.navigation.collections,href:'/collections'},
+            {label:design.navigation.series,href:'/(tabs)/series'},
+          ].map(destination=><Pressable key={destination.href} style={styles.navChip} onPress={() => router.push(destination.href as any)}><Text style={styles.navChipText}>{destination.label}</Text></Pressable>)}
+        </ScrollView>
         {categoryMenu && <View style={styles.categoryMenu}>
           <Text style={styles.categoryHeading}>Genres</Text>
           <ScrollView style={styles.categoryScroll} nestedScrollEnabled>
@@ -139,7 +146,8 @@ const styles = StyleSheet.create({
   search: { color: colors.text, fontSize: 27, fontWeight: '700' },
   avatar: { width: 32, height: 32, borderRadius: 7, borderWidth: 1, borderColor: 'rgba(255,255,255,0.6)', overflow: 'hidden' },
   avatarPhoto: { width: '100%', height: '100%' },
-  quickNav: { flexDirection: 'row', gap: 10, marginTop: 17 },
+  quickNav: { marginTop: 17, marginRight: -16 },
+  quickNavContent: { flexDirection: 'row', gap: 9, paddingRight: 28 },
   navChip: { height: 33, paddingHorizontal: 15, borderRadius: 18, borderWidth: 1, borderColor: 'rgba(255,255,255,0.6)', backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'center', alignItems: 'center' },
   activeChip: { backgroundColor: colors.surfaceAlt, borderColor: colors.text },
   navChipText: { color: colors.text, fontSize: 12, fontWeight: '700' },
