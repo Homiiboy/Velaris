@@ -882,18 +882,18 @@ class MainActivity : Activity() {
         val collectionId=activeCollectionId
         io.execute {
             try {
-                val params=mutableListOf("Recursive=true","Limit=150","SearchTerm=$encoded",
+                val queryParts=mutableListOf("Recursive=true","Limit=150","SearchTerm=$encoded",
                     "Fields=PrimaryImageAspectRatio,ProductionYear","EnableUserData=true")
                 if(collectionId.isNotBlank()) {
-                    params.add("ParentId=$collectionId")
-                    params.add("IncludeItemTypes=Movie,Series")
+                    queryParts.add("ParentId=$collectionId")
+                    queryParts.add("IncludeItemTypes=Movie,Series")
                 } else if(scope=="Sammlungen") {
-                    params.add("IncludeItemTypes=BoxSet")
+                    queryParts.add("IncludeItemTypes=BoxSet")
                 } else if(scope=="Meine Liste") {
-                    params.add("Filters=IsFavorite")
-                    params.add("IncludeItemTypes=Movie,Series")
+                    queryParts.add("Filters=IsFavorite")
+                    queryParts.add("IncludeItemTypes=Movie,Series")
                 } else if(scope=="Start") {
-                    params.add("IncludeItemTypes=Movie,Series")
+                    queryParts.add("IncludeItemTypes=Movie,Series")
                 } else {
                     val aliases=when(scope) {
                         "Anime" -> listOf("anime","animes","animeserien","animeseries")
@@ -910,15 +910,15 @@ class MainActivity : Activity() {
                     val folder=items("/Users/$userId/Views")
                         .firstOrNull { aliases.contains(norm(it.optString("Name"))) }
                     val id=folder?.optString("Id").orEmpty()
-                    if(id.isNotBlank())params.add("ParentId=$id")
-                    else params.add("ParentId=00000000000000000000000000000000")
-                    params.add("IncludeItemTypes="+when(scope) {
+                    if(id.isNotBlank())queryParts.add("ParentId=$id")
+                    else queryParts.add("ParentId=00000000000000000000000000000000")
+                    queryParts.add("IncludeItemTypes="+when(scope) {
                         "Anime Filme","Filme" -> "Movie"
                         "Anime","Serien" -> "Series"
                         else -> "Movie,Series"
                     })
                 }
-                val data=items("/Users/$userId/Items?"+params.joinToString("&"))
+                val data=items("/Users/$userId/Items?"+queryParts.joinToString("&"))
                 runOnUiThread {
                     val root=LinearLayout(this).apply {
                         orientation=LinearLayout.VERTICAL
