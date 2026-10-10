@@ -316,7 +316,7 @@ class MainActivity : Activity() {
 
     private fun addContinueRow(data:List<JSONObject>) {
         if(data.isEmpty()) return
-        homeRoot?.addView(sectionTitle("Weiterschauen"))
+        homeRoot?.addView(sectionTitle(VelarisDesign.homeRow("resume","Weiterschauen")))
         val row=LinearLayout(this).apply { orientation=LinearLayout.HORIZONTAL; setPadding(dp(12),dp(12),dp(36),dp(44)); clipChildren=false; clipToPadding=false }
         data.forEach { item ->
             val id=item.optString("Id"); if(id.isBlank()) return@forEach
@@ -761,7 +761,7 @@ class MainActivity : Activity() {
                 setOnFocusChangeListener{v,focused->
                     v.animate().scaleX(if(focused)1.08f else 1f).scaleY(if(focused)1.08f else 1f).setDuration(120).start()
                     background=GradientDrawable().apply{
-                        setColor(if(focused)0xFF222229.toInt() else Color.TRANSPARENT)
+                        setColor(if(focused)VelarisDesign.color("surfaceAlt",0xFF222229.toInt()) else Color.TRANSPARENT)
                         cornerRadius=dp(12).toFloat()
                         if(focused)setStroke(dp(2),Color.WHITE)
                     }
@@ -782,7 +782,7 @@ class MainActivity : Activity() {
                 setPadding(dp(8),dp(8),dp(8),dp(4));setOnClickListener{showCreateProfile()}
                 setOnFocusChangeListener{v,focused->
                     v.animate().scaleX(if(focused)1.08f else 1f).scaleY(if(focused)1.08f else 1f).setDuration(120).start()
-                    background=GradientDrawable().apply{setColor(if(focused)0xFF222229.toInt() else Color.TRANSPARENT);cornerRadius=dp(12).toFloat();if(focused)setStroke(dp(2),Color.WHITE)}
+                    background=GradientDrawable().apply{setColor(if(focused)VelarisDesign.color("surfaceAlt",0xFF222229.toInt()) else Color.TRANSPARENT);cornerRadius=dp(12).toFloat();if(focused)setStroke(dp(2),Color.WHITE)}
                 }
             }
             add.addView(TextView(this).apply{
@@ -1006,11 +1006,11 @@ class MainActivity : Activity() {
 
     private fun settingsCard(icon:String,title:String,sub:String,click:()->Unit)=LinearLayout(this).apply{
         orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(22),0,dp(22),0);isFocusable=true;isClickable=true
-        background=GradientDrawable().apply{setColor(0xFF18181E.toInt());cornerRadius=dp(12).toFloat()}
+        background=GradientDrawable().apply{setColor(VelarisDesign.color("surface",0xFF18181E.toInt()));cornerRadius=dp(12).toFloat()}
         addView(TextView(this@MainActivity).apply{text=icon;textSize=26f;setTextColor(Color.WHITE);gravity=Gravity.CENTER},LinearLayout.LayoutParams(dp(54),dp(54)))
         addView(LinearLayout(this@MainActivity).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(18),0,0,0);addView(TextView(this@MainActivity).apply{text=title;textSize=20f;setTextColor(Color.WHITE);typeface=Typeface.DEFAULT_BOLD});addView(TextView(this@MainActivity).apply{text=sub;textSize=14f;setTextColor(Color.GRAY)})},LinearLayout.LayoutParams(0,-2,1f))
         addView(TextView(this@MainActivity).apply{text="›";textSize=30f;setTextColor(Color.LTGRAY)})
-        setOnClickListener{click()};setOnFocusChangeListener{v,f->background=GradientDrawable().apply{setColor(if(f)0xFF303038.toInt() else 0xFF18181E.toInt());cornerRadius=dp(12).toFloat()};v.animate().scaleX(if(f)1.015f else 1f).scaleY(if(f)1.015f else 1f).setDuration(120).start()}
+        setOnClickListener{click()};setOnFocusChangeListener{v,f->background=GradientDrawable().apply{setColor(if(f)0xFF303038.toInt() else VelarisDesign.color("surface",0xFF18181E.toInt()));cornerRadius=dp(12).toFloat()};v.animate().scaleX(if(f)1.015f else 1f).scaleY(if(f)1.015f else 1f).setDuration(120).start()}
     }
 
     private fun showPlaybackSettings() {
