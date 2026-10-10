@@ -305,7 +305,7 @@ class MainActivity : Activity() {
             text=meta; textSize=17f; setTextColor(Color.LTGRAY); setPadding(0,dp(8),0,0)
         })
         if(overview.isNotBlank()) info.addView(TextView(this).apply {
-            text=overview; textSize=17f; setTextColor(Color.WHITE); maxLines=3;lineSpacingMultiplier=1.2f
+            text=overview; textSize=17f; setTextColor(Color.WHITE); maxLines=3;setLineSpacing(0f,1.2f)
             setPadding(0,dp(12),0,0)
         },LinearLayout.LayoutParams(dp(650),-2))
 
