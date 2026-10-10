@@ -6,7 +6,7 @@ import { colors } from '@/theme';
 export default function RootLayout() {
   return (
     <AuthProvider>
-      <StatusBar style="light" translucent backgroundColor="transparent" />
+      <StatusBar style="light" backgroundColor="transparent" />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }} />
     </AuthProvider>
   );
