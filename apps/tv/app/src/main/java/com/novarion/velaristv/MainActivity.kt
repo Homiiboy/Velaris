@@ -782,6 +782,26 @@ class MainActivity : Activity() {
         showHome()
     }
 
+    private fun avatarFrame(index:Int,description:String):FrameLayout {
+        return FrameLayout(this).apply {
+            clipChildren=false;clipToPadding=false
+            addView(avatarFace(index,description),FrameLayout.LayoutParams(-1,-1).apply {
+                setMargins(dp(4),dp(4),dp(4),dp(4))
+            })
+        }
+    }
+
+    private fun highlightAvatar(frame:View,focused:Boolean,selected:Boolean=false) {
+        frame.background=GradientDrawable().apply {
+            setColor(Color.TRANSPARENT)
+            cornerRadius=dp(20).toFloat()
+            if(focused)setStroke(dp(3),Color.WHITE)
+            else if(selected)setStroke(dp(2),VelarisDesign.color("accent",0xFF7C5CFC.toInt()))
+        }
+        frame.animate().scaleX(if(focused)1.045f else 1f).scaleY(if(focused)1.045f else 1f)
+            .setDuration(120).start()
+    }
+
     private fun showProfiles(startup:Boolean=false) {
         if(!startup) rememberBack { showHome() }
         val profiles=readProfiles()
@@ -797,54 +817,77 @@ class MainActivity : Activity() {
             text="Wähle dein Profil";textSize=17f;setTextColor(0xFF9B9BA4.toInt());gravity=Gravity.CENTER
         },params(-1,-2,8))
 
-        val grid=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER;setPadding(0,dp(26),0,0)}
-        var row=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER}
+        val grid=LinearLayout(this).apply{
+            orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER
+            clipChildren=false;clipToPadding=false
+            setPadding(dp(12),dp(26),dp(12),dp(12))
+        }
+        var firstProfile:View?=null
+        var row=LinearLayout(this).apply{
+            orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER
+            clipChildren=false;clipToPadding=false
+        }
         fun addTile(tile:View,index:Int){
-            if(index>0 && index%5==0){grid.addView(row);row=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER}}
+            if(index>0 && index%5==0){
+                grid.addView(row)
+                row=LinearLayout(this).apply{
+                    orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER
+                    clipChildren=false;clipToPadding=false
+                }
+            }
             row.addView(tile,LinearLayout.LayoutParams(dp(180),dp(205)).apply{marginEnd=dp(12)})
         }
         for(i in 0 until profiles.length()) {
             val p=profiles.optJSONObject(i) ?: continue
             val name=p.optString("name","Profil");val av=p.optInt("avatar",i)
+            val picture=avatarFrame(av,name)
             val tile=LinearLayout(this).apply{
-                orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER;isFocusable=true;isClickable=true
+                orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER
+                isFocusable=true;isClickable=true
+                clipChildren=false;clipToPadding=false
                 setPadding(dp(8),dp(8),dp(8),dp(4))
-                setOnFocusChangeListener{v,focused->
-                    v.animate().scaleX(if(focused)1.08f else 1f).scaleY(if(focused)1.08f else 1f).setDuration(120).start()
-                    background=GradientDrawable().apply{
-                        setColor(if(focused)VelarisDesign.color("surfaceAlt",0xFF222229.toInt()) else Color.TRANSPARENT)
-                        cornerRadius=dp(12).toFloat()
-                        if(focused)setStroke(dp(2),Color.WHITE)
-                    }
-                }
-                setOnClickListener{
-                    activateJellyfinProfile(p)
-                }
+                setOnFocusChangeListener{_,focused->highlightAvatar(picture,focused)}
+                setOnClickListener{activateJellyfinProfile(p)}
             }
-            tile.addView(avatarFace(av,name),LinearLayout.LayoutParams(dp(142),dp(142)))
+            tile.addView(picture,LinearLayout.LayoutParams(dp(142),dp(142)))
             tile.addView(TextView(this).apply{
-                text=name;textSize=17f;setTextColor(0xFFBDBDC4.toInt());gravity=Gravity.CENTER;maxLines=1
+                text=name;textSize=17f;setTextColor(0xFFBDBDC4.toInt())
+                gravity=Gravity.CENTER;maxLines=1
             },LinearLayout.LayoutParams(dp(164),dp(42)))
+            if(firstProfile==null)firstProfile=tile
             addTile(tile,i)
         }
         if(profiles.length()<VelarisDesign.maxProfiles()){
-            val add=LinearLayout(this).apply{
-                orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER;isFocusable=true;isClickable=true
-                setPadding(dp(8),dp(8),dp(8),dp(4));setOnClickListener{showCreateProfile()}
-                setOnFocusChangeListener{v,focused->
-                    v.animate().scaleX(if(focused)1.08f else 1f).scaleY(if(focused)1.08f else 1f).setDuration(120).start()
-                    background=GradientDrawable().apply{setColor(if(focused)VelarisDesign.color("surfaceAlt",0xFF222229.toInt()) else Color.TRANSPARENT);cornerRadius=dp(12).toFloat();if(focused)setStroke(dp(2),Color.WHITE)}
-                }
+            val addPicture=FrameLayout(this).apply{
+                clipChildren=false;clipToPadding=false
+                addView(TextView(this@MainActivity).apply{
+                    text="+";textSize=54f;setTextColor(0xFFBDBDC4.toInt());gravity=Gravity.CENTER
+                    background=GradientDrawable().apply{
+                        setColor(VelarisDesign.color("surfaceAlt",0xFF222229.toInt()))
+                        cornerRadius=dp(14).toFloat()
+                    }
+                },FrameLayout.LayoutParams(-1,-1).apply{setMargins(dp(4),dp(4),dp(4),dp(4))})
             }
+            val add=LinearLayout(this).apply{
+                orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER
+                isFocusable=true;isClickable=true
+                clipChildren=false;clipToPadding=false
+                setPadding(dp(8),dp(8),dp(8),dp(4))
+                setOnClickListener{showCreateProfile()}
+                setOnFocusChangeListener{_,focused->highlightAvatar(addPicture,focused)}
+            }
+            add.addView(addPicture,LinearLayout.LayoutParams(dp(142),dp(142)))
             add.addView(TextView(this).apply{
-                text="+";textSize=54f;setTextColor(0xFFBDBDC4.toInt());gravity=Gravity.CENTER
-                background=GradientDrawable().apply{setColor(0xFF24242A.toInt());cornerRadius=dp(14).toFloat()}
-            },LinearLayout.LayoutParams(dp(142),dp(142)))
-            add.addView(TextView(this).apply{text="Profil hinzufügen";textSize=15f;setTextColor(0xFFBDBDC4.toInt());gravity=Gravity.CENTER},LinearLayout.LayoutParams(dp(164),dp(42)))
+                text="Profil hinzufügen";textSize=15f
+                setTextColor(0xFFBDBDC4.toInt())
+                gravity=Gravity.CENTER
+            },LinearLayout.LayoutParams(dp(164),dp(42)))
+            if(firstProfile==null)firstProfile=add
             addTile(add,profiles.length())
         }
-        grid.addView(row);root.addView(grid);setContentView(root)
-        root.post{root.focusSearch(View.FOCUS_DOWN)?.requestFocus()}
+        grid.addView(row);root.addView(grid)
+        setContentView(root)
+        root.post{firstProfile?.requestFocus()}
     }
 
     private fun avatarFace(index:Int,initial:String):View {
