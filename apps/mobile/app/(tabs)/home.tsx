@@ -112,7 +112,7 @@ export default function HomeScreen() {
             </Pressable>
           </View>
         </View>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" style={styles.quickNav} contentContainerStyle={styles.quickNavContent}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" nestedScrollEnabled style={styles.quickNav} contentContainerStyle={styles.quickNavContent}>
           <Pressable style={[styles.navChip, categoryMenu && styles.activeChip]} onPress={() => setCategoryMenu(v => !v)}><Text style={styles.navChipText}>Genres  ⌄</Text></Pressable>
           {[
             {label:design.navigation.animation,href:'/(tabs)/animation'},
@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
   search: { color: colors.text, fontSize: 27, fontWeight: '700' },
   avatar: { width: 32, height: 32, borderRadius: 7, borderWidth: 1, borderColor: 'rgba(255,255,255,0.6)', overflow: 'hidden' },
   avatarPhoto: { width: '100%', height: '100%' },
-  quickNav: { marginTop: 17, marginRight: -16 },
+  quickNav: { marginTop: 17, marginRight: -16, flexGrow: 0 },
   quickNavContent: { flexDirection: 'row', gap: 9, paddingRight: 28 },
   navChip: { height: 33, paddingHorizontal: 15, borderRadius: 18, borderWidth: 1, borderColor: 'rgba(255,255,255,0.6)', backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'center', alignItems: 'center' },
   activeChip: { backgroundColor: colors.surfaceAlt, borderColor: colors.text },

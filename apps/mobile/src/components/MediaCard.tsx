@@ -22,12 +22,12 @@ export function MediaCard({ item, session, width = 128, showMeta = false, showFa
   };
   return (
     <Pressable
-      onPressIn={()=>press(.96)} onPressOut={()=>press(1)}
+      onPressIn={()=>press(.985)} onPressOut={()=>press(1)}
       onPress={() => item.Type === 'BoxSet' ? router.push({ pathname: '/collection/[id]', params: { id: item.Id } }) : router.push({ pathname: '/details/[id]', params: { id: item.Id } })}
       style={{width}}
     >
       <Animated.View style={{transform:[{scale}]}}><View style={styles.posterShell}>
-       {!imageFailed ? <Image source={{ uri: getPrimaryImageUrl(session, item.Id, imageTag) }} onError={()=>setImageFailed(true)} style={[styles.poster, { width }]} resizeMode="cover" /> :
+       {!imageFailed ? <Image source={{ uri: getPrimaryImageUrl(session, item.Id, imageTag) }} onError={()=>setImageFailed(true)} style={[styles.poster, { width }]} resizeMode="contain" /> :
         <View style={[styles.poster, styles.placeholder, { width }]}><Text style={styles.logo}>VELARIS</Text></View>}
        {!!watchedLabel(item)&&<View style={styles.watchedBadge}><Text style={styles.watchedText}>✓ {watchedLabel(item)}</Text></View>}
        {showFavorite&&item.Type!=='BoxSet'&&<Pressable hitSlop={8} onPress={(e)=>{e.stopPropagation();toggleFavorite()}} style={styles.heart}><Text style={[styles.heartText,favorite&&styles.heartActive]}>{favorite?'♥':'♡'}</Text></Pressable>}
@@ -39,7 +39,7 @@ export function MediaCard({ item, session, width = 128, showMeta = false, showFa
 }
 const styles = StyleSheet.create({
   poster:{aspectRatio:2/3,borderRadius:colors.posterRadius,backgroundColor:colors.surfaceAlt},
-  posterShell:{borderRadius:colors.posterRadius,overflow:'hidden',borderWidth:1,borderColor:'rgba(255,255,255,0.1)'},
+  posterShell:{borderRadius:colors.posterRadius,overflow:'hidden',backgroundColor:colors.surfaceAlt,borderWidth:1,borderColor:'rgba(255,255,255,0.15)'},
   placeholder:{alignItems:'center',justifyContent:'center',borderWidth:1,borderColor:colors.border},
   logo:{color:colors.accent,fontWeight:'900',fontSize:11,letterSpacing:2},
   watchedBadge:{position:'absolute',left:5,bottom:6,backgroundColor:'rgba(8,8,13,.88)',paddingHorizontal:7,paddingVertical:4,borderRadius:5,borderWidth:1,borderColor:colors.success},

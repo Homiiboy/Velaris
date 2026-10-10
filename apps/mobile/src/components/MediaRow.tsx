@@ -15,7 +15,7 @@ function ContinueCard({item,session}:{item:JellyfinItem;session:Session}){
   : item.Name;
  return <Pressable style={({pressed})=>[styles.continueCard,{opacity:pressed?.75:1}]} onPress={()=>router.push({pathname:'/player/[id]',params:{id:item.Id}})}>
   <View style={styles.thumbWrap}>
-   <Image source={{uri:getPrimaryImageUrl(session,item.Id,item.PrimaryImageTag??item.ImageTags?.Primary)}} style={styles.thumb} resizeMode="cover"/>
+   <Image source={{uri:getPrimaryImageUrl(session,item.Id,item.PrimaryImageTag??item.ImageTags?.Primary)}} style={styles.thumb} resizeMode="contain"/>
    <View style={styles.playBubble}><Text style={styles.playIcon}>▶</Text></View>
    <View style={styles.progressTrack}><View style={[styles.progressFill,{width:`${progress}%`}]} /></View>
   </View>
@@ -43,7 +43,7 @@ const styles = StyleSheet.create({
   title:{color:colors.text,fontSize:20,fontWeight:'900',paddingHorizontal:18,marginBottom:14,letterSpacing:-0.35},
   row:{paddingHorizontal:18,paddingBottom:4,gap:12},
   continueCard:{width:240},
-  thumbWrap:{width:240,aspectRatio:16/9,backgroundColor:colors.surface,borderRadius:8,overflow:'hidden',borderWidth:1,borderColor:'rgba(255,255,255,.12)'},
+  thumbWrap:{width:240,aspectRatio:16/9,backgroundColor:colors.surfaceAlt,borderRadius:8,overflow:'hidden',borderWidth:1,borderColor:'rgba(255,255,255,.12)'},
   thumb:{width:'100%',height:'100%'},
   playBubble:{position:'absolute',left:'50%',top:'50%',marginLeft:-19,marginTop:-19,width:38,height:38,borderRadius:19,borderWidth:2,borderColor:'rgba(255,255,255,.9)',backgroundColor:'rgba(0,0,0,.48)',alignItems:'center',justifyContent:'center'},
   playIcon:{color:'#fff',fontSize:15,marginLeft:2},

@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { FlatList, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { Redirect, useFocusEffect } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
 import { getLibraryItems, type MediaLibraryKind } from '@/services/jellyfin';
@@ -9,6 +9,8 @@ import { colors } from '@/theme';
 
 export function LibraryCategoryScreen({kind,title,description}:{kind:MediaLibraryKind;title:string;description:string}) {
  const {session}=useAuth();
+ const {width:screenWidth}=useWindowDimensions();
+ const cardWidth=Math.floor((screenWidth-42)/3);
  const [items,setItems]=useState<JellyfinItem[]>([]);
  const [loading,setLoading]=useState(true);
  useFocusEffect(useCallback(()=>{
@@ -26,7 +28,7 @@ export function LibraryCategoryScreen({kind,title,description}:{kind:MediaLibrar
       <View style={styles.titleRow}><Text style={styles.title}>{title}</Text><Text style={styles.count}>{items.length}</Text></View>
       <Text style={styles.sub}>{description}</Text></View>}
    ListEmptyComponent={!loading?<Text style={styles.empty}>Noch keine Titel gefunden. Prüfe, ob in Jellyfin eine Bibliothek namens „{title}“ vorhanden ist.</Text>:<Text style={styles.empty}>Wird geladen …</Text>}
-   renderItem={({item})=><MediaCard item={item} session={session} width={112}/>}
+   renderItem={({item})=><MediaCard item={item} session={session} width={cardWidth}/>}
    keyExtractor={item=>item.Id}/>;
 }
 const styles=StyleSheet.create({
