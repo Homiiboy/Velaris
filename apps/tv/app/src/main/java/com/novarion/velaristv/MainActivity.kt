@@ -368,6 +368,12 @@ class MainActivity : Activity() {
         if(meta.isNotBlank()) info.addView(TextView(this).apply {
             text=meta; textSize=17f; setTextColor(Color.LTGRAY); setPadding(0,dp(8),0,0)
         })
+        watchedLabel(item)?.let { label ->
+            info.addView(TextView(this).apply {
+                text=label;setTextColor(VelarisDesign.color("success",0xFF46D369.toInt()))
+                textSize=15f;typeface=Typeface.DEFAULT_BOLD;setPadding(0,dp(8),0,0)
+            })
+        }
         if(overview.isNotBlank()) info.addView(TextView(this).apply {
             text=overview; textSize=17f; setTextColor(Color.WHITE); maxLines=3;setLineSpacing(0f,1.2f)
             setPadding(0,dp(12),0,0)
@@ -388,6 +394,44 @@ class MainActivity : Activity() {
         info.addView(actions)
         hero.addView(info,FrameLayout.LayoutParams(-1,-1))
         homeRoot?.addView(hero,LinearLayout.LayoutParams(-1,dp(515)).apply { bottomMargin=dp(8) })
+    }
+
+    private fun watchedLabel(item:JSONObject):String? {
+        if(item.optJSONObject("UserData")?.optBoolean("Played",false)!=true)return null
+        return when(item.optString("Type")) {
+            "Movie" -> "✓ GESEHEN"
+            "Episode" -> "✓ FOLGE"
+            "Season" -> "✓ STAFFEL"
+            "Series" -> "✓ SERIE"
+            else -> null
+        }
+    }
+
+    private fun watchedPoster(item:JSONObject,w:Int,h:Int,imageType:String,requestedWidth:Int):FrameLayout {
+        val frame=FrameLayout(this).apply {
+            background=GradientDrawable().apply{
+                setColor(VelarisDesign.color("surface",0xFF15151B.toInt()))
+                cornerRadius=dp(9).toFloat()
+            }
+            clipToOutline=true
+        }
+        val poster=ImageView(this).apply{scaleType=ImageView.ScaleType.CENTER_CROP}
+        frame.addView(poster,FrameLayout.LayoutParams(-1,-1))
+        loadImage(poster,item.optString("Id"),imageType,requestedWidth)
+        watchedLabel(item)?.let{label->
+            frame.addView(TextView(this).apply{
+                text=label;setTextColor(Color.WHITE);textSize=12f;typeface=Typeface.DEFAULT_BOLD
+                gravity=Gravity.CENTER
+                setPadding(dp(9),dp(5),dp(9),dp(5))
+                background=GradientDrawable().apply{
+                    setColor(0xEE172A22.toInt());cornerRadius=dp(6).toFloat()
+                    setStroke(dp(1),VelarisDesign.color("success",0xFF46D369.toInt()))
+                }
+            },FrameLayout.LayoutParams(-2,-2,Gravity.TOP or Gravity.RIGHT).apply{
+                setMargins(dp(6),dp(7),dp(7),0)
+            })
+        }
+        return frame
     }
 
     private fun addContinueRow(data:List<JSONObject>) {
@@ -443,10 +487,7 @@ class MainActivity : Activity() {
             val wrap=LinearLayout(this).apply { orientation=LinearLayout.HORIZONTAL; gravity=Gravity.BOTTOM; isFocusable=true; isClickable=true
                 setOnClickListener { if(item.optString("Type")=="Series") showSeries(item.optString("Id")) else showDetails(item.optString("Id")) }; applyCardFocus(this) }
             wrap.addView(TextView(this).apply { text="${index+1}"; textSize=68f; typeface=Typeface.DEFAULT_BOLD; setTextColor(VelarisDesign.color("surfaceAlt",0xFF202027.toInt())); gravity=Gravity.BOTTOM },LinearLayout.LayoutParams(dp(58),dp(218)))
-            val img=ImageView(this).apply { scaleType=ImageView.ScaleType.CENTER_CROP }
-            img.clipToOutline=true
-            img.outlineProvider=object:android.view.ViewOutlineProvider(){override fun getOutline(v:View,o:android.graphics.Outline){o.setRoundRect(0,0,v.width.coerceAtLeast(1),v.height.coerceAtLeast(1),dp(12).toFloat())}}
-            wrap.addView(img,LinearLayout.LayoutParams(dp(154),dp(218))); loadImage(img,item.optString("Id"),"Primary",380)
+            wrap.addView(watchedPoster(item,154,218,"Primary",380),LinearLayout.LayoutParams(dp(154),dp(218)))
             row.addView(wrap,LinearLayout.LayoutParams(dp(220),dp(228)).apply{marginEnd=dp(4)})
         }
         homeRoot?.addView(HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;clipChildren=false;addView(row)},LinearLayout.LayoutParams(-1,dp(300)))
@@ -488,13 +529,7 @@ class MainActivity : Activity() {
                 setOnClickListener { if(type=="Series") showSeries(id) else showDetails(id) }
                 applyCardFocus(this)
             }
-            val img=ImageView(this).apply {
-                scaleType=ImageView.ScaleType.CENTER_CROP
-                clipToOutline=true
-                outlineProvider=object:android.view.ViewOutlineProvider(){override fun getOutline(v:View,o:android.graphics.Outline){o.setRoundRect(0,0,v.width.coerceAtLeast(1),v.height.coerceAtLeast(1),dp(12).toFloat())}}
-            }
-            card.addView(img,LinearLayout.LayoutParams(dp(176),dp(248)))
-            loadImage(img,id,"Primary",420)
+            card.addView(watchedPoster(item,176,248,"Primary",420),LinearLayout.LayoutParams(dp(176),dp(248)))
             card.setOnLongClickListener { showDetails(id); true }
             val progress=item.optJSONObject("UserData")?.optLong("PlaybackPositionTicks",0L) ?: 0L
             val total=item.optLong("RunTimeTicks",0L)
@@ -523,9 +558,7 @@ class MainActivity : Activity() {
                     setOnClickListener { if(type=="Series") showSeries(id) else showDetails(id) }
                     applyCardFocus(this)
                 }
-                val img=ImageView(this).apply { scaleType=ImageView.ScaleType.CENTER_CROP }
-                card.addView(img,LinearLayout.LayoutParams(dp(196),dp(276)))
-                loadImage(img,id,"Primary",460)
+                card.addView(watchedPoster(item,196,276,"Primary",460),LinearLayout.LayoutParams(dp(196),dp(276)))
                 card.addView(TextView(this).apply { text=item.optString("Name"); textSize=15f; setTextColor(Color.WHITE); maxLines=1; setPadding(dp(4),dp(7),dp(4),0) },LinearLayout.LayoutParams(dp(196),dp(30)))
                 row.addView(card,LinearLayout.LayoutParams(dp(212),dp(326)).apply { marginEnd=dp(16); bottomMargin=dp(18) })
             }
