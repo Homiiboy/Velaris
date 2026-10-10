@@ -112,7 +112,8 @@ class MainActivity : Activity() {
 
     private fun showServer() {
         val input = EditText(this).apply {
-            hint = "http://192.168.1.50:8096"; setText(server); setTextColor(Color.WHITE)
+            hint = VelarisDesign.defaultServerUrl()
+            setText(server.ifBlank { VelarisDesign.defaultServerUrl() });setTextColor(Color.WHITE)
             setHintTextColor(Color.GRAY); textSize = 18f; setSingleLine()
             inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI
         }
@@ -208,13 +209,15 @@ class MainActivity : Activity() {
         }
         listOf(
             VelarisDesign.navigation("home","Start") to navButton(VelarisDesign.navigation("home","Start")){showHome()},
-            VelarisDesign.navigation("movies","Filme") to navButton(VelarisDesign.navigation("movies","Filme")){showLibrary("Filme","Movie")},
-            VelarisDesign.navigation("series","Serien") to navButton(VelarisDesign.navigation("series","Serien")){showLibrary("Serien","Series")},
             VelarisDesign.navigation("anime","Anime") to navButton(VelarisDesign.navigation("anime","Anime")){showMediaFolderLibrary("Anime","Series")},
             VelarisDesign.navigation("animeMovies","Anime Filme") to navButton(VelarisDesign.navigation("animeMovies","Anime Filme")){showMediaFolderLibrary("Anime Filme","Movie")},
-            VelarisDesign.navigation("collections","Sammlungen") to navButton(VelarisDesign.navigation("collections","Sammlungen")){showLibrary("Sammlungen","BoxSet")}
+            VelarisDesign.navigation("animation","Animation") to navButton(VelarisDesign.navigation("animation","Animation")){showMediaFolderLibrary("Animation","Movie,Series")},
+            VelarisDesign.navigation("cartoons","Cartoons") to navButton(VelarisDesign.navigation("cartoons","Cartoons")){showMediaFolderLibrary("Cartoons","Movie,Series")},
+            VelarisDesign.navigation("movies","Filme") to navButton(VelarisDesign.navigation("movies","Filme")){showLibrary("Filme","Movie")},
+            VelarisDesign.navigation("collections","Sammlungen") to navButton(VelarisDesign.navigation("collections","Sammlungen")){showLibrary("Sammlungen","BoxSet")},
+            VelarisDesign.navigation("series","Serien") to navButton(VelarisDesign.navigation("series","Serien")){showLibrary("Serien","Series")}
         ).forEach { (label,button) ->
-            val width=when(label) { "Start"->dp(78); "Anime Filme"->dp(114); "Sammlungen"->dp(126); else->dp(84) }
+            val width=when(label) { "Start"->dp(78); "Anime Filme"->dp(116); "Sammlungen"->dp(130); "Animation"->dp(119); "Cartoons"->dp(108); else->dp(84) }
             nav.addView(button,LinearLayout.LayoutParams(width,dp(46)).apply{marginEnd=dp(3)})
         }
         val navScroll=HorizontalScrollView(this).apply {
@@ -543,12 +546,15 @@ class MainActivity : Activity() {
                 fun normalized(value:String)=java.text.Normalizer.normalize(value.lowercase(),java.text.Normalizer.Form.NFD)
                     .replace(Regex("[\\u0300-\\u036f]"),"")
                     .replace(Regex("[^a-z0-9]"),"")
-                val aliases=if(type=="Movie")
-                    listOf("animemovies","animefilme","animefilms","animefilme")
-                else listOf("anime","animes","animeserien","animeseries")
+                val aliases=when(title) {
+                    "Anime Filme" -> listOf("animemovies","animefilme","animefilms")
+                    "Animation" -> listOf("animation","animations","animationsfilme")
+                    "Cartoons" -> listOf("cartoons","cartoon","zeichentrick","zeichentrickfilme")
+                    else -> listOf("anime","animes","animeserien","animeseries")
+                }
                 val folder=views.firstOrNull { view -> aliases.contains(normalized(view.optString("Name"))) }
                 val folderId=folder?.optString("Id").orEmpty()
-                val data=if(folderId.isBlank()) emptyList() else items("/Users/$userId/Items?ParentId=$folderId&Recursive=true&Limit=250&SortBy=SortName&SortOrder=Ascending&IncludeItemTypes=$type&Fields=PrimaryImageAspectRatio")
+                val data=if(folderId.isBlank()) emptyList() else items("/Users/$userId/Items?ParentId=$folderId&Recursive=true&Limit=250&SortBy=SortName&SortOrder=Ascending&IncludeItemTypes=$type&Fields=PrimaryImageAspectRatio&EnableUserData=true")
                 runOnUiThread {
                     root.removeViewAt(1); homeRoot=root
                     if(folderId.isBlank()) {
