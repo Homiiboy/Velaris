@@ -512,12 +512,14 @@ class MainActivity : Activity() {
     private fun applyCardFocus(v:View, poster:View?=null) {
         v.setOnFocusChangeListener { _,focused ->
             val target=poster ?: v
-            if(poster!=null) {
-                poster.background=GradientDrawable().apply {
-                    setColor(VelarisDesign.color("surface",0xFF15151B.toInt()))
+            if(poster is FrameLayout) {
+                // Foreground draws above the poster artwork; background borders
+                // were hidden behind the full-size ImageView.
+                poster.foreground=if(focused)GradientDrawable().apply{
+                    setColor(Color.TRANSPARENT)
                     cornerRadius=dp(10).toFloat()
-                    if(focused)setStroke(dp(2),Color.WHITE)
-                }
+                    setStroke(dp(3),Color.WHITE)
+                } else null
             } else {
                 v.background=GradientDrawable().apply {
                     setColor(if(focused) 0x302E2E38 else Color.TRANSPARENT)
