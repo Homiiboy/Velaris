@@ -480,7 +480,9 @@ class MainActivity : Activity() {
             if(resumeMeta.isNotBlank()) card.addView(TextView(this).apply{text=resumeMeta;textSize=12f;setTextColor(Color.GRAY);setPadding(dp(4),0,0,0)},LinearLayout.LayoutParams(dp(310),dp(24)))
             row.addView(card,LinearLayout.LayoutParams(dp(322),dp(230)).apply{marginEnd=dp(12)})
         }
-        homeRoot?.addView(HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;clipChildren=false;addView(row)},LinearLayout.LayoutParams(-1,dp(268)))
+        homeRoot?.addView(HorizontalScrollView(this).apply{
+            isHorizontalScrollBarEnabled=false;clipChildren=false;clipToPadding=false;addView(row)
+        },LinearLayout.LayoutParams(-1,dp(300)))
     }
 
     private fun addRankedRow(title:String,data:List<JSONObject>) {
@@ -561,7 +563,7 @@ class MainActivity : Activity() {
         }
         homeRoot?.addView(HorizontalScrollView(this).apply {
             isHorizontalScrollBarEnabled=false; clipChildren=false; clipToPadding=false; addView(row)
-        },LinearLayout.LayoutParams(-1,dp(334)))
+        },LinearLayout.LayoutParams(-1,dp(350)))
     }
 
 
