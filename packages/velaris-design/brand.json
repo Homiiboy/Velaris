@@ -3,17 +3,21 @@
   "name": "VELARIS",
   "theme": {
     "background": "#08080D",
-    "surface": "#18181E",
-    "surfaceAlt": "#222229",
+    "surface": "#15151B",
+    "surfaceAlt": "#202027",
     "text": "#FFFFFF",
-    "muted": "#BDBDC4",
+    "muted": "#B9B9C3",
     "accent": "#7C5CFC",
     "accentPressed": "#6748E8",
     "focus": "#7E57FF",
     "danger": "#E50914",
-    "border": "#2B2B33",
+    "border": "#303039",
     "success": "#46D369",
-    "radius": 12
+    "radius": 12,
+    "progress": "#E50914",
+    "overlay": "#0B0B10",
+    "posterRadius": 9,
+    "heroLabel": "IM RAMPENLICHT"
   },
   "profiles": {
     "maxProfiles": 5,

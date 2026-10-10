@@ -143,12 +143,16 @@ class MainActivity : Activity() {
 
         val top=LinearLayout(this).apply {
             orientation=LinearLayout.HORIZONTAL; gravity=Gravity.CENTER_VERTICAL
-            setPadding(0,dp(16),dp(32),dp(8))
+            setPadding(dp(42),dp(16),dp(40),dp(8))
             background=GradientDrawable(
                 GradientDrawable.Orientation.TOP_BOTTOM,
                 intArrayOf(0xE608080D.toInt(),0x9908080D.toInt(),0x0008080D)
             )
         }
+        top.addView(TextView(this).apply {
+            text="VELARIS"; textSize=26f; typeface=Typeface.DEFAULT_BOLD
+            letterSpacing=0.12f; setTextColor(Color.WHITE); gravity=Gravity.CENTER_VERTICAL
+        },LinearLayout.LayoutParams(dp(160),dp(50)).apply{marginEnd=dp(24)})
         val nav=LinearLayout(this).apply { orientation=LinearLayout.HORIZONTAL; gravity=Gravity.CENTER_VERTICAL }
         listOf(
             VelarisDesign.navigation("home","Start") to navButton(VelarisDesign.navigation("home","Start")){showHome()},
@@ -158,7 +162,7 @@ class MainActivity : Activity() {
             VelarisDesign.navigation("animeMovies","Anime Filme") to navButton(VelarisDesign.navigation("animeMovies","Anime Filme")){showMediaFolderLibrary("Anime Filme","Movie")},
             VelarisDesign.navigation("collections","Sammlungen") to navButton(VelarisDesign.navigation("collections","Sammlungen")){showLibrary("Sammlungen","BoxSet")}
         ).forEach { (label,button) ->
-            val width=when(label) { "Start"->dp(90); "Anime Filme"->dp(122); "Sammlungen"->dp(132); else->dp(88) }
+            val width=when(label) { "Start"->dp(78); "Anime Filme"->dp(114); "Sammlungen"->dp(126); else->dp(84) }
             nav.addView(button,LinearLayout.LayoutParams(width,dp(46)).apply{marginEnd=dp(3)})
         }
         top.addView(nav,LinearLayout.LayoutParams(0,dp(50),1f))
@@ -223,7 +227,7 @@ class MainActivity : Activity() {
     private fun addHeroCarousel(items:List<JSONObject>) {
         if(items.isEmpty()) return
         val holder=FrameLayout(this)
-        homeRoot?.addView(holder,LinearLayout.LayoutParams(-1,dp(500)).apply{bottomMargin=dp(-26)})
+        homeRoot?.addView(holder,LinearLayout.LayoutParams(-1,dp(525)).apply{bottomMargin=dp(-12)})
         fun render(index:Int) {
             if(destroyed || items.isEmpty()) return
             holder.animate().alpha(0f).setDuration(150).withEndAction {
@@ -258,17 +262,17 @@ class MainActivity : Activity() {
         val ticks=item.optJSONObject("UserData")?.optLong("PlaybackPositionTicks",0L) ?: 0L
 
         val hero=FrameLayout(this).apply {
-            minimumHeight=dp(480)
+            minimumHeight=dp(515)
             setBackgroundColor(Color.rgb(12,12,18))
         }
         val image=ImageView(this).apply { scaleType=ImageView.ScaleType.CENTER_CROP }
-        hero.addView(image, FrameLayout.LayoutParams(-1,dp(480)))
+        hero.addView(image, FrameLayout.LayoutParams(-1,dp(515)))
         loadImage(image,id,"Backdrop",1600)
 
         val shade=View(this).apply {
             background=GradientDrawable(
                 GradientDrawable.Orientation.LEFT_RIGHT,
-                intArrayOf(0xF708080D.toInt(),0xB808080D.toInt(),0x3308080D,0x0808080D)
+                intArrayOf(0xFB08080D.toInt(),0xD008080D.toInt(),0x5008080D,0x0808080D)
             )
         }
         hero.addView(shade,FrameLayout.LayoutParams(-1,-1))
@@ -279,13 +283,19 @@ class MainActivity : Activity() {
         val info=LinearLayout(this).apply {
             orientation=LinearLayout.VERTICAL
             gravity=Gravity.BOTTOM
-            setPadding(dp(24),0,dp(58),dp(50))
+            setPadding(dp(64),0,dp(58),dp(55))
         }
+        info.addView(TextView(this).apply {
+            text=VelarisDesign.themeText("heroLabel","IM RAMPENLICHT")
+            textSize=13f; letterSpacing=0.17f; typeface=Typeface.DEFAULT_BOLD
+            setTextColor(VelarisDesign.color("accent",0xFF7C5CFC.toInt()))
+            setPadding(0,0,0,dp(12))
+        })
         val logo=ImageView(this).apply{scaleType=ImageView.ScaleType.FIT_START;visibility=View.INVISIBLE}
         info.addView(logo,LinearLayout.LayoutParams(dp(430),dp(120)))
         loadImageWithFallback(logo,id,"Logo",700) {
             logo.visibility=View.GONE
-            info.addView(TextView(this).apply { text=title; textSize=42f; setTextColor(Color.WHITE); typeface=Typeface.DEFAULT_BOLD },0)
+            info.addView(TextView(this).apply { text=title; textSize=48f; setTextColor(Color.WHITE); typeface=Typeface.DEFAULT_BOLD;maxLines=2 },1)
         }
         val meta=listOfNotNull(
             if(year>0) year.toString() else null,
@@ -295,7 +305,7 @@ class MainActivity : Activity() {
             text=meta; textSize=17f; setTextColor(Color.LTGRAY); setPadding(0,dp(8),0,0)
         })
         if(overview.isNotBlank()) info.addView(TextView(this).apply {
-            text=overview; textSize=17f; setTextColor(Color.WHITE); maxLines=3
+            text=overview; textSize=17f; setTextColor(Color.WHITE); maxLines=3;setLineSpacing(0f,1.2f)
             setPadding(0,dp(12),0,0)
         },LinearLayout.LayoutParams(dp(650),-2))
 
@@ -308,16 +318,18 @@ class MainActivity : Activity() {
         },LinearLayout.LayoutParams(dp(220),dp(58)).apply { marginEnd=dp(12) })
         val isFav=item.optJSONObject("UserData")?.optBoolean("IsFavorite",false)?:false
         actions.addView(actionButton(if(isFav)"✓  Meine Liste" else "+  Meine Liste",false) { setFavorite(id,!isFav){showHome()} },
-            LinearLayout.LayoutParams(dp(210),dp(58)))
+            LinearLayout.LayoutParams(dp(210),dp(58)).apply{marginEnd=dp(12)})
+        actions.addView(actionButton("ⓘ  Mehr Infos",false){showDetails(id)},
+            LinearLayout.LayoutParams(dp(195),dp(58)))
         info.addView(actions)
         hero.addView(info,FrameLayout.LayoutParams(-1,-1))
-        homeRoot?.addView(hero,LinearLayout.LayoutParams(-1,dp(480)).apply { bottomMargin=dp(8) })
+        homeRoot?.addView(hero,LinearLayout.LayoutParams(-1,dp(515)).apply { bottomMargin=dp(8) })
     }
 
     private fun addContinueRow(data:List<JSONObject>) {
         if(data.isEmpty()) return
         homeRoot?.addView(sectionTitle(VelarisDesign.homeRow("resume","Weiterschauen")))
-        val row=LinearLayout(this).apply { orientation=LinearLayout.HORIZONTAL; setPadding(dp(12),dp(12),dp(36),dp(44)); clipChildren=false; clipToPadding=false }
+        val row=LinearLayout(this).apply { orientation=LinearLayout.HORIZONTAL; setPadding(dp(52),dp(12),dp(40),dp(44)); clipChildren=false; clipToPadding=false }
         data.forEach { item ->
             val id=item.optString("Id"); if(id.isBlank()) return@forEach
             val ticks=item.optJSONObject("UserData")?.optLong("PlaybackPositionTicks",0L) ?: 0L
@@ -327,16 +339,33 @@ class MainActivity : Activity() {
                 setOnClickListener { playNative(id,ticks) }; applyCardFocus(this)
             }
             val img=ImageView(this).apply { scaleType=ImageView.ScaleType.CENTER_CROP }
-            card.addView(img,LinearLayout.LayoutParams(dp(310),dp(174))); loadImage(img,id,"Backdrop",620)
+            val thumb=FrameLayout(this).apply {
+                background=GradientDrawable().apply {
+                    setColor(VelarisDesign.color("surface",0xFF15151B.toInt()))
+                    cornerRadius=dp(9).toFloat()
+                }
+                clipToOutline=true
+            }
+            thumb.addView(img,FrameLayout.LayoutParams(-1,-1));loadImage(img,id,"Backdrop",620)
+            thumb.addView(TextView(this).apply {
+                text="▶";textSize=22f;setTextColor(Color.WHITE);gravity=Gravity.CENTER
+                background=GradientDrawable().apply {
+                    setColor(0x88000000.toInt())
+                    cornerRadius=dp(26).toFloat()
+                    setStroke(dp(2),0xCCFFFFFF.toInt())
+                }
+            },FrameLayout.LayoutParams(dp(52),dp(52),Gravity.CENTER))
+            if(ticks>0 && total>0)thumb.addView(ProgressBar(this,null,android.R.attr.progressBarStyleHorizontal).apply {
+                max=1000;progress=((ticks.toDouble()/total)*1000).toInt().coerceIn(0,1000)
+                progressTintList=android.content.res.ColorStateList.valueOf(VelarisDesign.color("progress",0xFFE50914.toInt()))
+                progressBackgroundTintList=android.content.res.ColorStateList.valueOf(0xAA888888.toInt())
+            },FrameLayout.LayoutParams(-1,dp(5),Gravity.BOTTOM))
+            card.addView(thumb,LinearLayout.LayoutParams(dp(310),dp(174)))
             card.addView(TextView(this).apply { text=item.optString("Name"); setTextColor(Color.WHITE); textSize=15f; maxLines=1; setPadding(dp(4),dp(7),0,0) },LinearLayout.LayoutParams(dp(310),dp(30)))
             val remaining=((total-ticks).coerceAtLeast(0L)/600_000_000L)
             val ep=item.optInt("IndexNumber",0); val season=item.optInt("ParentIndexNumber",0)
             val resumeMeta=listOfNotNull(if(season>0&&ep>0)"S$season:E$ep" else null,if(remaining>0)"Noch $remaining Min." else null).joinToString("  •  ")
             if(resumeMeta.isNotBlank()) card.addView(TextView(this).apply{text=resumeMeta;textSize=12f;setTextColor(Color.GRAY);setPadding(dp(4),0,0,0)},LinearLayout.LayoutParams(dp(310),dp(24)))
-            if(ticks>0 && total>0) card.addView(ProgressBar(this,null,android.R.attr.progressBarStyleHorizontal).apply {
-                max=1000; progress=((ticks.toDouble()/total)*1000).toInt().coerceIn(0,1000)
-                progressTintList=android.content.res.ColorStateList.valueOf(Color.rgb(126,87,255))
-            },LinearLayout.LayoutParams(dp(310),dp(5)))
             row.addView(card,LinearLayout.LayoutParams(dp(322),dp(230)).apply{marginEnd=dp(12)})
         }
         homeRoot?.addView(HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;clipChildren=false;addView(row)},LinearLayout.LayoutParams(-1,dp(268)))
@@ -345,11 +374,11 @@ class MainActivity : Activity() {
     private fun addRankedRow(title:String,data:List<JSONObject>) {
         if(data.isEmpty()) return
         homeRoot?.addView(sectionTitle(title))
-        val row=LinearLayout(this).apply { orientation=LinearLayout.HORIZONTAL; setPadding(dp(12),dp(12),dp(36),dp(44)); clipChildren=false; clipToPadding=false }
+        val row=LinearLayout(this).apply { orientation=LinearLayout.HORIZONTAL; setPadding(dp(52),dp(12),dp(40),dp(44)); clipChildren=false; clipToPadding=false }
         data.take(10).forEachIndexed { index,item ->
             val wrap=LinearLayout(this).apply { orientation=LinearLayout.HORIZONTAL; gravity=Gravity.BOTTOM; isFocusable=true; isClickable=true
                 setOnClickListener { if(item.optString("Type")=="Series") showSeries(item.optString("Id")) else showDetails(item.optString("Id")) }; applyCardFocus(this) }
-            wrap.addView(TextView(this).apply { text="${index+1}"; textSize=68f; typeface=Typeface.DEFAULT_BOLD; setTextColor(0xFF2D2D35.toInt()); gravity=Gravity.BOTTOM },LinearLayout.LayoutParams(dp(58),dp(218)))
+            wrap.addView(TextView(this).apply { text="${index+1}"; textSize=68f; typeface=Typeface.DEFAULT_BOLD; setTextColor(VelarisDesign.color("surfaceAlt",0xFF202027.toInt())); gravity=Gravity.BOTTOM },LinearLayout.LayoutParams(dp(58),dp(218)))
             val img=ImageView(this).apply { scaleType=ImageView.ScaleType.CENTER_CROP }
             img.clipToOutline=true
             img.outlineProvider=object:android.view.ViewOutlineProvider(){override fun getOutline(v:View,o:android.graphics.Outline){o.setRoundRect(0,0,v.width.coerceAtLeast(1),v.height.coerceAtLeast(1),dp(12).toFloat())}}
@@ -360,13 +389,18 @@ class MainActivity : Activity() {
     }
 
     private fun sectionTitle(label:String)=TextView(this).apply {
-        text=label; setTextColor(Color.WHITE); textSize=24f; typeface=Typeface.DEFAULT_BOLD
-        setPadding(dp(12),dp(18),0,dp(8))
+        text=label; setTextColor(Color.WHITE); textSize=26f; typeface=Typeface.DEFAULT_BOLD
+        setPadding(dp(52),dp(18),0,dp(12))
     }
 
     private fun applyCardFocus(v:View) {
         v.setOnFocusChangeListener { view,focused ->
-            view.animate().scaleX(if(focused)1.075f else 1f).scaleY(if(focused)1.075f else 1f)
+            view.background=GradientDrawable().apply {
+                setColor(if(focused) 0x302E2E38 else Color.TRANSPARENT)
+                cornerRadius=dp(12).toFloat()
+                if(focused)setStroke(dp(2),Color.WHITE)
+            }
+            view.animate().scaleX(if(focused)1.065f else 1f).scaleY(if(focused)1.065f else 1f)
                 .translationZ(if(focused)dp(14).toFloat() else 0f).setDuration(140).start()
         }
     }
@@ -376,7 +410,7 @@ class MainActivity : Activity() {
         homeRoot?.addView(sectionTitle(title))
         val row=LinearLayout(this).apply {
             orientation=LinearLayout.HORIZONTAL
-            setPadding(dp(52),dp(8),dp(52),dp(22))
+            setPadding(dp(52),dp(8),dp(52),dp(30))
             clipChildren=false
             clipToPadding=false
         }
@@ -402,7 +436,7 @@ class MainActivity : Activity() {
             val total=item.optLong("RunTimeTicks",0L)
             if(progress>0 && total>0) card.addView(ProgressBar(this,null,android.R.attr.progressBarStyleHorizontal).apply {
                 max=1000; this.progress=((progress.toDouble()/total)*1000).toInt().coerceIn(0,1000)
-                progressTintList=android.content.res.ColorStateList.valueOf(Color.rgb(126,87,255))
+                progressTintList=android.content.res.ColorStateList.valueOf(VelarisDesign.color("progress",0xFFE50914.toInt()))
             },LinearLayout.LayoutParams(dp(176),dp(5)))
             row.addView(card,LinearLayout.LayoutParams(dp(188),dp(304)).apply { marginEnd=dp(8) })
         }
@@ -1052,8 +1086,9 @@ class MainActivity : Activity() {
         setOnClickListener { click() }
         setOnFocusChangeListener { v, focused ->
             background=GradientDrawable().apply {
-                setColor(if(focused) 0x663F3F46 else Color.TRANSPARENT)
-                cornerRadius=dp(7).toFloat()
+                setColor(if(focused) 0x70404048 else Color.TRANSPARENT)
+                cornerRadius=dp(10).toFloat()
+                if(focused)setStroke(dp(1),0xCCFFFFFF.toInt())
             }
             v.animate()
                 .scaleX(if(focused)1.03f else 1f)
@@ -1066,12 +1101,12 @@ class MainActivity : Activity() {
         text=label; contentDescription=label; isAllCaps=false; textSize=17f; typeface=Typeface.DEFAULT_BOLD
         setTextColor(if(primary) Color.BLACK else Color.WHITE); isFocusable=true
         background=GradientDrawable().apply {
-            setColor(if(primary) Color.WHITE else 0x99282830.toInt()); cornerRadius=dp(8).toFloat()
+            setColor(if(primary) Color.WHITE else 0xD034343B.toInt()); cornerRadius=dp(10).toFloat()
         }
         setOnClickListener { click() }
         setOnFocusChangeListener { v, focused ->
             background=GradientDrawable().apply {
-                setColor(if(focused) Color.rgb(126,87,255) else if(primary) Color.WHITE else 0x99282830.toInt())
+                setColor(if(focused) VelarisDesign.color("focus",0xFF7E57FF.toInt()) else if(primary) Color.WHITE else 0x99282830.toInt())
                 cornerRadius=dp(8).toFloat()
             }
             setTextColor(if(focused || !primary) Color.WHITE else Color.BLACK)
