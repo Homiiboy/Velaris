@@ -572,7 +572,11 @@ class MainActivity : Activity() {
     private fun addLibraryGrid(data:List<JSONObject>) {
         if(data.isEmpty()) return
         val grid=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; clipChildren=false; clipToPadding=false; setPadding(dp(16),dp(20),dp(16),dp(42)) }
-        data.chunked(5).forEach { items ->
+        // Respect the available TV viewport instead of forcing five posters
+        // across devices that are narrower (or use larger accessibility scaling).
+        val available=(resources.displayMetrics.widthPixels-dp(128)).coerceAtLeast(dp(228))
+        val columns=(available/dp(228)).coerceIn(1,5)
+        data.chunked(columns).forEach { items ->
             val row=LinearLayout(this).apply { orientation=LinearLayout.HORIZONTAL; gravity=Gravity.START; clipChildren=false; clipToPadding=false }
             items.forEach { item ->
                 val id=item.optString("Id"); if(id.isBlank()) return@forEach
