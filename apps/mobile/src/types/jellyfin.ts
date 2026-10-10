@@ -13,7 +13,7 @@ export type JellyfinMediaSource = {
 };
 export type JellyfinPlaybackInfo = { MediaSources?: JellyfinMediaSource[]; PlaySessionId?: string };
 export type JellyfinItem = {
-  Id: string; Name: string; Type?: string; MediaType?: string; Overview?: string; ProductionYear?: number; RunTimeTicks?: number;
+  Id: string; Name: string; EpisodeTitle?: string; OriginalTitle?: string; Type?: string; MediaType?: string; Overview?: string; ProductionYear?: number; RunTimeTicks?: number;
   CommunityRating?: number; OfficialRating?: string; Genres?: string[]; PrimaryImageTag?: string; ImageTags?: { Primary?: string; [key:string]: string | undefined }; BackdropImageTags?: string[];
   SeriesName?: string; SeriesId?: string; SeasonName?: string; ParentIndexNumber?: number; IndexNumber?: number; Container?: string; MediaSources?: JellyfinMediaSource[]; UserData?: JellyfinUserData;
 };
