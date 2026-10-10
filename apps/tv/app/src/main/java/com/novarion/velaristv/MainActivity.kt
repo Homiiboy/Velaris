@@ -136,14 +136,18 @@ class MainActivity : Activity() {
         homeRoot=content
 
         val scroll=ScrollView(this).apply {
-            isVerticalScrollBarEnabled=false; clipToPadding=false; addView(content)
+            isVerticalScrollBarEnabled=false
+            clipChildren=false;clipToPadding=false
+            descendantFocusability=android.view.ViewGroup.FOCUS_AFTER_DESCENDANTS
+            addView(content)
         }
         val screen=FrameLayout(this).apply { setBackgroundColor(VelarisDesign.color("background",0xFF08080D.toInt())) }
         screen.addView(scroll,FrameLayout.LayoutParams(-1,-1))
 
         val top=LinearLayout(this).apply {
             orientation=LinearLayout.HORIZONTAL; gravity=Gravity.CENTER_VERTICAL
-            setPadding(dp(42),dp(16),dp(40),dp(8))
+            setPadding(dp(48),dp(16),dp(48),dp(8))
+            clipChildren=false;clipToPadding=false
             background=GradientDrawable(
                 GradientDrawable.Orientation.TOP_BOTTOM,
                 intArrayOf(0xE608080D.toInt(),0x9908080D.toInt(),0x0008080D)
@@ -152,8 +156,12 @@ class MainActivity : Activity() {
         top.addView(TextView(this).apply {
             text="VELARIS"; textSize=26f; typeface=Typeface.DEFAULT_BOLD
             letterSpacing=0.12f; setTextColor(Color.WHITE); gravity=Gravity.CENTER_VERTICAL
-        },LinearLayout.LayoutParams(dp(160),dp(50)).apply{marginEnd=dp(24)})
-        val nav=LinearLayout(this).apply { orientation=LinearLayout.HORIZONTAL; gravity=Gravity.CENTER_VERTICAL }
+        },LinearLayout.LayoutParams(dp(152),dp(50)).apply{marginEnd=dp(18)})
+        // Keep all destinations reachable with the D-pad, even on smaller/overscanned TVs.
+        val nav=LinearLayout(this).apply {
+            orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL
+            clipChildren=false;clipToPadding=false
+        }
         listOf(
             VelarisDesign.navigation("home","Start") to navButton(VelarisDesign.navigation("home","Start")){showHome()},
             VelarisDesign.navigation("movies","Filme") to navButton(VelarisDesign.navigation("movies","Filme")){showLibrary("Filme","Movie")},
@@ -165,7 +173,16 @@ class MainActivity : Activity() {
             val width=when(label) { "Start"->dp(78); "Anime Filme"->dp(114); "Sammlungen"->dp(126); else->dp(84) }
             nav.addView(button,LinearLayout.LayoutParams(width,dp(46)).apply{marginEnd=dp(3)})
         }
-        top.addView(nav,LinearLayout.LayoutParams(0,dp(50),1f))
+        val navScroll=HorizontalScrollView(this).apply {
+            isHorizontalScrollBarEnabled=false
+            isFillViewport=false
+            isFocusable=false
+            clipChildren=false;clipToPadding=false
+            overScrollMode=View.OVER_SCROLL_NEVER
+            setPadding(dp(10),0,dp(14),0)
+            addView(nav,FrameLayout.LayoutParams(-2,-1))
+        }
+        top.addView(navScroll,LinearLayout.LayoutParams(0,dp(54),1f))
         top.addView(navButton("⌕"){showSearch()},LinearLayout.LayoutParams(dp(60),dp(46)).apply{marginEnd=dp(6)})
         top.addView(navButton("Profil"){showProfiles()},LinearLayout.LayoutParams(dp(82),dp(46)).apply{marginEnd=dp(4)})
         top.addView(navButton("⚙"){showSettingsDialog()},LinearLayout.LayoutParams(dp(60),dp(46)))
@@ -1027,7 +1044,12 @@ class MainActivity : Activity() {
 
     private fun showSettingsDialog() {
         rememberBack { showHome() }
-        val root=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(64),dp(44),dp(64),dp(44));setBackgroundColor(VelarisDesign.color("background",0xFF08080D.toInt()))}
+        val root=LinearLayout(this).apply{
+            orientation=LinearLayout.VERTICAL
+            setPadding(dp(52),dp(38),dp(52),dp(82))
+            setBackgroundColor(VelarisDesign.color("background",0xFF08080D.toInt()))
+            clipChildren=false;clipToPadding=false
+        }
         root.addView(TextView(this).apply{text="Einstellungen";textSize=38f;setTextColor(Color.WHITE);typeface=Typeface.DEFAULT_BOLD})
         root.addView(TextView(this).apply{text="Velaris TV";textSize=16f;setTextColor(Color.GRAY);setPadding(0,dp(4),0,dp(24))})
         val playback=settingsCard("▶","Wiedergabe","Autoplay, Intro, Rückblick und Abspann"){showPlaybackSettings()}
@@ -1035,7 +1057,15 @@ class MainActivity : Activity() {
         val serverCard=settingsCard("◉","Server",server.ifBlank{"Nicht verbunden"}){clearConnection();showServer()}
         val logout=settingsCard("↪","Abmelden","Jellyfin-Sitzung auf diesem TV beenden"){token="";userId="";prefs.edit().remove("access_token").remove("user_id").apply();showLogin()}
         listOf(playback,profiles,serverCard,logout).forEach{root.addView(it,LinearLayout.LayoutParams(-1,dp(86)).apply{bottomMargin=dp(12)})}
-        setContentView(root)
+        val page=ScrollView(this).apply {
+            isVerticalScrollBarEnabled=false
+            isFillViewport=true
+            clipChildren=false;clipToPadding=false
+            setBackgroundColor(VelarisDesign.color("background",0xFF08080D.toInt()))
+            addView(root)
+        }
+        setContentView(page)
+        page.post { playback.requestFocus() }
     }
 
     private fun settingsCard(icon:String,title:String,sub:String,click:()->Unit)=LinearLayout(this).apply{
@@ -1044,11 +1074,26 @@ class MainActivity : Activity() {
         addView(TextView(this@MainActivity).apply{text=icon;textSize=26f;setTextColor(Color.WHITE);gravity=Gravity.CENTER},LinearLayout.LayoutParams(dp(54),dp(54)))
         addView(LinearLayout(this@MainActivity).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(18),0,0,0);addView(TextView(this@MainActivity).apply{text=title;textSize=20f;setTextColor(Color.WHITE);typeface=Typeface.DEFAULT_BOLD});addView(TextView(this@MainActivity).apply{text=sub;textSize=14f;setTextColor(Color.GRAY)})},LinearLayout.LayoutParams(0,-2,1f))
         addView(TextView(this@MainActivity).apply{text="›";textSize=30f;setTextColor(Color.LTGRAY)})
-        setOnClickListener{click()};setOnFocusChangeListener{v,f->background=GradientDrawable().apply{setColor(if(f)0xFF303038.toInt() else VelarisDesign.color("surface",0xFF18181E.toInt()));cornerRadius=dp(12).toFloat()};v.animate().scaleX(if(f)1.015f else 1f).scaleY(if(f)1.015f else 1f).setDuration(120).start()}
+        stateListAnimator=null
+        setOnClickListener{click()}
+        setOnFocusChangeListener{_,focused->
+            background=GradientDrawable().apply{
+                setColor(if(focused)VelarisDesign.color("surfaceAlt",0xFF202027.toInt()) else VelarisDesign.color("surface",0xFF18181E.toInt()))
+                cornerRadius=dp(12).toFloat()
+                if(focused)setStroke(dp(2),Color.WHITE)
+            }
+            // Borders provide focus feedback without scaling/cropping the full-width row.
+            animate().scaleX(1f).scaleY(1f).setDuration(100).start()
+        }
     }
 
     private fun showPlaybackSettings() {
-        val root=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(64),dp(44),dp(64),dp(44));setBackgroundColor(VelarisDesign.color("background",0xFF08080D.toInt()))}
+        val root=LinearLayout(this).apply{
+            orientation=LinearLayout.VERTICAL
+            setPadding(dp(52),dp(38),dp(52),dp(82))
+            setBackgroundColor(VelarisDesign.color("background",0xFF08080D.toInt()))
+            clipChildren=false;clipToPadding=false
+        }
         root.addView(TextView(this).apply{text="Wiedergabe";textSize=36f;setTextColor(Color.WHITE);typeface=Typeface.DEFAULT_BOLD})
         val options=listOf("Automatisch nächste Folge" to "auto_next","Intro automatisch überspringen" to "auto_skip_intro","Rückblick automatisch überspringen" to "auto_skip_recap","Abspann automatisch überspringen" to "auto_skip_credits")
         options.forEachIndexed{i,(label,key)->
@@ -1057,7 +1102,13 @@ class MainActivity : Activity() {
             }
             root.addView(row,LinearLayout.LayoutParams(-1,dp(82)).apply{topMargin=dp(10)})
         }
-        root.addView(actionButton("Zurück",false){showSettingsDialog()},params(180,56,22));setContentView(root)
+        root.addView(actionButton("Zurück",false){showSettingsDialog()},params(180,56,22))
+        setContentView(ScrollView(this).apply{
+            isVerticalScrollBarEnabled=false;isFillViewport=true
+            clipChildren=false;clipToPadding=false
+            addView(root)
+        })
+        root.post{(root.getChildAt(1) as? View)?.requestFocus()}
     }
 
 
@@ -1090,10 +1141,13 @@ class MainActivity : Activity() {
                 cornerRadius=dp(10).toFloat()
                 if(focused)setStroke(dp(1),0xCCFFFFFF.toInt())
             }
-            v.animate()
-                .scaleX(if(focused)1.03f else 1f)
-                .scaleY(if(focused)1.03f else 1f)
-                .setDuration(110).start()
+            // The HorizontalScrollView follows D-pad focus to "Sammlungen".
+            if(focused) post {
+                val strip=parent as? LinearLayout
+                val scroll=strip?.parent as? HorizontalScrollView
+                if(scroll!=null)scroll.smoothScrollTo((left - dp(30)).coerceAtLeast(0),0)
+            }
+            v.animate().scaleX(1f).scaleY(1f).setDuration(110).start()
         }
     }
 
