@@ -24,6 +24,9 @@ object VelarisDesign {
     fun homeRow(key: String, fallback: String): String =
         config.optJSONObject("homeRows")?.optString(key, fallback) ?: fallback
 
+    fun themeText(key: String, fallback: String): String =
+        config.optJSONObject("theme")?.optString(key, fallback) ?: fallback
+
     fun maxProfiles(): Int =
         config.optJSONObject("profiles")?.optInt("maxProfiles", 5)?.coerceIn(1, 10) ?: 5
 }
