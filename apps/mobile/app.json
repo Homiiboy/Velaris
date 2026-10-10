@@ -1,0 +1,74 @@
+{
+  "expo": {
+    "name": "Velaris",
+    "slug": "velaris-smartphone-app",
+    "scheme": "velaris",
+    "version": "0.7.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "at.velaris.app",
+      "infoPlist": {
+        "NSLocalNetworkUsageDescription": "Velaris benötigt Zugriff auf dein lokales Netzwerk, um Chromecast- und Cast-fähige Fernseher zu finden.",
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true
+        }
+      },
+      "icon": "./assets/NewAppIcon.png"
+    },
+    "android": {
+      "package": "at.velaris.app",
+      "versionCode": 7,
+      "icon": "./assets/NewAppIcon.png",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/NewAppIcon.png",
+        "backgroundColor": "#08090B"
+      }
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Velaris benötigt Zugriff auf deine Fotos, damit du ein eigenes Profilbild auswählen kannst.",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
+      ],
+      [
+        "expo-video",
+        {
+          "supportsPictureInPicture": true
+        }
+      ],
+      [
+        "react-native-google-cast",
+        {
+          "receiverAppId": "CC1AD845",
+          "expandedController": true,
+          "iosStartDiscoveryAfterFirstTapOnCastButton": true
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "icon": "./assets/NewAppIcon.png",
+    "owner": "novadev-studio",
+    "extra": {
+      "eas": {
+        "projectId": "3cdbab13-f114-45ae-a0be-54275f4a4508"
+      }
+    }
+  }
+}

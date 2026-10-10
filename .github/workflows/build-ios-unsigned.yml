@@ -1,0 +1,80 @@
+name: Build unsigned iOS IPA
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-ios:
+    runs-on: macos-26
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: apps/mobile
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Verify Xcode and Swift
+        run: |
+          xcodebuild -version
+          swift --version
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/mobile/package-lock.json
+
+      - name: Install JavaScript dependencies
+        run: npm ci --include=dev
+
+      - name: Generate native iOS project
+        run: npx expo prebuild --platform ios --clean --no-install
+
+      - name: Install CocoaPods dependencies
+        run: |
+          cd ios
+          pod install
+
+      - name: Build Velaris without code signing
+        run: |
+          set -o pipefail
+          WORKSPACE=$(find ios -maxdepth 1 -name "*.xcworkspace" | head -1)
+          SCHEME="Velaris"
+          echo "Workspace: $WORKSPACE"
+          echo "Scheme: $SCHEME"
+          xcodebuild \
+            -workspace "$WORKSPACE" \
+            -scheme "$SCHEME" \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            build
+
+      - name: Package unsigned IPA
+        run: |
+          APP=$(find build/Build/Products/Release-iphoneos -maxdepth 1 -name "*.app" | head -1)
+          if [ -z "$APP" ]; then
+            echo "No .app bundle was produced."
+            exit 1
+          fi
+          echo "App bundle: $APP"
+          mkdir -p Payload
+          cp -R "$APP" Payload/
+          zip -qry Velaris-unsigned.ipa Payload
+
+      - name: Upload Velaris IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: Velaris-unsigned-iOS
+          path: apps/mobile/Velaris-unsigned.ipa
+          if-no-files-found: error
+          retention-days: 14

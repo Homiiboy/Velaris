@@ -1,0 +1,515 @@
+{
+  "imported_at": "2026-10-10",
+  "strategy": "Exact source snapshots; original Git histories remain in source repositories.",
+  "sources": [
+    {
+      "repository": "Homiiboy/Velaris-Smartphone-App",
+      "commit": "f9fc989b1bebeb37f90d3d7d2e36c5dd7728c13e",
+      "destination": "apps/mobile"
+    },
+    {
+      "repository": "Homiiboy/Velaris-TV-App",
+      "commit": "880cb8c18a48c507a078fe7960c036c04b5d5e37",
+      "destination": "apps/tv"
+    }
+  ],
+  "files": [
+    {
+      "source_repository": "Homiiboy/Velaris-Smartphone-App",
+      "source_path": ".github/workflows/build-ios-unsigned.yml",
+      "source_blob": "23cf8670ae9e8c8efd4be88d517ee020e1bc95b2",
+      "destination": ".github/workflows/build-ios-unsigned.yml",
+      "mode": "adapted-workflow"
+    },
+    {
+      "source_repository": "Homiiboy/Velaris-Smartphone-App",
+      "source_path": ".github/workflows/generate-package-lock.yml",
+      "source_blob": "c992139e34ca5ff2814237e88bb92f029311451e",
+      "destination": ".github/workflows/generate-package-lock.yml",
+      "mode": "adapted-workflow"
+    },
+    {
+      "source_repository": "Homiiboy/Velaris-Smartphone-App",
+      "source_path": ".gitignore",
+      "source_blob": "e6f56238ded7702bc85ea2c6178d7738f95114ed",
+      "destination": "apps/mobile/.gitignore",
+      "mode": "exact-copy"
+    },
+    {
+      "source_repository": "Homiiboy/Velaris-Smartphone-App",
+      "source_path": "README.md",
+      "source_blob": "75856be7fdcfe51661a96b93bb7484e18499b4ba",
+      "destination": "apps/mobile/README.md",
+      "mode": "exact-copy"
+    },
+    {
+      "source_repository": "Homiiboy/Velaris-Smartphone-App",
+      "source_path": "app.json",
+      "source_blob": "f40b7de920907a192b4989dd8c38cdc662c2c492",
+      "destination": "apps/mobile/app.json",
+      "mode": "exact-copy"
+    },
+    {
+      "source_repository": "Homiiboy/Velaris-Smartphone-App",
+      "source_path": "app/(tabs)/_layout.tsx",
+      "source_blob": "71d845ffdaed366f8a2abe2e09a9f00f4699f10d",
+      "destination": "apps/mobile/app/(tabs)/_layout.tsx",
+      "mode": "exact-copy"
+    },
+    {
+      "source_repository": "Homiiboy/Velaris-Smartphone-App",
+      "source_path": "app/(tabs)/anime-movies.tsx",
+      "source_blob": "b77b9f5c13a874d76abb0abb3399c348a88f7f00",
+      "destination": "apps/mobile/app/(tabs)/anime-movies.tsx",
+      "mode": "exact-copy"
+    },
+    {
+      "source_repository": "Homiiboy/Velaris-Smartphone-App",
+      "source_path": "app/(tabs)/anime.tsx",
+      "source_blob": "5913c9496e98676c00e35a37cda56368ea7744bc",
+      "destination": "apps/mobile/app/(tabs)/anime.tsx",
+      "mode": "exact-copy"
+    },
+    {
+      "source_repository": "Homiiboy/Velaris-Smartphone-App",
+      "source_path": "app/(tabs)/home.tsx",
+      "source_blob": "5289766ba443bb03f4535b3c423d5474c8b0db7c",
+      "destination": "apps/mobile/app/(tabs)/home.tsx",
+      "mode": "exact-copy"
+    },
+    {
+      "source_repository": "Homiiboy/Velaris-Smartphone-App",
+      "source_path": "app/(tabs)/movies.tsx",
+      "source_blob": "35b83f2e95e536a777d117f8d205bb6da8676c3f",
+      "destination": "apps/mobile/app/(tabs)/movies.tsx",
+      "mode": "exact-copy"
+    },
+    {
+      "source_repository": "Homiiboy/Velaris-Smartphone-App",
+      "source_path": "app/(tabs)/profile.tsx",
+      "source_blob": "88590a1bad6c0d39d628f5c23998cf900d6bd574",
+      "destination": "apps/mobile/app/(tabs)/profile.tsx",
+      "mode": "exact-copy"
+    },
+    {
+      "source_repository": "Homiiboy/Velaris-Smartphone-App",
+      "source_path": "app/(tabs)/search.tsx",
+      "source_blob": "a0020f9697fce79a3519dbe289a4938158d70e56",
+      "destination": "apps/mobile/app/(tabs)/search.tsx",
+      "mode": "exact-copy"
+    },
+    {
+      "source_repository": "Homiiboy/Velaris-Smartphone-App",
+      "source_path": "app/(tabs)/series.tsx",
+      "source_blob": "c079434105f7ee3645232a30ff9216657b337962",
+      "destination": "apps/mobile/app/(tabs)/series.tsx",
+      "mode": "exact-copy"
+    },
+    {
+      "source_repository": "Homiiboy/Velaris-Smartphone-App",
+      "source_path": "app/_layout.tsx",
+      "source_blob": "10c44ba72fa1b31d41ad6feef1ae6fa7eab9aa45",
+      "destination": "apps/mobile/app/_layout.tsx",
+      "mode": "exact-copy"
+    },
+    {
+      "source_repository": "Homiiboy/Velaris-Smartphone-App",
+      "source_path": "app/collection/[id].tsx",
+      "source_blob": "c599fa36cbc5303d392e61c475fd70594c2e89ee",
+      "destination": "apps/mobile/app/collection/[id].tsx",
+      "mode": "exact-copy"
+    },
+    {
+      "source_repository": "Homiiboy/Velaris-Smartphone-App",
+      "source_path": "app/collections.tsx",
+      "source_blob": "3a201c06c72b5c0dc7fdf42de299af3a6c4515a9",
+      "destination": "apps/mobile/app/collections.tsx",
+      "mode": "exact-copy"
+    },
+    {
+      "source_repository": "Homiiboy/Velaris-Smartphone-App",
+      "source_path": "app/connect.tsx",
+      "source_blob": "f2c847f08ec785d833bd63bf1a692b2156c799e1",
+      "destination": "apps/mobile/app/connect.tsx",
+      "mode": "exact-copy"
+    },
+    {
+      "source_repository": "Homiiboy/Velaris-Smartphone-App",
+      "source_path": "app/details/[id].tsx",
+      "source_blob": "7d6816142ccfd2a469c1d9dc3a25aaa66649e733",
+      "destination": "apps/mobile/app/details/[id].tsx",
+      "mode": "exact-copy"
+    },
+    {
+      "source_repository": "Homiiboy/Velaris-Smartphone-App",
+      "source_path": "app/downloads.tsx",
+      "source_blob": "f59182078087cbaa6890a1455d8a094971a0ece0",
+      "destination": "apps/mobile/app/downloads.tsx",
+      "mode": "exact-copy"
+    },
+    {
+      "source_repository": "Homiiboy/Velaris-Smartphone-App",
+      "source_path": "app/genre/[name].tsx",
+      "source_blob": "4415601cea7fd1d55cf6fbe19f28eb6816fef8ee",
+      "destination": "apps/mobile/app/genre/[name].tsx",
+      "mode": "exact-copy"
+    },
+    {
+      "source_repository": "Homiiboy/Velaris-Smartphone-App",
+      "source_path": "app/index.tsx",
+      "source_blob": "36f9efc10ebb0fa2d9787bf795c973f00479f994",
+      "destination": "apps/mobile/app/index.tsx",
+      "mode": "exact-copy"
+    },
+    {
+      "source_repository": "Homiiboy/Velaris-Smartphone-App",
+      "source_path": "app/library.tsx",
+      "source_blob": "aa6fc5e6bbed5bfa4a28dfb0117b6c6c206756b5",
+      "destination": "apps/mobile/app/library.tsx",
+      "mode": "exact-copy"
+    },
+    {
+      "source_repository": "Homiiboy/Velaris-Smartphone-App",
+      "source_path": "app/login.tsx",
+      "source_blob": "8f9287703c0ff534a9b4e6b4052f41faa4dc0613",
+      "destination": "apps/mobile/app/login.tsx",
+      "mode": "exact-copy"
+    },
+    {
+      "source_repository": "Homiiboy/Velaris-Smartphone-App",
+      "source_path": "app/offline-player.tsx",
+      "source_blob": "71a371d945c24aef5c676de2d91d23ffe3f60f5c",
+      "destination": "apps/mobile/app/offline-player.tsx",
+      "mode": "exact-copy"
+    },
+    {
+      "source_repository": "Homiiboy/Velaris-Smartphone-App",
+      "source_path": "app/player/[id].tsx",
+      "source_blob": "faa0f38238592b58600ab19c134eab5a8714f239",
+      "destination": "apps/mobile/app/player/[id].tsx",
+      "mode": "exact-copy"
+    },
+    {
+      "source_repository": "Homiiboy/Velaris-Smartphone-App",
+      "source_path": "app/plugins.tsx",
+      "source_blob": "226cef955a86a272a97d2829db1fa5768bc31dee",
+      "destination": "apps/mobile/app/plugins.tsx",
+      "mode": "exact-copy"
+    },
+    {
+      "source_repository": "Homiiboy/Velaris-Smartphone-App",
+      "source_path": "app/profiles.tsx",
+      "source_blob": "61a97c7638b9a21792ecb415cf26657e7c3f3cfb",
+      "destination": "apps/mobile/app/profiles.tsx",
+      "mode": "exact-copy"
+    },
+    {
+      "source_repository": "Homiiboy/Velaris-Smartphone-App",
+      "source_path": "assets/.gitkeep",
+      "source_blob": "8b137891791fe96927ad78e64b0aad7bded08bdc",
+      "destination": "apps/mobile/assets/.gitkeep",
+      "mode": "exact-copy"
+    },
+    {
+      "source_repository": "Homiiboy/Velaris-Smartphone-App",
+      "source_path": "assets/AvatarBlau.png",
+      "source_blob": "3a16cc6f6e2d98dece54523aff74d7706ef6e168",
+      "destination": "apps/mobile/assets/AvatarBlau.png",
+      "mode": "exact-copy"
+    },
+    {
+      "source_repository": "Homiiboy/Velaris-Smartphone-App",
+      "source_path": "assets/AvatarRot.png",
+      "source_blob": "7ee65e5d5c1b6d780aca450d85476d3d0b241397",
+      "destination": "apps/mobile/assets/AvatarRot.png",
+      "mode": "exact-copy"
+    },
+    {
+      "source_repository": "Homiiboy/Velaris-Smartphone-App",
+      "source_path": "assets/NewAppIcon.png",
+      "source_blob": "a5e77c931375972b44860cf6c72b25507bcc8f11",
+      "destination": "apps/mobile/assets/NewAppIcon.png",
+      "mode": "exact-copy"
+    },
+    {
+      "source_repository": "Homiiboy/Velaris-Smartphone-App",
+      "source_path": "eas.json",
+      "source_blob": "00c75ad36937afb2adbdcb964397e58886e523e2",
+      "destination": "apps/mobile/eas.json",
+      "mode": "exact-copy"
+    },
+    {
+      "source_repository": "Homiiboy/Velaris-Smartphone-App",
+      "source_path": "expo-env.d.ts",
+      "source_blob": "e6394b247e71f08454a02a1ef1f42bbd0d945d35",
+      "destination": "apps/mobile/expo-env.d.ts",
+      "mode": "exact-copy"
+    },
+    {
+      "source_repository": "Homiiboy/Velaris-Smartphone-App",
+      "source_path": "package-lock.json",
+      "source_blob": "edc1346dad46e31abdf4b946621ce7b30b4f279a",
+      "destination": "apps/mobile/package-lock.json",
+      "mode": "exact-copy"
+    },
+    {
+      "source_repository": "Homiiboy/Velaris-Smartphone-App",
+      "source_path": "package.json",
+      "source_blob": "d30f6c9813b78ce140987faf3010d1419c912bc3",
+      "destination": "apps/mobile/package.json",
+      "mode": "exact-copy"
+    },
+    {
+      "source_repository": "Homiiboy/Velaris-Smartphone-App",
+      "source_path": "src/components/CastControls.tsx",
+      "source_blob": "09e0972471ac0d556a874b0d01caf2bd85dc6259",
+      "destination": "apps/mobile/src/components/CastControls.tsx",
+      "mode": "exact-copy"
+    },
+    {
+      "source_repository": "Homiiboy/Velaris-Smartphone-App",
+      "source_path": "src/components/MediaCard.tsx",
+      "source_blob": "3c78950690aaa83c04f3a079c2d70f4980b6910c",
+      "destination": "apps/mobile/src/components/MediaCard.tsx",
+      "mode": "exact-copy"
+    },
+    {
+      "source_repository": "Homiiboy/Velaris-Smartphone-App",
+      "source_path": "src/components/MediaRow.tsx",
+      "source_blob": "45e24a1ef045bb56e1948285424bd8ffa4a148aa",
+      "destination": "apps/mobile/src/components/MediaRow.tsx",
+      "mode": "exact-copy"
+    },
+    {
+      "source_repository": "Homiiboy/Velaris-Smartphone-App",
+      "source_path": "src/context/AuthContext.tsx",
+      "source_blob": "77052864cf3bd66705272002cdcf631d7464bbfd",
+      "destination": "apps/mobile/src/context/AuthContext.tsx",
+      "mode": "exact-copy"
+    },
+    {
+      "source_repository": "Homiiboy/Velaris-Smartphone-App",
+      "source_path": "src/lib/device.ts",
+      "source_blob": "28b81ebd9b3c36e9a393ce46c0d6941442d0a017",
+      "destination": "apps/mobile/src/lib/device.ts",
+      "mode": "exact-copy"
+    },
+    {
+      "source_repository": "Homiiboy/Velaris-Smartphone-App",
+      "source_path": "src/services/downloads.ts",
+      "source_blob": "400ed68d5e4fb76fdadf27ff230bcad43288dbaf",
+      "destination": "apps/mobile/src/services/downloads.ts",
+      "mode": "exact-copy"
+    },
+    {
+      "source_repository": "Homiiboy/Velaris-Smartphone-App",
+      "source_path": "src/services/jellyfin.ts",
+      "source_blob": "e8efe949671c6ccbe10c8ad2bfd40428f5aba1a0",
+      "destination": "apps/mobile/src/services/jellyfin.ts",
+      "mode": "exact-copy"
+    },
+    {
+      "source_repository": "Homiiboy/Velaris-Smartphone-App",
+      "source_path": "src/services/pluginSettings.ts",
+      "source_blob": "882faf03857fc34fefd2d8dde3ad64f019087747",
+      "destination": "apps/mobile/src/services/pluginSettings.ts",
+      "mode": "exact-copy"
+    },
+    {
+      "source_repository": "Homiiboy/Velaris-Smartphone-App",
+      "source_path": "src/services/session.ts",
+      "source_blob": "2b8b3ed27408a626bd7ee0bddfc18d795518ac57",
+      "destination": "apps/mobile/src/services/session.ts",
+      "mode": "exact-copy"
+    },
+    {
+      "source_repository": "Homiiboy/Velaris-Smartphone-App",
+      "source_path": "src/theme.ts",
+      "source_blob": "7ad59136320a63e2cea36ce2888cdee0259fbddb",
+      "destination": "apps/mobile/src/theme.ts",
+      "mode": "exact-copy"
+    },
+    {
+      "source_repository": "Homiiboy/Velaris-Smartphone-App",
+      "source_path": "src/types/jellyfin.ts",
+      "source_blob": "f39af2891ecfbde5fa096cd092507e84b592056d",
+      "destination": "apps/mobile/src/types/jellyfin.ts",
+      "mode": "exact-copy"
+    },
+    {
+      "source_repository": "Homiiboy/Velaris-Smartphone-App",
+      "source_path": "tsconfig.json",
+      "source_blob": "d69eb4d9afeb0b294fc06524a493b53582caeed8",
+      "destination": "apps/mobile/tsconfig.json",
+      "mode": "exact-copy"
+    },
+    {
+      "source_repository": "Homiiboy/Velaris-TV-App",
+      "source_path": ".github/workflows/android.yml",
+      "source_blob": "55111abbc4c9dbe8b3d30a40025aa19d9bf9f52a",
+      "destination": ".github/workflows/android.yml",
+      "mode": "adapted-workflow"
+    },
+    {
+      "source_repository": "Homiiboy/Velaris-TV-App",
+      "source_path": ".gitignore",
+      "source_blob": "615cf40aac0857efbc2a6fd2ba3ee4ddecbb5982",
+      "destination": "apps/tv/.gitignore",
+      "mode": "exact-copy"
+    },
+    {
+      "source_repository": "Homiiboy/Velaris-TV-App",
+      "source_path": "README.md",
+      "source_blob": "e365976c3905d0bfb790d921eb726f54c5faed37",
+      "destination": "apps/tv/README.md",
+      "mode": "exact-copy"
+    },
+    {
+      "source_repository": "Homiiboy/Velaris-TV-App",
+      "source_path": "app/build.gradle.kts",
+      "source_blob": "a80f19799a88f502656a4b6eb78863d677a040f4",
+      "destination": "apps/tv/app/build.gradle.kts",
+      "mode": "exact-copy"
+    },
+    {
+      "source_repository": "Homiiboy/Velaris-TV-App",
+      "source_path": "app/proguard-rules.pro",
+      "source_blob": "bbbf2a2ff0c8f004ab557bf8241a2548c4fc587c",
+      "destination": "apps/tv/app/proguard-rules.pro",
+      "mode": "exact-copy"
+    },
+    {
+      "source_repository": "Homiiboy/Velaris-TV-App",
+      "source_path": "app/src/main/AndroidManifest.xml",
+      "source_blob": "401f9d011c5a3c587d2285c8eb734e1e2c242431",
+      "destination": "apps/tv/app/src/main/AndroidManifest.xml",
+      "mode": "exact-copy"
+    },
+    {
+      "source_repository": "Homiiboy/Velaris-TV-App",
+      "source_path": "app/src/main/java/com/novarion/velaristv/MainActivity.kt",
+      "source_blob": "5da5b5cc9f5f83c8b47f7293d3f90c10a8283d9c",
+      "destination": "apps/tv/app/src/main/java/com/novarion/velaristv/MainActivity.kt",
+      "mode": "exact-copy"
+    },
+    {
+      "source_repository": "Homiiboy/Velaris-TV-App",
+      "source_path": "app/src/main/java/com/novarion/velaristv/PlayerActivity.kt",
+      "source_blob": "76e34ee07309ac3a93ab963a715859f9b6146b28",
+      "destination": "apps/tv/app/src/main/java/com/novarion/velaristv/PlayerActivity.kt",
+      "mode": "exact-copy"
+    },
+    {
+      "source_repository": "Homiiboy/Velaris-TV-App",
+      "source_path": "app/src/main/res/drawable-nodpi/velaris_logo.png",
+      "source_blob": "c97ea196cc9b62679b928a45887b32e5799e258f",
+      "destination": "apps/tv/app/src/main/res/drawable-nodpi/velaris_logo.png",
+      "mode": "exact-copy"
+    },
+    {
+      "source_repository": "Homiiboy/Velaris-TV-App",
+      "source_path": "app/src/main/res/drawable/avatar_seal_gray.png",
+      "source_blob": "4ce2b3b6631c1d9afcef18d83b44271cbb80f2f1",
+      "destination": "apps/tv/app/src/main/res/drawable/avatar_seal_gray.png",
+      "mode": "exact-copy"
+    },
+    {
+      "source_repository": "Homiiboy/Velaris-TV-App",
+      "source_path": "app/src/main/res/drawable/avatar_seal_white.png",
+      "source_blob": "9f240b55da30becb9308958c945e77069d777730",
+      "destination": "apps/tv/app/src/main/res/drawable/avatar_seal_white.png",
+      "mode": "exact-copy"
+    },
+    {
+      "source_repository": "Homiiboy/Velaris-TV-App",
+      "source_path": "app/src/main/res/drawable/splash_background.xml",
+      "source_blob": "abc9ac7d1b7e571e6b916a50446dec625a41f89c",
+      "destination": "apps/tv/app/src/main/res/drawable/splash_background.xml",
+      "mode": "exact-copy"
+    },
+    {
+      "source_repository": "Homiiboy/Velaris-TV-App",
+      "source_path": "app/src/main/res/drawable/tv_banner.xml",
+      "source_blob": "e93186a7f39922a4a009803a42d31a9741215a8a",
+      "destination": "apps/tv/app/src/main/res/drawable/tv_banner.xml",
+      "mode": "exact-copy"
+    },
+    {
+      "source_repository": "Homiiboy/Velaris-TV-App",
+      "source_path": "app/src/main/res/mipmap/ic_launcher.png",
+      "source_blob": "a5e77c931375972b44860cf6c72b25507bcc8f11",
+      "destination": "apps/tv/app/src/main/res/mipmap/ic_launcher.png",
+      "mode": "exact-copy"
+    },
+    {
+      "source_repository": "Homiiboy/Velaris-TV-App",
+      "source_path": "app/src/main/res/mipmap/ic_launcher_round.png",
+      "source_blob": "a5e77c931375972b44860cf6c72b25507bcc8f11",
+      "destination": "apps/tv/app/src/main/res/mipmap/ic_launcher_round.png",
+      "mode": "exact-copy"
+    },
+    {
+      "source_repository": "Homiiboy/Velaris-TV-App",
+      "source_path": "app/src/main/res/values/strings.xml",
+      "source_blob": "a3410a1722d3082882e363c9c4b4031233968ea0",
+      "destination": "apps/tv/app/src/main/res/values/strings.xml",
+      "mode": "exact-copy"
+    },
+    {
+      "source_repository": "Homiiboy/Velaris-TV-App",
+      "source_path": "app/src/main/res/values/styles.xml",
+      "source_blob": "163bae991b53758b24b4a10a8e5e9df176bd1deb",
+      "destination": "apps/tv/app/src/main/res/values/styles.xml",
+      "mode": "exact-copy"
+    },
+    {
+      "source_repository": "Homiiboy/Velaris-TV-App",
+      "source_path": "branding/NewAppIcon.png",
+      "source_blob": "a5e77c931375972b44860cf6c72b25507bcc8f11",
+      "destination": "apps/tv/branding/NewAppIcon.png",
+      "mode": "exact-copy"
+    },
+    {
+      "source_repository": "Homiiboy/Velaris-TV-App",
+      "source_path": "branding/Robbe Grau.png",
+      "source_blob": "4ce2b3b6631c1d9afcef18d83b44271cbb80f2f1",
+      "destination": "apps/tv/branding/Robbe Grau.png",
+      "mode": "exact-copy"
+    },
+    {
+      "source_repository": "Homiiboy/Velaris-TV-App",
+      "source_path": "branding/Robbe.png",
+      "source_blob": "9f240b55da30becb9308958c945e77069d777730",
+      "destination": "apps/tv/branding/Robbe.png",
+      "mode": "exact-copy"
+    },
+    {
+      "source_repository": "Homiiboy/Velaris-TV-App",
+      "source_path": "branding/VelarisBannerTV.png",
+      "source_blob": "c97ea196cc9b62679b928a45887b32e5799e258f",
+      "destination": "apps/tv/branding/VelarisBannerTV.png",
+      "mode": "exact-copy"
+    },
+    {
+      "source_repository": "Homiiboy/Velaris-TV-App",
+      "source_path": "build.gradle.kts",
+      "source_blob": "f928a84390b953ebfda7816eae78d728b7d5a6fe",
+      "destination": "apps/tv/build.gradle.kts",
+      "mode": "exact-copy"
+    },
+    {
+      "source_repository": "Homiiboy/Velaris-TV-App",
+      "source_path": "gradle.properties",
+      "source_blob": "2e11322913e56c04783e2f5dbe7927b9e0539007",
+      "destination": "apps/tv/gradle.properties",
+      "mode": "exact-copy"
+    },
+    {
+      "source_repository": "Homiiboy/Velaris-TV-App",
+      "source_path": "settings.gradle.kts",
+      "source_blob": "eead6234836afe4c3e0be05e05bac3c19b3a6ed6",
+      "destination": "apps/tv/settings.gradle.kts",
+      "mode": "exact-copy"
+    }
+  ]
+}
