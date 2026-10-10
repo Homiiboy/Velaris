@@ -7,9 +7,9 @@ const Icon=({symbol,color,size=20}:{symbol:string;color:ColorValue;size?:number}
 export default function TabLayout(){
  return <Tabs screenOptions={{
   headerShown:false,
-  tabBarStyle:{backgroundColor:colors.background,borderTopColor:colors.border,height:72,paddingTop:6},
-  tabBarActiveTintColor:'#fff',tabBarInactiveTintColor:'#8C8C8C',
-  tabBarLabelStyle:{fontSize:9,fontWeight:'700',marginBottom:6}
+  tabBarStyle:{backgroundColor:'rgba(8,8,13,0.98)',borderTopColor:'rgba(255,255,255,.12)',height:76,paddingTop:9,paddingBottom:8},
+  tabBarActiveTintColor:colors.text,tabBarInactiveTintColor:colors.muted,
+  tabBarLabelStyle:{fontSize:10,fontWeight:'800',marginBottom:3}
  }}>
   <Tabs.Screen name="movies" options={{title:design.navigation.movies,tabBarIcon:({color})=><Icon symbol="▶" color={color}/>}}/>
   <Tabs.Screen name="series" options={{title:design.navigation.series,tabBarIcon:({color})=><Icon symbol="▣" color={color}/>}}/>

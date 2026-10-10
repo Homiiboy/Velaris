@@ -25,7 +25,7 @@ export function MediaCard({ item, session, width = 128, showMeta = false, showFa
       onPress={() => item.Type === 'BoxSet' ? router.push({ pathname: '/collection/[id]', params: { id: item.Id } }) : router.push({ pathname: '/details/[id]', params: { id: item.Id } })}
       style={{width}}
     >
-      <Animated.View style={{transform:[{scale}]}}><View>
+      <Animated.View style={{transform:[{scale}]}}><View style={styles.posterShell}>
        {!imageFailed ? <Image source={{ uri: getPrimaryImageUrl(session, item.Id, imageTag) }} onError={()=>setImageFailed(true)} style={[styles.poster, { width }]} resizeMode="cover" /> :
         <View style={[styles.poster, styles.placeholder, { width }]}><Text style={styles.logo}>VELARIS</Text></View>}
        {showFavorite&&item.Type!=='BoxSet'&&<Pressable hitSlop={8} onPress={(e)=>{e.stopPropagation();toggleFavorite()}} style={styles.heart}><Text style={[styles.heartText,favorite&&styles.heartActive]}>{favorite?'♥':'♡'}</Text></Pressable>}
@@ -36,11 +36,12 @@ export function MediaCard({ item, session, width = 128, showMeta = false, showFa
   );
 }
 const styles = StyleSheet.create({
-  poster:{aspectRatio:2/3,borderRadius:4,backgroundColor:colors.surfaceAlt},
+  poster:{aspectRatio:2/3,borderRadius:colors.posterRadius,backgroundColor:colors.surfaceAlt},
+  posterShell:{borderRadius:colors.posterRadius,overflow:'hidden',borderWidth:1,borderColor:'rgba(255,255,255,0.1)'},
   placeholder:{alignItems:'center',justifyContent:'center',borderWidth:1,borderColor:colors.border},
   logo:{color:colors.accent,fontWeight:'900',fontSize:11,letterSpacing:2},
-  heart:{position:'absolute',right:6,top:6,width:30,height:30,borderRadius:15,backgroundColor:'rgba(0,0,0,.72)',borderWidth:1,borderColor:'rgba(255,255,255,.18)',alignItems:'center',justifyContent:'center'},
+  heart:{position:'absolute',right:7,top:7,width:30,height:30,borderRadius:15,backgroundColor:'rgba(0,0,0,.78)',borderWidth:1,borderColor:'rgba(255,255,255,.3)',alignItems:'center',justifyContent:'center'},
   heartText:{color:'#fff',fontSize:21,lineHeight:23},heartActive:{color:'#fff'},
-  name:{color:colors.text,fontWeight:'700',fontSize:11,marginTop:7,letterSpacing:.1},
-  meta:{color:'#8C8C8C',fontSize:10,marginTop:2},
+  name:{color:colors.text,fontWeight:'700',fontSize:12,marginTop:7,letterSpacing:.1},
+  meta:{color:colors.muted,fontSize:10,marginTop:3},
 });

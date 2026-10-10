@@ -39,18 +39,18 @@ export function MediaRow({ title, items, session, continueWatching=false, topTen
   );
 }
 const styles = StyleSheet.create({
-  section:{marginBottom:24},
-  title:{color:colors.text,fontSize:18,fontWeight:'800',paddingHorizontal:14,marginBottom:10},
-  row:{paddingHorizontal:14,gap:7},
-  continueCard:{width:220},
-  thumbWrap:{width:220,aspectRatio:16/9,backgroundColor:'#151515',borderRadius:3,overflow:'hidden'},
+  section:{marginBottom:30},
+  title:{color:colors.text,fontSize:20,fontWeight:'900',paddingHorizontal:18,marginBottom:14,letterSpacing:-0.35},
+  row:{paddingHorizontal:18,paddingBottom:4,gap:12},
+  continueCard:{width:240},
+  thumbWrap:{width:240,aspectRatio:16/9,backgroundColor:colors.surface,borderRadius:8,overflow:'hidden',borderWidth:1,borderColor:'rgba(255,255,255,.12)'},
   thumb:{width:'100%',height:'100%'},
   playBubble:{position:'absolute',left:'50%',top:'50%',marginLeft:-19,marginTop:-19,width:38,height:38,borderRadius:19,borderWidth:2,borderColor:'rgba(255,255,255,.9)',backgroundColor:'rgba(0,0,0,.48)',alignItems:'center',justifyContent:'center'},
   playIcon:{color:'#fff',fontSize:15,marginLeft:2},
   progressTrack:{position:'absolute',left:0,right:0,bottom:0,height:4,backgroundColor:'rgba(255,255,255,.28)'},
-  progressFill:{height:4,backgroundColor:'#E50914'},
-  continueTitle:{color:'#fff',fontSize:12,fontWeight:'700',marginTop:7},
-  continueMeta:{color:'#8C8C8C',fontSize:10,marginTop:2},
-  topTenCard:{width:170,height:174,flexDirection:'row',alignItems:'flex-end',overflow:'hidden'},
-  rank:{width:58,color:'#000',fontSize:112,lineHeight:130,fontWeight:'900',letterSpacing:-9,textShadowColor:'#fff',textShadowRadius:3,textShadowOffset:{width:0,height:0},marginRight:-5,marginBottom:-5}
+  progressFill:{height:4,backgroundColor:colors.progress},
+  continueTitle:{color:'#fff',fontSize:13,fontWeight:'800',marginTop:9},
+  continueMeta:{color:colors.muted,fontSize:11,marginTop:3},
+  topTenCard:{width:187,height:218,flexDirection:'row',alignItems:'flex-start',paddingTop:2},
+  rank:{width:67,color:colors.background,fontSize:110,lineHeight:174,fontWeight:'900',letterSpacing:-9,textShadowColor:'rgba(255,255,255,0.95)',textShadowRadius:2,textShadowOffset:{width:0,height:0},marginRight:-3}
 });
