@@ -1,5 +1,11 @@
 # Velaris
 
+<p align="center">
+  <img src="assets/logos/NewAppIcon.png" alt="Velaris Logo" width="160" />
+  &nbsp;&nbsp;&nbsp;
+  <img src="assets/banners/VelarisBannerTV.png" alt="Velaris TV Banner" width="320" />
+</p>
+
 Gemeinsames Repository für Velaris auf iOS, Android und Android TV / Google TV.
 
 ## Stand der Zusammenführung
