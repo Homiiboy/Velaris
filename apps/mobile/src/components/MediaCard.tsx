@@ -26,9 +26,9 @@ export function MediaCard({ item, session, width = 128, showMeta = false, showFa
       onPress={() => item.Type === 'BoxSet' ? router.push({ pathname: '/collection/[id]', params: { id: item.Id } }) : router.push({ pathname: '/details/[id]', params: { id: item.Id } })}
       style={{width}}
     >
-      <Animated.View style={{transform:[{scale}]}}><View style={styles.posterShell}>
-       {!imageFailed ? <Image source={{ uri: getPrimaryImageUrl(session, item.Id, imageTag) }} onError={()=>setImageFailed(true)} style={[styles.poster, { width }]} resizeMode="contain" /> :
-        <View style={[styles.poster, styles.placeholder, { width }]}><Text style={styles.logo}>VELARIS</Text></View>}
+      <Animated.View style={{transform:[{scale}],width}}><View style={[styles.posterShell,{width,height:Math.round(width*1.5)}]}>
+       {!imageFailed ? <Image source={{ uri: getPrimaryImageUrl(session, item.Id, imageTag) }} onError={()=>setImageFailed(true)} style={styles.poster} resizeMode="contain" /> :
+        <View style={[styles.poster, styles.placeholder]}><Text style={styles.logo}>VELARIS</Text></View>}
        {!!watchedLabel(item)&&<View style={styles.watchedBadge}><Text style={styles.watchedText}>✓ {watchedLabel(item)}</Text></View>}
        {showFavorite&&item.Type!=='BoxSet'&&<Pressable hitSlop={8} onPress={(e)=>{e.stopPropagation();toggleFavorite()}} style={styles.heart}><Text style={[styles.heartText,favorite&&styles.heartActive]}>{favorite?'♥':'♡'}</Text></Pressable>}
       </View></Animated.View>
@@ -38,7 +38,7 @@ export function MediaCard({ item, session, width = 128, showMeta = false, showFa
   );
 }
 const styles = StyleSheet.create({
-  poster:{aspectRatio:2/3,borderRadius:colors.posterRadius,backgroundColor:colors.surfaceAlt},
+  poster:{width:'100%',height:'100%',backgroundColor:colors.surfaceAlt},
   posterShell:{borderRadius:colors.posterRadius,overflow:'hidden',backgroundColor:colors.surfaceAlt,borderWidth:1,borderColor:'rgba(255,255,255,0.15)'},
   placeholder:{alignItems:'center',justifyContent:'center',borderWidth:1,borderColor:colors.border},
   logo:{color:colors.accent,fontWeight:'900',fontSize:11,letterSpacing:2},
