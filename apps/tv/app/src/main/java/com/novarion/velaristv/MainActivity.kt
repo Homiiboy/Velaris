@@ -218,13 +218,17 @@ class MainActivity : Activity() {
             val width=(((button.paint.measureText(label)/resources.displayMetrics.density).toInt()+36).coerceAtLeast(76))
             nav.addView(button,LinearLayout.LayoutParams(dp(width),dp(42)).apply{marginEnd=dp(14)})
         }
+        // Reserve real space after the last tab so its pill and focus outline
+        // are completely visible at the scroll limit (also on overscanned TVs).
+        nav.addView(View(this).apply{isFocusable=false},
+            LinearLayout.LayoutParams(dp(30),dp(1)))
         val navScroll=HorizontalScrollView(this).apply {
             isHorizontalScrollBarEnabled=false
             isFillViewport=false
             isFocusable=false
             clipChildren=true;clipToPadding=true
             overScrollMode=View.OVER_SCROLL_NEVER
-            setPadding(dp(12),0,dp(18),0)
+            setPadding(dp(12),0,dp(24),0)
             addView(nav,FrameLayout.LayoutParams(-2,-1))
         }
         // Arrow has its own reserved slot: text never disappears below a gradient
@@ -234,24 +238,59 @@ class MainActivity : Activity() {
             clipChildren=true;clipToPadding=true
         }
         navBox.addView(navScroll,LinearLayout.LayoutParams(0,dp(48),1f))
-        val moreArrow=TextView(this).apply {
-            text="›";textSize=27f;gravity=Gravity.CENTER
-            setTextColor(Color.WHITE)
+        // Draw the chevron geometrically rather than as a font glyph.
+        // Text glyph baselines vary by Google TV font and visually shift the arrow.
+        val moreArrow=object:View(this) {
+            private val stroke=android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+                color=Color.WHITE
+                style=android.graphics.Paint.Style.STROKE
+                strokeWidth=dp(3).toFloat()
+                strokeCap=android.graphics.Paint.Cap.ROUND
+                strokeJoin=android.graphics.Paint.Join.ROUND
+            }
+            override fun onDraw(canvas:android.graphics.Canvas) {
+                super.onDraw(canvas)
+                val x=width/2f
+                val y=height/2f
+                val halfWidth=dp(4).toFloat()
+                val halfHeight=dp(6).toFloat()
+                val chevron=android.graphics.Path().apply {
+                    moveTo(x-halfWidth,y-halfHeight)
+                    lineTo(x+halfWidth,y)
+                    lineTo(x-halfWidth,y+halfHeight)
+                }
+                canvas.drawPath(chevron,stroke)
+            }
+        }.apply {
             contentDescription="Weitere Kategorien nach rechts"
             isFocusable=true;isClickable=true
             background=GradientDrawable().apply {
                 setColor(0xFF22212E.toInt())
-                cornerRadius=dp(22).toFloat()
+                cornerRadius=dp(21).toFloat()
                 setStroke(dp(1),0x665D547A)
             }
             setOnFocusChangeListener { _,focused->
                 background=GradientDrawable().apply {
                     setColor(if(focused)VelarisDesign.color("accent",0xFF7C5CFC.toInt()) else 0xFF22212E.toInt())
-                    cornerRadius=dp(22).toFloat()
+                    cornerRadius=dp(21).toFloat()
                     if(focused)setStroke(dp(2),Color.WHITE)
                 }
             }
-            setOnClickListener { navScroll.smoothScrollBy(dp(230),0) }
+            setOnClickListener {
+                // Snap forward to show the NEXT whole chip instead of stopping
+                // with half of the final category cut off.
+                val visibleRight=navScroll.scrollX+navScroll.width-navScroll.paddingRight-dp(10)
+                val next=(0 until nav.childCount)
+                    .map { nav.getChildAt(it) }
+                    .firstOrNull { it is Button && it.right>visibleRight }
+                val maxX=(nav.width+navScroll.paddingLeft+navScroll.paddingRight-navScroll.width)
+                    .coerceAtLeast(0)
+                val nextX=next?.let {
+                    (it.right+navScroll.paddingRight+dp(18)-navScroll.width)
+                        .coerceIn(0,maxX)
+                } ?: maxX
+                navScroll.smoothScrollTo(nextX,0)
+            }
         }
         navBox.addView(moreArrow,LinearLayout.LayoutParams(dp(40),dp(40)).apply{
             marginStart=dp(6);marginEnd=dp(7)
@@ -1752,8 +1791,17 @@ class MainActivity : Activity() {
                 val strip=parent as? LinearLayout
                 val scroll=strip?.parent as? HorizontalScrollView
                 if(scroll!=null) {
-                    val rect=android.graphics.Rect(left-dp(10),top,right+dp(10),bottom)
-                    scroll.requestChildRectangleOnScreen(strip,rect,false)
+                    val inset=dp(20)
+                    val leftEdge=scroll.scrollX+scroll.paddingLeft+inset
+                    val rightEdge=scroll.scrollX+scroll.width-scroll.paddingRight-inset
+                    val maxX=(strip.width+scroll.paddingLeft+scroll.paddingRight-scroll.width)
+                        .coerceAtLeast(0)
+                    when {
+                        right>rightEdge -> scroll.smoothScrollTo(
+                            (right+scroll.paddingRight+inset-scroll.width).coerceIn(0,maxX),0)
+                        left<leftEdge -> scroll.smoothScrollTo(
+                            (left-scroll.paddingLeft-inset).coerceIn(0,maxX),0)
+                    }
                 }
             }
             view.animate().scaleX(1f).scaleY(1f).setDuration(100).start()
