@@ -84,8 +84,8 @@ class PlayerActivity : Activity() {
             finish()
             return
         }
-        immersive()
-
+        // The player decor view is not attached yet: applying insets here
+        // crashes on Android 15 / Google TV emulators (PhoneWindow.getInsetsController).
         val root = FrameLayout(this).apply { setBackgroundColor(Color.BLACK) }
         val playerView = PlayerView(this).apply {
             useController = true
@@ -129,6 +129,8 @@ class PlayerActivity : Activity() {
         root.addView(nextOverlay,FrameLayout.LayoutParams(-2,-2,android.view.Gravity.END or android.view.Gravity.BOTTOM).apply{marginEnd=42;bottomMargin=140})
         loadPlayerTitle(itemId)
         setContentView(root)
+        // Wait for the player view to attach before changing system bars.
+        root.post { if(!isFinishing && !isDestroyed) immersive() }
 
         val exo = createPlayer()
         player = exo
@@ -503,9 +505,17 @@ class PlayerActivity : Activity() {
     }
 
     private fun immersive() {
-        if (android.os.Build.VERSION.SDK_INT >= 30) window.insetsController?.apply {
-            hide(WindowInsets.Type.systemBars())
-            systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-        } else @Suppress("DEPRECATION") run { window.decorView.systemUiVisibility = 5894 }
+        // Never use Window.getInsetsController() before its DecorView exists.
+        // The attached decor view returns null safely if insets are not ready.
+        val decor = window.decorView
+        if (android.os.Build.VERSION.SDK_INT >= 30) {
+            decor.windowInsetsController?.apply {
+                hide(WindowInsets.Type.systemBars())
+                systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            }
+        } else {
+            @Suppress("DEPRECATION")
+            decor.systemUiVisibility = 5894
+        }
     }
 }
