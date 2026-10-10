@@ -14,6 +14,13 @@ android {
         versionName = "0.7.0"
     }
 
+    sourceSets {
+        // Share the central brand.json directly with the Expo application.
+        getByName("main") {
+            assets.srcDir(file("../../../packages/velaris-design"))
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false

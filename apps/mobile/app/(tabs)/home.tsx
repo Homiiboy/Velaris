@@ -5,8 +5,15 @@ import { useAuth } from '@/context/AuthContext';
 import { getBackdropUrl, getFavorites, getGenres, getLatest, getPlayedItems, getRecommendations, getResumeItems } from '@/services/jellyfin';
 import { MediaRow } from '@/components/MediaRow';
 import type { JellyfinItem } from '@/types/jellyfin';
-import { colors } from '@/theme';
+import { colors, design } from '@/theme';
 import { getActiveProfile, type VelarisProfile } from '@/services/session';
+
+const AVATARS=[
+ require('../../assets/AvatarRot.png'),
+ require('../../assets/AvatarBlau.png'),
+ require('../../assets/AvatarRobbeWeiss.png'),
+ require('../../assets/AvatarRobbeGrau.png'),
+];
 
 export default function HomeScreen() {
   const { session } = useAuth();
@@ -18,7 +25,6 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [activeProfile,setActiveProfile]=useState<VelarisProfile|null>(null); const [categoryMenu,setCategoryMenu]=useState(false); const [genres,setGenres]=useState<string[]>([]);
   const entrance=useRef(new Animated.Value(0)).current;
-  const avatarSymbols=['⚙','◈','✦','◆','🦭'];
   const load = useCallback(async () => {
     if (!session) return;
     const [a,b,c,d]=await Promise.allSettled([getResumeItems(session),getLatest(session),getFavorites(session),getPlayedItems(session)]);
@@ -34,7 +40,7 @@ export default function HomeScreen() {
   const hero=useMemo(()=>latest.find(i=>i.BackdropImageTags?.length)||latest[0],[latest]);
   if(!session)return <Redirect href="/connect"/>;
   return <ScrollView style={styles.page} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={async()=>{setRefreshing(true);await load();setRefreshing(false)}} tintColor={colors.accent}/>}>
-    <View style={styles.top}><Text style={styles.brand}>VELARIS</Text><View style={styles.actions}><Pressable hitSlop={12} onPress={()=>router.push('/downloads')}><Text style={styles.downloadIcon}>⇩</Text></Pressable><Pressable hitSlop={12} onPress={()=>router.push('/collections')}><Text style={styles.collectionIcon}>▣</Text></Pressable><Pressable hitSlop={12} onPress={()=>router.push('/(tabs)/search')}><Text style={styles.action}>⌕</Text></Pressable><Pressable hitSlop={12} onPress={()=>router.push('/(tabs)/profile')}><View style={styles.avatar}>{activeProfile?.photoUri?<Image source={{uri:activeProfile.photoUri}} style={styles.avatarPhoto}/>:<Text style={styles.avatarText}>{avatarSymbols[activeProfile?.avatar??0]??activeProfile?.name?.slice(0,1).toUpperCase()??'V'}</Text>}</View></Pressable></View></View><View style={styles.quickNav}><Pressable style={styles.navChip} onPress={()=>setCategoryMenu(v=>!v)}><Text style={styles.navChipText}>Kategorien</Text></Pressable></View>{categoryMenu&&<View style={styles.categoryMenu}><Text style={styles.categoryHeading}>Genres</Text><ScrollView style={styles.categoryScroll} nestedScrollEnabled>{genres.map(g=><Pressable key={g} style={styles.categoryItem} onPress={()=>{setCategoryMenu(false);router.push({pathname:'/genre/[name]',params:{name:g}})}}><Text style={styles.categoryText}>{g}</Text><Text style={styles.categoryArrow}>›</Text></Pressable>)}</ScrollView></View>}
+    <View style={styles.top}><Text style={styles.brand}>VELARIS</Text><View style={styles.actions}><Pressable hitSlop={12} onPress={()=>router.push('/downloads')}><Text style={styles.downloadIcon}>⇩</Text></Pressable><Pressable hitSlop={12} onPress={()=>router.push('/collections')}><Text style={styles.collectionIcon}>▣</Text></Pressable><Pressable hitSlop={12} onPress={()=>router.push('/(tabs)/search')}><Text style={styles.action}>⌕</Text></Pressable><Pressable hitSlop={12} onPress={()=>router.push('/(tabs)/profile')}><View style={styles.avatar}>{activeProfile?.photoUri?<Image source={{uri:activeProfile.photoUri}} style={styles.avatarPhoto}/>:<Image source={AVATARS[(activeProfile?.avatar??0)%AVATARS.length]} style={styles.avatarPhoto}/>}</View></Pressable></View></View><View style={styles.quickNav}><Pressable style={styles.navChip} onPress={()=>setCategoryMenu(v=>!v)}><Text style={styles.navChipText}>Kategorien</Text></Pressable></View>{categoryMenu&&<View style={styles.categoryMenu}><Text style={styles.categoryHeading}>Genres</Text><ScrollView style={styles.categoryScroll} nestedScrollEnabled>{genres.map(g=><Pressable key={g} style={styles.categoryItem} onPress={()=>{setCategoryMenu(false);router.push({pathname:'/genre/[name]',params:{name:g}})}}><Text style={styles.categoryText}>{g}</Text><Text style={styles.categoryArrow}>›</Text></Pressable>)}</ScrollView></View>}
     <Animated.View style={{opacity:entrance,transform:[{translateY:entrance.interpolate({inputRange:[0,1],outputRange:[12,0]})}]}}>{hero&&<ImageBackground source={{uri:getBackdropUrl(session,hero)}} style={styles.hero} imageStyle={styles.heroImage}>
       <View style={styles.shade}><View style={styles.heroContent}><Text numberOfLines={2} style={styles.heroTitle}>{hero.Name}</Text>
       <Text style={styles.heroMeta}>{[hero.ProductionYear,hero.Type==='Series'?'Serie':'Film'].filter(Boolean).join('  •  ')}</Text>
@@ -43,11 +49,11 @@ export default function HomeScreen() {
       <Pressable style={styles.info} onPress={()=>router.push({pathname:'/details/[id]',params:{id:hero.Id}})}><Text style={styles.infoText}>ⓘ  Mehr Infos</Text></Pressable></View></View></View>
     </ImageBackground>}
     <View style={styles.rows}>
-      <MediaRow title="Top 10 für dich" items={recommended.length?recommended:latest} session={session} topTen/>
-      <MediaRow title="Weiterschauen" items={resume} session={session} continueWatching/>
-      <MediaRow title="Meine Liste" items={favorites} session={session}/>
-      {!!becauseTitle&&<MediaRow title={`Weil du „${becauseTitle}“ gesehen hast`} items={recommended} session={session}/>}
-      <MediaRow title="Kürzlich hinzugefügt" items={latest} session={session}/>
+      <MediaRow title={design.homeRows.topTen} items={recommended.length?recommended:latest} session={session} topTen/>
+      <MediaRow title={design.homeRows.resume} items={resume} session={session} continueWatching/>
+      <MediaRow title={design.homeRows.favorites} items={favorites} session={session}/>
+      {!!becauseTitle&&<MediaRow title={`${design.homeRows.becausePrefix} „${becauseTitle}“ gesehen hast`} items={recommended} session={session}/>}
+      <MediaRow title={design.homeRows.latest} items={latest} session={session}/>
     </View></Animated.View>
   </ScrollView>;
 }

@@ -61,3 +61,47 @@ Arbeitsverzeichnisse, npm-Cache und Artefaktpfade sind an die neue Struktur ange
 - Signierschlüssel, GitHub-Secrets, Expo-Zugriffsrechte und frühere Build-Artefakte sind keine Quelldateien und werden durch diesen Import nicht übertragen. Die bestehende Signierung ist für Updates vorhandener Installationen erforderlich.
 
 Die README-Dateien in den App-Ordnern dokumentieren den übernommenen Stand; ihre früheren Fertigmeldungen sind keine erneute Gerätevalidierung.
+
+## Gemeinsame Struktur und Designsystem (Unified Experience)
+
+```text
+Velaris/
+├── apps/mobile/               # iOS + Android (Expo / React Native)
+├── apps/tv/                   # Android TV / Google TV (Kotlin / Media3)
+├── packages/velaris-design/   # einheitliche Farben, Navigation, Profile und Reihen
+├── assets/                    # zentrale App-Icons, Banner, Avatare
+└── scripts/                   # Asset-Synchronisation und Konsistenztests
+```
+
+**Wichtig:** Alle Geräte nutzen dieselben Designvorgaben und echten Jellyfin-Konten.
+Die mobile und die TV-Oberfläche sind gerätegerecht ausgelegt: Touch-Bedienung,
+Cast und Downloads auf Smartphones, D-Pad-Navigation und Media3 auf dem TV.
+Es gibt bewusst noch zwei native UI-Runtimes; der gemeinsame Brand-Vertrag liegt
+in [packages/velaris-design/brand.json](packages/velaris-design/brand.json).
+
+### Assets vereinheitlichen
+
+Neue/ersetzte Bilder in `assets/` ablegen, danach im Repo-Stamm ausführen:
+
+```bash
+node scripts/sync-assets.cjs
+node scripts/check-unified.cjs
+```
+
+Bei Änderungen auf GitHub ohne lokales Checkout müssen die App-Kopien
+ebenfalls mit aktualisiert werden. Die CI meldet Abweichungen.
+
+### Profile und Synchronisation
+
+- Auf Handy und TV bis zu **5 echte Jellyfin-Benutzerkonten** (lokale Anmeldungen).
+- Profilwahl beim Start; Favoriten, Verlauf und Weiterschauen kommen je Benutzer
+  aus Jellyfin und sind damit geräteübergreifend synchronisiert.
+- Vorhandene TV-Scheinprofile ohne Jellyfin-Anmeldung können keinen eigenen
+  Fortschritt besitzen. Beim Umstieg bleibt das authentifizierte Konto erhalten;
+  weitere Personen müssen sich mit eigenen Jellyfin-Konten anmelden.
+- Geräte-eigene Einstellungen, heruntergeladene Medien und lokal gewählte
+  Profilbilder werden **nicht** über Jellyfin synchronisiert.
+
+GitHub Actions prüfen die gemeinsame Gestaltung und die mobile Typprüfung;
+die separate TV-CI führt Lint und den APK-Build aus. Gerätespezifische
+Funktionstests sind weiterhin notwendig.

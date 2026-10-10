@@ -11,6 +11,6 @@ export default function Index() {
   useEffect(()=>{if(!loading)shouldShowProfilePicker().then(setPicker)},[loading]);
   if (loading||picker===null) return <View style={styles.center}><ActivityIndicator size="large" color={colors.accent} /></View>;
   if(!session)return <Redirect href="/connect"/>;
-  return <Redirect href={profiles.length>1&&picker ? '/profiles' : '/(tabs)/home'} />;
+  return <Redirect href={profiles.length>0&&picker ? '/profiles' : '/(tabs)/home'} />;
 }
 const styles=StyleSheet.create({center:{flex:1,alignItems:'center',justifyContent:'center',backgroundColor:colors.background}});

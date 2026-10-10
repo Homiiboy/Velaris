@@ -1,0 +1,57 @@
+{
+  "version": 1,
+  "name": "VELARIS",
+  "theme": {
+    "background": "#08080D",
+    "surface": "#18181E",
+    "surfaceAlt": "#222229",
+    "text": "#FFFFFF",
+    "muted": "#BDBDC4",
+    "accent": "#7C5CFC",
+    "accentPressed": "#6748E8",
+    "focus": "#7E57FF",
+    "danger": "#E50914",
+    "border": "#2B2B33",
+    "success": "#46D369",
+    "radius": 12
+  },
+  "profiles": {
+    "maxProfiles": 5,
+    "showPickerOnStartup": true,
+    "accountBacked": true
+  },
+  "navigation": {
+    "home": "Start",
+    "movies": "Filme",
+    "series": "Serien",
+    "anime": "Anime",
+    "animeMovies": "Anime Filme",
+    "collections": "Sammlungen"
+  },
+  "homeRows": {
+    "topTen": "Top 10 für dich",
+    "resume": "Weiterschauen",
+    "favorites": "Meine Liste",
+    "latest": "Kürzlich hinzugefügt",
+    "becausePrefix": "Weil du",
+    "recommended": "Für dich"
+  },
+  "avatars": [
+    {
+      "id": "red",
+      "label": "Rot"
+    },
+    {
+      "id": "blue",
+      "label": "Blau"
+    },
+    {
+      "id": "sealWhite",
+      "label": "Weiße Robbe"
+    },
+    {
+      "id": "sealGray",
+      "label": "Graue Robbe"
+    }
+  ]
+}
