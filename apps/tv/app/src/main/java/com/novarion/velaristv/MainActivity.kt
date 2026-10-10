@@ -494,7 +494,7 @@ class MainActivity : Activity() {
             val wrap=LinearLayout(this).apply {
                 orientation=LinearLayout.HORIZONTAL;gravity=Gravity.BOTTOM
                 isFocusable=true;isClickable=true
-                setOnClickListener { if(item.optString("Type")=="Series") showSeries(item.optString("Id")) else showDetails(item.optString("Id")) }
+                setOnClickListener { openMediaItem(item) }
                 applyCardFocus(this,cover)
             }
             wrap.addView(TextView(this).apply { text="${index+1}"; textSize=68f; typeface=Typeface.DEFAULT_BOLD; setTextColor(VelarisDesign.color("surfaceAlt",0xFF202027.toInt())); gravity=Gravity.BOTTOM },LinearLayout.LayoutParams(dp(58),dp(218)))
@@ -550,11 +550,11 @@ class MainActivity : Activity() {
             val card=LinearLayout(this).apply {
                 orientation=LinearLayout.VERTICAL; isFocusable=true; isClickable=true
                 setPadding(dp(4),dp(4),dp(4),dp(4))
-                setOnClickListener { if(type=="Series") showSeries(id) else showDetails(id) }
+                setOnClickListener { openMediaItem(item) }
                 applyCardFocus(this,cover)
             }
             card.addView(cover,LinearLayout.LayoutParams(dp(176),dp(248)))
-            card.setOnLongClickListener { showDetails(id); true }
+            card.setOnLongClickListener { openMediaItem(item); true }
             val progress=item.optJSONObject("UserData")?.optLong("PlaybackPositionTicks",0L) ?: 0L
             val total=item.optLong("RunTimeTicks",0L)
             if(progress>0 && total>0) card.addView(ProgressBar(this,null,android.R.attr.progressBarStyleHorizontal).apply {
@@ -585,7 +585,7 @@ class MainActivity : Activity() {
                 val card=LinearLayout(this).apply {
                     orientation=LinearLayout.VERTICAL; isFocusable=true; isClickable=true
                     clipChildren=false;clipToPadding=false
-                    setOnClickListener { if(type=="Series") showSeries(id) else showDetails(id) }
+                    setOnClickListener { openMediaItem(item) }
                     applyCardFocus(this,cover)
                 }
                 card.addView(cover,LinearLayout.LayoutParams(dp(196),dp(276)))
@@ -645,6 +645,72 @@ class MainActivity : Activity() {
                     else addLibraryGrid(data)
                 }
             } catch(e:Exception){ runOnUiThread{toast("$title konnten nicht geladen werden")} }
+        }
+    }
+
+    private fun openMediaItem(item:JSONObject) {
+        val id=item.optString("Id")
+        if(id.isBlank())return
+        when(item.optString("Type")) {
+            "BoxSet" -> showCollection(id)
+            "Series" -> showSeries(id)
+            else -> showDetails(id)
+        }
+    }
+
+    private fun showCollection(collectionId:String) {
+        rememberBack { showLibrary("Sammlungen","BoxSet") }
+        val root=LinearLayout(this).apply {
+            orientation=LinearLayout.VERTICAL
+            setPadding(dp(48),dp(34),dp(48),dp(55))
+            setBackgroundColor(VelarisDesign.color("background",0xFF08080D.toInt()))
+            clipChildren=false;clipToPadding=false
+        }
+        root.addView(TextView(this).apply {
+            text="Sammlung wird geladen …";textSize=26f;setTextColor(Color.WHITE)
+        })
+        val spinner=ProgressBar(this)
+        root.addView(spinner,params(60,60,24))
+        setContentView(ScrollView(this).apply{
+            isVerticalScrollBarEnabled=false;clipChildren=false;clipToPadding=false
+            addView(root)
+        })
+        io.execute {
+            try {
+                val collection=request("/Users/$userId/Items/$collectionId")
+                // Jellyfin BoxSets expose their actual member movies as children.
+                // Do not treat the BoxSet as a playable Movie.
+                val children=items("/Users/$userId/Items?ParentId=$collectionId&Recursive=true&IncludeItemTypes=Movie,Series&SortBy=SortName&SortOrder=Ascending&Limit=500&EnableUserData=true&Fields=Overview,PrimaryImageAspectRatio")
+                runOnUiThread {
+                    root.removeAllViews()
+                    root.addView(TextView(this).apply {
+                        text=collection.optString("Name","Sammlung")
+                        textSize=37f;typeface=Typeface.DEFAULT_BOLD;setTextColor(Color.WHITE)
+                    },params(-1,-2,0))
+                    val overview=collection.optString("Overview")
+                    if(overview.isNotBlank())root.addView(TextView(this).apply {
+                        text=overview;setTextColor(Color.LTGRAY);textSize=17f;maxLines=5
+                    },params(-1,-2,12))
+                    root.addView(TextView(this).apply {
+                        text="${children.size} Titel"
+                        setTextColor(Color.LTGRAY);textSize=16f
+                    },params(-1,-2,15))
+                    homeRoot=root
+                    if(children.isEmpty())root.addView(TextView(this).apply {
+                        text="Diese Sammlung enthält keine verfügbaren Filme oder Serien."
+                        textSize=18f;setTextColor(Color.LTGRAY)
+                    },params(-1,-2,28))
+                    else addLibraryGrid(children)
+                }
+            } catch(e:Exception) {
+                runOnUiThread {
+                    root.removeView(spinner)
+                    root.addView(TextView(this).apply{
+                        text="Sammlung konnte nicht geladen werden: ${e.message ?: "Verbindungsfehler"}"
+                        textSize=17f;setTextColor(Color.LTGRAY)
+                    })
+                }
+            }
         }
     }
 
