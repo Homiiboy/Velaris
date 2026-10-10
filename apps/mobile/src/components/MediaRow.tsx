@@ -4,6 +4,7 @@ import { MediaCard } from '@/components/MediaCard';
 import { getPrimaryImageUrl, getBackdropUrl } from '@/services/jellyfin';
 import type { JellyfinItem, Session } from '@/types/jellyfin';
 import { colors } from '@/theme';
+import { episodeTitle } from '@/services/episodeTitles';
 
 function ContinueCard({item,session}:{item:JellyfinItem;session:Session}){
  const progress=Math.max(0,Math.min(100,item.UserData?.PlayedPercentage ?? (
@@ -21,7 +22,7 @@ function ContinueCard({item,session}:{item:JellyfinItem;session:Session}){
    <View style={styles.playBubble}><Text style={styles.playIcon}>▶</Text></View>
    <View style={styles.progressTrack}><View style={[styles.progressFill,{width:`${progress}%`}]} /></View>
   </View>
-  <Text numberOfLines={1} style={styles.continueTitle}>{item.Type==='Episode'?item.Name:item.Name}</Text>
+  <Text numberOfLines={1} style={styles.continueTitle}>{item.Type==='Episode'?episodeTitle(item):item.Name}</Text>
   {!!subtitle&&item.Type==='Episode'&&<Text numberOfLines={1} style={styles.continueMeta}>{subtitle}</Text>}
  </Pressable>;
 }
