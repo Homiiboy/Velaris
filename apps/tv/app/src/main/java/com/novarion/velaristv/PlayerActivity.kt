@@ -5,6 +5,7 @@ import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
+import android.util.Log
 import android.view.KeyEvent
 import android.view.View
 import android.view.WindowInsets
@@ -14,6 +15,7 @@ import android.widget.TextView
 import android.widget.Button
 import android.app.AlertDialog
 import androidx.media3.common.MediaItem
+import androidx.media3.common.MimeTypes
 import androidx.media3.common.Player
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.C
@@ -21,8 +23,11 @@ import androidx.media3.common.TrackSelectionOverride
 import androidx.media3.common.Tracks
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
+import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.ui.PlayerView
 import org.json.JSONObject
+import org.json.JSONArray
 import java.net.URLEncoder
 import java.net.HttpURLConnection
 import java.net.URL
@@ -51,6 +56,8 @@ class PlayerActivity : Activity() {
     private var nextOverlay: TextView? = null
     private var autoNextEnabled = true
     private var lastPlaybackLabel = "Auto"
+    private var triedCompatibleFallback = false
+    private var playbackRequestSerial = 0
     private var lastMediaInfo = ""
     private var playerViewRef: PlayerView? = null
     private var releasedPositionMs = 0L
@@ -123,32 +130,77 @@ class PlayerActivity : Activity() {
         loadPlayerTitle(itemId)
         setContentView(root)
 
-        val exo = ExoPlayer.Builder(this).build()
+        val exo = createPlayer()
         player = exo
         playerView.player = exo
-        exo.addListener(object : Player.Listener {
-            override fun onIsPlayingChanged(isPlaying: Boolean) {
-                if (isPlaying && !sessionStarted) { sessionStarted = true; report("Playing") }
-                else if (!isPlaying && sessionStarted) report("Progress")
+        attachPlayerListener(exo)
+        preparePlayback(exo, itemId, startTicks)
+        introUiHandler.post(introUiTick)
+        playerView.requestFocus()
+    }
+
+    private fun authorizationHeader():String =
+        """MediaBrowser Client="Velaris TV", Device="Android TV", DeviceId="velaris-tv", Version="0.7.0", Token="$token" """
+
+    private fun createPlayer():ExoPlayer {
+        // Authenticate HLS playlists and their segments, not just the metadata call.
+        val http=DefaultHttpDataSource.Factory().setDefaultRequestProperties(
+            mapOf("X-Emby-Token" to token,"Authorization" to authorizationHeader().trim())
+        )
+        return ExoPlayer.Builder(this)
+            .setMediaSourceFactory(DefaultMediaSourceFactory(http))
+            .build()
+    }
+
+    private fun attachPlayerListener(exo:ExoPlayer) {
+        exo.addListener(object:Player.Listener {
+            override fun onIsPlayingChanged(isPlaying:Boolean) {
+                if(isPlaying && !sessionStarted) {
+                    sessionStarted=true
+                    report("Playing")
+                } else if(!isPlaying && sessionStarted) report("Progress")
             }
-            override fun onPlaybackStateChanged(state: Int) {
-                if (state == Player.STATE_ENDED) {
+            override fun onPlaybackStateChanged(state:Int) {
+                if(state==Player.STATE_ENDED) {
                     reportStoppedOnce()
                     if(nextItemId.isNotBlank() && autoNextEnabled) {
-                        itemId=nextItemId; nextItemId=""; stoppedReported=false; sessionStarted=false
+                        itemId=nextItemId;nextItemId=""
+                        stoppedReported=false;sessionStarted=false
+                        triedCompatibleFallback=false
                         loadFollowingEpisodeAndPlay(exo,itemId)
                     } else finish()
                 }
             }
-            override fun onTracksChanged(tracks: Tracks) { availableTracks=tracks }
-            override fun onPlayerError(error: PlaybackException) {
-                android.widget.Toast.makeText(this@PlayerActivity, "Wiedergabefehler: ${error.errorCodeName}", android.widget.Toast.LENGTH_LONG).show()
+            override fun onTracksChanged(tracks:Tracks) {availableTracks=tracks}
+            override fun onPlayerError(error:PlaybackException) {
+                Log.w("VelarisPlayback","Player error ${error.errorCodeName}",error)
+                val retriable=error.errorCode in 3000..5999 ||
+                    error.errorCode==PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS
+                if(!triedCompatibleFallback && retriable) {
+                    triedCompatibleFallback=true
+                    val ticks=exo.currentPosition.coerceAtLeast(0L)*10_000L
+                    android.widget.Toast.makeText(this@PlayerActivity,
+                        "Versuche kompatiblen H.264/AAC-Stream …",
+                        android.widget.Toast.LENGTH_LONG).show()
+                    preparePlayback(exo,itemId,ticks,forceCompatible=true)
+                } else {
+                    showPlaybackError("Playerfehler: ${error.errorCodeName}. "+
+                        "Prüfe in Jellyfin, ob Transcoding für deinen Benutzer erlaubt ist.")
+                }
             }
         })
+    }
 
-        preparePlayback(exo, itemId, startTicks)
-        introUiHandler.post(introUiTick)
-        playerView.requestFocus()
+    private fun showPlaybackError(message:String) {
+        if(isFinishing||isDestroyed)return
+        AlertDialog.Builder(this).setTitle("Wiedergabe fehlgeschlagen")
+            .setMessage(message)
+            .setPositiveButton("Erneut versuchen"){_,_->
+                triedCompatibleFallback=false
+                player?.let{preparePlayback(it,itemId,it.currentPosition.coerceAtLeast(0L)*10_000L)}
+            }
+            .setNegativeButton("Schließen"){_,_->finish()}
+            .show()
     }
 
     private fun loadFollowingEpisodeAndPlay(exo: ExoPlayer, id:String) {
@@ -171,18 +223,31 @@ class PlayerActivity : Activity() {
         }
     }
 
-    private fun preparePlayback(exo: ExoPlayer, id:String, resumeTicks:Long) {
-        synchronized(mediaSegments) { mediaSegments.clear() }; activeSegment=null
+    private fun preparePlayback(exo:ExoPlayer,id:String,resumeTicks:Long,forceCompatible:Boolean=false) {
+        synchronized(mediaSegments){mediaSegments.clear()}
+        activeSegment=null
         skipIntroButton?.visibility=View.GONE
         loadMediaSegments(id)
+        val request=++playbackRequestSerial
         io.execute {
-            val url = try { resolvePlaybackUrl(id) } catch (_:Exception) { "$server/Videos/$id/stream?static=true&api_key=$token" }
+            val result=runCatching{resolvePlaybackUrl(id,forceCompatible)}
             runOnUiThread {
-                if(isFinishing || isDestroyed || player == null) return@runOnUiThread
-                exo.setMediaItem(MediaItem.fromUri(url))
-                exo.prepare()
-                if(resumeTicks > 0) exo.seekTo(resumeTicks / 10_000L)
-                exo.playWhenReady=true
+                if(isFinishing||isDestroyed||player!==exo||request!=playbackRequestSerial)return@runOnUiThread
+                result.onSuccess { url ->
+                    val media=MediaItem.Builder().setUri(url).apply {
+                        if(url.substringBefore('?').contains(".m3u8",ignoreCase=true))
+                            setMimeType(MimeTypes.APPLICATION_M3U8)
+                    }.build()
+                    exo.setMediaItem(media)
+                    exo.prepare()
+                    if(resumeTicks>0)exo.seekTo(resumeTicks/10_000L)
+                    exo.playWhenReady=true
+                }.onFailure { err ->
+                    Log.w("VelarisPlayback","Unable to resolve playback stream",err)
+                    showPlaybackError("Jellyfin konnte keinen kompatiblen Videostream bereitstellen. "+
+                        (err.message?:"Unbekannter Serverfehler")+
+                        "\nPrüfe die Jellyfin-Transcoding-Berechtigung und FFmpeg.")
+                }
             }
         }
     }
@@ -254,31 +319,84 @@ class PlayerActivity : Activity() {
         }
     }
 
-    private fun resolvePlaybackUrl(id:String):String {
-        val body=JSONObject().put("UserId",intent.getStringExtra("userId").orEmpty()).put("StartTimeTicks",0).put("AutoOpenLiveStream",true).toString()
+    private fun emulatorSafeDeviceProfile():JSONObject {
+        // Conservative profile suitable for emulator software decoders.
+        // Jellyfin chooses direct play for supported MP4/H.264/AAC sources;
+        // on incompatible codecs it can return an HLS transcode URL.
+        val direct=JSONArray().put(JSONObject()
+            .put("Type","Video").put("Container","mp4,m4v,mov")
+            .put("VideoCodec","h264").put("AudioCodec","aac,mp3"))
+        val transcode=JSONArray().put(JSONObject()
+            .put("Type","Video").put("Context","Streaming")
+            .put("Protocol","hls").put("Container","ts")
+            .put("VideoCodec","h264").put("AudioCodec","aac")
+            .put("Conditions",JSONArray()))
+        return JSONObject().put("Name","Velaris Android TV (H.264/AAC)")
+            .put("MaxStreamingBitrate",8_000_000)
+            .put("MaxStaticBitrate",8_000_000)
+            .put("DirectPlayProfiles",direct)
+            .put("TranscodingProfiles",transcode)
+            .put("SubtitleProfiles",JSONArray())
+            .put("CodecProfiles",JSONArray())
+            .put("ContainerProfiles",JSONArray())
+    }
+
+    private fun resolvePlaybackUrl(id:String,forceCompatible:Boolean=false):String {
+        val body=JSONObject()
+            .put("UserId",userId)
+            .put("StartTimeTicks",0L)
+            .put("IsPlayback",true)
+            .put("AutoOpenLiveStream",true)
+            .put("EnableDirectPlay",!forceCompatible)
+            .put("EnableDirectStream",!forceCompatible)
+            .put("EnableTranscoding",true)
+            .put("AllowVideoStreamCopy",!forceCompatible)
+            .put("AllowAudioStreamCopy",!forceCompatible)
+            .put("MaxStreamingBitrate",8_000_000)
+            .put("DeviceProfile",emulatorSafeDeviceProfile())
+            .toString()
         val c=URL("$server/Items/$id/PlaybackInfo").openConnection() as HttpURLConnection
         try {
-            c.requestMethod="POST"; c.doOutput=true; c.connectTimeout=8000; c.readTimeout=12000
+            c.requestMethod="POST"
+            c.doOutput=true;c.connectTimeout=8000;c.readTimeout=12000
             c.setRequestProperty("Content-Type","application/json")
-            c.setRequestProperty("Authorization", """MediaBrowser Client="Velaris TV", Device="Android TV", DeviceId="velaris-tv", Version="0.7.0", Token="$token"""")
-            c.outputStream.use { it.write(body.toByteArray()) }
-            if(c.responseCode !in 200..299) throw IllegalStateException("PlaybackInfo HTTP ${c.responseCode}")
-            val json=JSONObject(c.inputStream.bufferedReader().use { it.readText() })
-            val sources=json.optJSONArray("MediaSources") ?: throw IllegalStateException("Keine Medienquelle")
-            if(sources.length()==0) throw IllegalStateException("Keine Medienquelle")
+            c.setRequestProperty("Accept","application/json")
+            c.setRequestProperty("Authorization",authorizationHeader().trim())
+            c.outputStream.use{it.write(body.toByteArray())}
+            val status=c.responseCode
+            if(status !in 200..299)throw IllegalStateException("PlaybackInfo HTTP $status")
+            val json=JSONObject(c.inputStream.bufferedReader().use{it.readText()})
+            val sources=json.optJSONArray("MediaSources")?:throw IllegalStateException("Keine Medienquelle")
+            if(sources.length()==0)throw IllegalStateException("Keine Medienquelle")
             val source=sources.getJSONObject(0)
             mediaSourceId=source.optString("Id")
             val streams=source.optJSONArray("MediaStreams")
             var video:JSONObject?=null
-            if(streams!=null) for(i in 0 until streams.length()) { val s=streams.getJSONObject(i); if(s.optString("Type")=="Video") { video=s; break } }
-            lastMediaInfo=listOfNotNull(video?.optString("Codec")?.uppercase()?.takeIf { it.isNotBlank() },video?.optInt("Width")?.takeIf { it>0 }?.let { "${it} px" },source.optLong("Bitrate").takeIf { it>0 }?.let { "${it/1_000_000} Mbps" }).joinToString(" • ")
-            val transcoding=source.optString("TranscodingUrl")
-            if(transcoding.isNotBlank()) { lastPlaybackLabel="Transcoding"; return if(transcoding.startsWith("http")) transcoding else server+transcoding }
+            if(streams!=null)for(i in 0 until streams.length()){
+                val candidate=streams.getJSONObject(i)
+                if(candidate.optString("Type")=="Video"){video=candidate;break}
+            }
+            lastMediaInfo=listOfNotNull(
+                video?.optString("Codec")?.uppercase()?.takeIf{it.isNotBlank()},
+                video?.optInt("Width")?.takeIf{it>0}?.let{"$it px"},
+                source.optLong("Bitrate").takeIf{it>0}?.let{"${it/1_000_000} Mbps"}
+            ).joinToString(" • ")
+            val transcode=source.optString("TranscodingUrl")
+            if(transcode.isNotBlank()){
+                lastPlaybackLabel="Transcoding (H.264/AAC)"
+                return if(transcode.startsWith("http",ignoreCase=true))transcode else server+transcode
+            }
+            if(forceCompatible)throw IllegalStateException(
+                "Der Server hat keinen HLS-Transcoding-Stream geliefert."
+            )
+            if(!source.optBoolean("SupportsDirectPlay",true))
+                throw IllegalStateException("Jellyfin erlaubt für diesen Titel weder Direct Play noch Transcoding.")
             lastPlaybackLabel="Direct Play"
-            val container=source.optString("Container","mp4").split(",").firstOrNull().orEmpty().ifBlank{"mp4"}
+            val container=source.optString("Container","mp4").split(",")
+                .firstOrNull().orEmpty().ifBlank{"mp4"}
             val encoded=URLEncoder.encode(mediaSourceId,"UTF-8")
             return "$server/Videos/$id/stream.$container?Static=true&MediaSourceId=$encoded&api_key=$token"
-        } finally { c.disconnect() }
+        }finally{c.disconnect()}
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
@@ -341,12 +459,9 @@ class PlayerActivity : Activity() {
     override fun onStart() {
         super.onStart()
         if(player==null && shouldResumeAfterStop && server.isNotBlank() && itemId.isNotBlank()) {
-            val exo=ExoPlayer.Builder(this).build()
-            player=exo; playerViewRef?.player=exo
-            exo.addListener(object:Player.Listener {
-                override fun onIsPlayingChanged(isPlaying:Boolean) { if(isPlaying && !sessionStarted) { sessionStarted=true; report("Playing") } else if(!isPlaying && sessionStarted) report("Progress") }
-                override fun onTracksChanged(tracks:Tracks) { availableTracks=tracks }
-            })
+            val exo=createPlayer()
+            player=exo;playerViewRef?.player=exo
+            attachPlayerListener(exo)
             stoppedReported=false; sessionStarted=false; shouldResumeAfterStop=false
             preparePlayback(exo,itemId,releasedPositionMs*10_000L)
         }
