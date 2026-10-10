@@ -27,6 +27,9 @@ object VelarisDesign {
     fun themeText(key: String, fallback: String): String =
         config.optJSONObject("theme")?.optString(key, fallback) ?: fallback
 
+    fun defaultServerUrl(): String =
+        config.optString("defaultServerUrl","http://192.168.0.74:8097")
+
     fun maxProfiles(): Int =
         config.optJSONObject("profiles")?.optInt("maxProfiles", 5)?.coerceIn(1, 10) ?: 5
 }

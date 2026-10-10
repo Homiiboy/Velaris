@@ -16,6 +16,8 @@ export default function TabLayout(){
   <Tabs.Screen name="home" options={{title:design.navigation.home,tabBarIcon:({color})=><Icon symbol="⌂" color={color} size={22}/>}}/>
   <Tabs.Screen name="anime" options={{title:design.navigation.anime,tabBarIcon:({color})=><Icon symbol="✦" color={color}/>}}/>
   <Tabs.Screen name="anime-movies" options={{title:design.navigation.animeMovies,tabBarIcon:({color})=><Icon symbol="◆" color={color}/>}}/>
+  <Tabs.Screen name="animation" options={{title:design.navigation.animation,href:null}}/>
+  <Tabs.Screen name="cartoons" options={{title:design.navigation.cartoons,href:null}}/>
   <Tabs.Screen name="search" options={{title:'Suche',href:null}}/>
   <Tabs.Screen name="profile" options={{title:'Profil',href:null}}/>
  </Tabs>

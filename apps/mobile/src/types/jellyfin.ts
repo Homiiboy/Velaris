@@ -2,7 +2,7 @@ export type JellyfinServerInfo = { ServerName?: string; Version?: string; Id?: s
 export type JellyfinUser = { Id: string; Name: string; PrimaryImageTag?: string };
 export type JellyfinAuthResponse = { User: JellyfinUser; AccessToken: string; ServerId: string };
 
-export type JellyfinUserData = { Played?: boolean; PlaybackPositionTicks?: number; IsFavorite?: boolean; PlayedPercentage?: number };
+export type JellyfinUserData = { Played?: boolean; PlaybackPositionTicks?: number; IsFavorite?: boolean; PlayedPercentage?: number; UnplayedItemCount?: number };
 export type JellyfinMediaStream = {
   Index: number; Type: 'Video' | 'Audio' | 'Subtitle'; Codec?: string; Language?: string; DisplayTitle?: string;
   IsDefault?: boolean; IsExternal?: boolean; SupportsExternalStream?: boolean; DeliveryUrl?: string;
