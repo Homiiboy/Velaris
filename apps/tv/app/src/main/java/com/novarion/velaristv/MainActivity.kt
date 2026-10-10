@@ -212,8 +212,11 @@ class MainActivity : Activity() {
             VelarisDesign.navigation("collections","Sammlungen") to navButton(VelarisDesign.navigation("collections","Sammlungen")){showLibrary("Sammlungen","BoxSet")},
             VelarisDesign.navigation("series","Serien") to navButton(VelarisDesign.navigation("series","Serien")){showLibrary("Serien","Series")}
         ).forEach { (label,button) ->
-            val width=when(label) { "Start"->dp(78); "Anime Filme"->dp(116); "Sammlungen"->dp(130); "Animation"->dp(119); "Cartoons"->dp(108); else->dp(84) }
-            nav.addView(button,LinearLayout.LayoutParams(width,dp(46)).apply{marginEnd=dp(3)})
+            button.isSelected=(label==activeSection)
+            styleNavButton(button,false)
+            // Measure the real text rather than forcing category names into fixed boxes.
+            val width=(((button.paint.measureText(label)/resources.displayMetrics.density).toInt()+36).coerceAtLeast(76))
+            nav.addView(button,LinearLayout.LayoutParams(dp(width),dp(42)).apply{marginEnd=dp(14)})
         }
         val navScroll=HorizontalScrollView(this).apply {
             isHorizontalScrollBarEnabled=false
@@ -221,26 +224,43 @@ class MainActivity : Activity() {
             isFocusable=false
             clipChildren=true;clipToPadding=true
             overScrollMode=View.OVER_SCROLL_NEVER
-            setPadding(dp(12),0,dp(12),0)
+            setPadding(dp(12),0,dp(18),0)
             addView(nav,FrameLayout.LayoutParams(-2,-1))
         }
-        val navBox=FrameLayout(this).apply {
+        // Arrow has its own reserved slot: text never disappears below a gradient
+        // overlay or a partially drawn button.
+        val navBox=LinearLayout(this).apply {
+            orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL
             clipChildren=true;clipToPadding=true
         }
-        navBox.addView(navScroll,FrameLayout.LayoutParams(-1,-1))
+        navBox.addView(navScroll,LinearLayout.LayoutParams(0,dp(48),1f))
         val moreArrow=TextView(this).apply {
-            text="›";textSize=29f;gravity=Gravity.CENTER
-            setTextColor(VelarisDesign.color("accent",0xFF7C5CFC.toInt()))
+            text="›";textSize=27f;gravity=Gravity.CENTER
+            setTextColor(Color.WHITE)
             contentDescription="Weitere Kategorien nach rechts"
             isFocusable=true;isClickable=true
-            background=GradientDrawable(
-                GradientDrawable.Orientation.LEFT_RIGHT,
-                intArrayOf(0x0008080D,0xF008080D.toInt(),0xFF08080D.toInt())
-            )
-            setOnClickListener { navScroll.smoothScrollBy(dp(220),0) }
+            background=GradientDrawable().apply {
+                setColor(0xFF22212E.toInt())
+                cornerRadius=dp(22).toFloat()
+                setStroke(dp(1),0x665D547A)
+            }
+            setOnFocusChangeListener { _,focused->
+                background=GradientDrawable().apply {
+                    setColor(if(focused)VelarisDesign.color("accent",0xFF7C5CFC.toInt()) else 0xFF22212E.toInt())
+                    cornerRadius=dp(22).toFloat()
+                    if(focused)setStroke(dp(2),Color.WHITE)
+                }
+            }
+            setOnClickListener { navScroll.smoothScrollBy(dp(230),0) }
         }
-        navBox.addView(moreArrow,FrameLayout.LayoutParams(dp(58),-1,Gravity.RIGHT))
-        val updateArrow={ moreArrow.visibility=if(navScroll.canScrollHorizontally(1))View.VISIBLE else View.GONE }
+        navBox.addView(moreArrow,LinearLayout.LayoutParams(dp(40),dp(40)).apply{
+            marginStart=dp(6);marginEnd=dp(7)
+        })
+        val updateArrow={
+            val hasMore=navScroll.canScrollHorizontally(1)
+            moreArrow.visibility=if(hasMore)View.VISIBLE else View.INVISIBLE
+            moreArrow.isFocusable=hasMore
+        }
         navScroll.setOnScrollChangeListener { _,_,_,_,_->updateArrow() }
         navScroll.post { updateArrow() }
         top.addView(navBox,LinearLayout.LayoutParams(0,dp(54),1f))
@@ -1701,33 +1721,42 @@ class MainActivity : Activity() {
         addView(TextView(this@MainActivity).apply{text=sub;textSize=16f;setTextColor(Color.LTGRAY);gravity=Gravity.CENTER},params(-2,-2,8))
         addView(first,params(600,62,22))
     }
-    private fun navButton(label:String, click:()->Unit)=Button(this).apply {
-        text=label; contentDescription=label; isAllCaps=false; textSize=14f; setSingleLine(true); includeFontPadding=false
-        setTextColor(Color.WHITE); isFocusable=true; isClickable=true
-        setPadding(dp(9),0,dp(9),0)
-        background=GradientDrawable().apply {
-            setColor(Color.TRANSPARENT)
-            cornerRadius=dp(7).toFloat()
+    private fun styleNavButton(button:Button,focused:Boolean) {
+        val selected=button.isSelected
+        button.background=GradientDrawable().apply {
+            setColor(when {
+                selected -> VelarisDesign.color("accent",0xFF7C5CFC.toInt())
+                focused -> 0x442B2941
+                else -> Color.TRANSPARENT
+            })
+            cornerRadius=dp(24).toFloat()
+            if(focused)setStroke(dp(2),Color.WHITE)
         }
-        stateListAnimator=null
-        elevation=0f
-        setOnClickListener { click() }
-        setOnFocusChangeListener { v, focused ->
-            background=GradientDrawable().apply {
-                setColor(if(focused) 0x70404048 else Color.TRANSPARENT)
-                cornerRadius=dp(10).toFloat()
-                if(focused)setStroke(dp(1),0xCCFFFFFF.toInt())
-            }
-            // Android scrolls the focused child without drawing into search/profile.
-            if(focused) post {
+        button.setTextColor(if(selected||focused)Color.WHITE else 0xCCDCDCE4.toInt())
+        button.typeface=if(selected)Typeface.DEFAULT_BOLD else Typeface.DEFAULT
+    }
+
+    private fun navButton(label:String, click:()->Unit)=Button(this).apply {
+        text=label;contentDescription=label;isAllCaps=false
+        textSize=15f;setSingleLine(true);includeFontPadding=false
+        isFocusable=true;isClickable=true
+        minWidth=0;minimumWidth=0
+        setPadding(dp(14),0,dp(14),0)
+        stateListAnimator=null;elevation=0f
+        styleNavButton(this,false)
+        setOnClickListener{click()}
+        setOnFocusChangeListener { view,focused ->
+            styleNavButton(this,focused)
+            // Move the whole chip into view when navigating with the D-pad.
+            if(focused)post {
                 val strip=parent as? LinearLayout
                 val scroll=strip?.parent as? HorizontalScrollView
                 if(scroll!=null) {
-                    val rect=android.graphics.Rect(left-dp(8),top,right+dp(8),bottom)
+                    val rect=android.graphics.Rect(left-dp(10),top,right+dp(10),bottom)
                     scroll.requestChildRectangleOnScreen(strip,rect,false)
                 }
             }
-            v.animate().scaleX(1f).scaleY(1f).setDuration(110).start()
+            view.animate().scaleX(1f).scaleY(1f).setDuration(100).start()
         }
     }
 
