@@ -209,9 +209,9 @@ class MainActivity : Activity() {
         }
         listOf(
             VelarisDesign.navigation("home","Start") to navButton(VelarisDesign.navigation("home","Start")){showHome()},
+            VelarisDesign.navigation("animation","Animation") to navButton(VelarisDesign.navigation("animation","Animation")){showMediaFolderLibrary("Animation","Movie,Series")},
             VelarisDesign.navigation("anime","Anime") to navButton(VelarisDesign.navigation("anime","Anime")){showMediaFolderLibrary("Anime","Series")},
             VelarisDesign.navigation("animeMovies","Anime Filme") to navButton(VelarisDesign.navigation("animeMovies","Anime Filme")){showMediaFolderLibrary("Anime Filme","Movie")},
-            VelarisDesign.navigation("animation","Animation") to navButton(VelarisDesign.navigation("animation","Animation")){showMediaFolderLibrary("Animation","Movie,Series")},
             VelarisDesign.navigation("cartoons","Cartoons") to navButton(VelarisDesign.navigation("cartoons","Cartoons")){showMediaFolderLibrary("Cartoons","Movie,Series")},
             VelarisDesign.navigation("movies","Filme") to navButton(VelarisDesign.navigation("movies","Filme")){showLibrary("Filme","Movie")},
             VelarisDesign.navigation("collections","Sammlungen") to navButton(VelarisDesign.navigation("collections","Sammlungen")){showLibrary("Sammlungen","BoxSet")},

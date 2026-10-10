@@ -112,9 +112,9 @@ export default function HomeScreen() {
         <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" style={styles.quickNav} contentContainerStyle={styles.quickNavContent}>
           <Pressable style={[styles.navChip, categoryMenu && styles.activeChip]} onPress={() => setCategoryMenu(v => !v)}><Text style={styles.navChipText}>Genres  ⌄</Text></Pressable>
           {[
+            {label:design.navigation.animation,href:'/(tabs)/animation'},
             {label:design.navigation.anime,href:'/(tabs)/anime'},
             {label:design.navigation.animeMovies,href:'/(tabs)/anime-movies'},
-            {label:design.navigation.animation,href:'/(tabs)/animation'},
             {label:design.navigation.cartoons,href:'/(tabs)/cartoons'},
             {label:design.navigation.movies,href:'/(tabs)/movies'},
             {label:design.navigation.collections,href:'/collections'},

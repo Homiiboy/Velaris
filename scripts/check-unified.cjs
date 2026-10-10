@@ -11,7 +11,10 @@ const check=(condition,message)=>{if(!condition)errors.push(message)};
 check(brand.name==='VELARIS','Brand name mismatch');
 check(brand.profiles.maxProfiles===5,'Profile limit must match on mobile and TV');
 check(brand.avatars.length===4,'Expected four shared avatars');
-check(Object.keys(brand.navigation).join(',')==='home,movies,series,anime,animeMovies,collections','Navigation contract changed');
+check(['home','movies','series','anime','animeMovies','collections','animation','cartoons'].every(k=>!!brand.navigation[k]),'Missing shared navigation labels');
+check(brand.defaultServerUrl==='http://192.168.0.74:8097','Unexpected Jellyfin default server address');
+const ordered=brand.navigationOrder.filter(k=>k!=='home').map(k=>brand.navigation[k]);
+check(ordered.length===7 && ordered.join('|')===[...ordered].sort((a,b)=>a.localeCompare(b,'de')).join('|'),'Categories must stay alphabetically ordered');
 const sum=file=>crypto.createHash('sha256').update(read(file)).digest('hex');
 for(const [source,target] of pairs){
   try{check(sum(source)===sum(target),'Asset differs: '+source+' -> '+target)}
