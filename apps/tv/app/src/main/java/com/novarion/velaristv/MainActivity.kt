@@ -567,7 +567,7 @@ class MainActivity : Activity() {
 
     private fun addLibraryGrid(data:List<JSONObject>) {
         if(data.isEmpty()) return
-        val grid=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; clipChildren=false; clipToPadding=false; setPadding(dp(52),dp(20),dp(52),dp(42)) }
+        val grid=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; clipChildren=false; clipToPadding=false; setPadding(dp(16),dp(20),dp(16),dp(42)) }
         data.chunked(5).forEach { items ->
             val row=LinearLayout(this).apply { orientation=LinearLayout.HORIZONTAL; gravity=Gravity.START; clipChildren=false; clipToPadding=false }
             items.forEach { item ->
@@ -854,8 +854,11 @@ class MainActivity : Activity() {
                     selector.addView(chooser)
                     selector.addView(episodeList)
                     root.addView(selector)
-                    if(seasons.isNotEmpty()) renderSeason(0)
-                    else episodeList.addView(TextView(this).apply{
+                    if(seasons.isNotEmpty()) {
+                        // Season 0 ("Specials") must not replace season 1 on first open.
+                        val firstRegular=seasons.indexOfFirst{it.optInt("IndexNumber",-1)==1}
+                        renderSeason(if(firstRegular>=0)firstRegular else 0)
+                    } else episodeList.addView(TextView(this).apply{
                         text="Keine Staffeln gefunden.";textSize=16f;setTextColor(Color.LTGRAY)
                     },params(-1,-2,12))
                     setContentView(ScrollView(this).apply{isVerticalScrollBarEnabled=false;addView(root)})
