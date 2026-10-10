@@ -839,10 +839,29 @@ class MainActivity : Activity() {
     }
 
     private fun showSearch() {
-        rememberBack { showHome() }
+        val fromSection=activeSection
+        val fromCollection=activeCollectionId
+        rememberBack {
+            activeSection=fromSection;activeCollectionId=fromCollection
+            when(fromSection) {
+                "Start" -> showHome()
+                "Anime","Anime Filme","Animation","Cartoons" -> showMediaFolderLibrary(fromSection,when(fromSection) {
+                    "Anime" -> "Series"
+                    "Anime Filme" -> "Movie"
+                    else -> "Movie,Series"
+                })
+                "Sammlungen" -> if(fromCollection.isNotBlank())showCollection(fromCollection) else showLibrary(fromSection,"BoxSet")
+                "Filme" -> showLibrary(fromSection,"Movie")
+                "Serien" -> showLibrary(fromSection,"Series")
+                else -> showHome()
+            }
+        }
         val root=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;setPadding(dp(54),dp(48),dp(54),dp(40));setBackgroundColor(VelarisDesign.color("background",0xFF08080D.toInt()))}
         val left=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(0,0,dp(36),0)}
-        left.addView(TextView(this).apply{text="Suche";textSize=36f;setTextColor(Color.WHITE);typeface=Typeface.DEFAULT_BOLD})
+        left.addView(TextView(this).apply{
+            text=if(activeSection=="Start")"Suche" else "Suche in $activeSection"
+            textSize=36f;setTextColor(Color.WHITE);typeface=Typeface.DEFAULT_BOLD
+        })
         val input=EditText(this).apply{
             hint="Titel suchen…";setTextColor(Color.WHITE);setHintTextColor(Color.GRAY);textSize=20f;setSingleLine()
             background=GradientDrawable().apply{setColor(0xFF202026.toInt());cornerRadius=dp(10).toFloat()}
@@ -859,18 +878,69 @@ class MainActivity : Activity() {
     private fun search(query:String) {
         rememberBack { showSearch() }
         val encoded=java.net.URLEncoder.encode(query,"UTF-8")
+        val scope=activeSection
+        val collectionId=activeCollectionId
         io.execute {
             try {
-                val data=items("/Users/$userId/Items?Recursive=true&Limit=50&SearchTerm=$encoded&IncludeItemTypes=Movie,Series&Fields=PrimaryImageAspectRatio")
-                runOnUiThread {
-                    val root=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; setPadding(dp(48),dp(28),dp(48),dp(28)); setBackgroundColor(VelarisDesign.color("background",0xFF08080D.toInt())) }
-                    root.addView(TextView(this).apply { text="Suchergebnisse für „$query“"; textSize=30f; setTextColor(Color.WHITE) })
-                    homeRoot=root
-                    addRow("Ergebnisse",data)
-                    root.addView(button("Neue Suche") { showSearch() },params(220,56,16))
-                    showAppPage(ScrollView(this).apply { addView(root) })
+                val params=mutableListOf("Recursive=true","Limit=150","SearchTerm=$encoded",
+                    "Fields=PrimaryImageAspectRatio,ProductionYear","EnableUserData=true")
+                if(collectionId.isNotBlank()) {
+                    params.add("ParentId=$collectionId")
+                    params.add("IncludeItemTypes=Movie,Series")
+                } else if(scope=="Sammlungen") {
+                    params.add("IncludeItemTypes=BoxSet")
+                } else if(scope=="Meine Liste") {
+                    params.add("Filters=IsFavorite")
+                    params.add("IncludeItemTypes=Movie,Series")
+                } else if(scope=="Start") {
+                    params.add("IncludeItemTypes=Movie,Series")
+                } else {
+                    val aliases=when(scope) {
+                        "Anime" -> listOf("anime","animes","animeserien","animeseries")
+                        "Anime Filme" -> listOf("animemovies","animefilme","animefilms")
+                        "Animation" -> listOf("animation","animations","animationsfilme")
+                        "Cartoons" -> listOf("cartoons","cartoon","zeichentrick","zeichentrickfilme")
+                        "Filme" -> listOf("filme","movies","movie")
+                        "Serien" -> listOf("serien","series","tvshows","shows")
+                        else -> emptyList()
+                    }
+                    fun norm(name:String)=java.text.Normalizer.normalize(name.lowercase(),java.text.Normalizer.Form.NFD)
+                        .replace(Regex("[\\u0300-\\u036f]"),"")
+                        .replace(Regex("[^a-z0-9]"),"")
+                    val folder=items("/Users/$userId/Views")
+                        .firstOrNull { aliases.contains(norm(it.optString("Name"))) }
+                    val id=folder?.optString("Id").orEmpty()
+                    if(id.isNotBlank())params.add("ParentId=$id")
+                    else params.add("ParentId=00000000000000000000000000000000")
+                    params.add("IncludeItemTypes="+when(scope) {
+                        "Anime Filme","Filme" -> "Movie"
+                        "Anime","Serien" -> "Series"
+                        else -> "Movie,Series"
+                    })
                 }
-            } catch(e:Exception){ runOnUiThread{toast("Suche fehlgeschlagen")} }
+                val data=items("/Users/$userId/Items?"+params.joinToString("&"))
+                runOnUiThread {
+                    val root=LinearLayout(this).apply {
+                        orientation=LinearLayout.VERTICAL
+                        setPadding(dp(48),dp(28),dp(48),dp(28))
+                        setBackgroundColor(VelarisDesign.color("background",0xFF08080D.toInt()))
+                    }
+                    root.addView(TextView(this).apply {
+                        text="Suchergebnisse in $scope für „$query“"
+                        textSize=30f;setTextColor(Color.WHITE)
+                    })
+                    homeRoot=root
+                    if(data.isEmpty()) root.addView(TextView(this).apply {
+                        text="Keine passenden Titel gefunden."
+                        textSize=18f;setTextColor(Color.LTGRAY)
+                    },params(-1,-2,20))
+                    else addLibraryGrid(data)
+                    root.addView(button("Neue Suche") { showSearch() },params(220,56,16))
+                    showAppPage(ScrollView(this).apply {
+                        isVerticalScrollBarEnabled=false;addView(root)
+                    })
+                }
+            } catch(e:Exception){ runOnUiThread { toast("Suche fehlgeschlagen") } }
         }
     }
 
