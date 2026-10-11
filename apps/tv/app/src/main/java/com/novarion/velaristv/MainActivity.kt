@@ -153,7 +153,7 @@ class MainActivity : Activity() {
         val signInButton=button("Anmelden") { login(user.text.toString(), pass.text.toString()) }.apply {
             id=View.generateViewId()
         }
-        val backButton=button("Zurück") { clearConnection(); showServer() }.apply {
+        val backButton=actionButton("Zurück",false) { clearConnection(); showServer() }.apply {
             id=View.generateViewId()
         }
         actions.addView(signInButton,LinearLayout.LayoutParams(0,dp(64),1f).apply {
