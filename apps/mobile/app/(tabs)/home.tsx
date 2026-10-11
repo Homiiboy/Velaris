@@ -7,6 +7,7 @@ import { MediaRow } from '@/components/MediaRow';
 import type { JellyfinItem } from '@/types/jellyfin';
 import { colors, design } from '@/theme';
 import { VelarisHeader } from '@/components/VelarisHeader';
+import { PlayGlyph } from '@/components/PlayGlyph';
 
 const AVATARS = [
   require('../../assets/AvatarRot.png'),
@@ -78,10 +79,10 @@ export default function HomeScreen() {
               {!!hero.Genres?.length && <Text style={styles.heroGenres} numberOfLines={1}>{hero.Genres.slice(0, 3).join('   ·   ')}</Text>}
               <View style={styles.heroButtons}>
                 <Pressable accessibilityRole="button" style={({pressed}) => [styles.play, pressed && styles.pressed]} onPress={() => router.push({ pathname: '/player/[id]', params: { id: hero.Id } })}>
-                  <Text style={styles.playText}>▶   Abspielen</Text>
+                  <PlayGlyph size={17} color="#101016"/><Text style={styles.playText}>Abspielen</Text>
                 </Pressable>
                 <Pressable accessibilityRole="button" style={({pressed}) => [styles.info, pressed && styles.pressed]} onPress={() => router.push({ pathname: '/details/[id]', params: { id: hero.Id } })}>
-                  <Text style={styles.infoText}>ⓘ   Mehr Infos</Text>
+                  <View style={styles.infoIcon}><Text style={styles.infoIconText}>i</Text></View><Text style={styles.infoText}>Mehr Infos</Text>
                 </Pressable>
               </View>
             </View>
@@ -135,9 +136,11 @@ const styles = StyleSheet.create({
   heroMeta: { color: '#EEEEF0', fontSize: 12, fontWeight: '800', marginTop: 12 },
   heroGenres: { color: colors.muted, fontSize: 12, fontWeight: '600', marginTop: 9 },
   heroButtons: { flexDirection: 'row', gap: 10, marginTop: 24, alignSelf: 'stretch' },
-  play: { flex: 1, height: 47, borderRadius: 7, backgroundColor: '#FFFFFF', justifyContent: 'center', alignItems: 'center' },
-  info: { flex: 1, height: 47, borderRadius: 7, backgroundColor: 'rgba(84,84,92,0.84)', justifyContent: 'center', alignItems: 'center' },
-  pressed: { opacity: 0.80 },
+  play: { flex: 1, height: 48, borderRadius: 9, backgroundColor: '#FFFFFF', flexDirection: 'row', gap: 9, justifyContent: 'center', alignItems: 'center' },
+  info: { flex: 1, height: 48, borderRadius: 9, backgroundColor: 'rgba(84,84,92,0.84)', flexDirection: 'row', gap: 9, justifyContent: 'center', alignItems: 'center' },
+  infoIcon: { width: 17, height: 17, borderRadius: 9, borderWidth: 1.5, borderColor: colors.text, alignItems: 'center', justifyContent: 'center' },
+  infoIconText: { color: colors.text, fontSize: 12, fontWeight: '900', lineHeight: 14, includeFontPadding: false },
+  pressed: { opacity: 0.83, transform:[{scale:0.985}] },
   playText: { color: '#111115', fontSize: 14, fontWeight: '900' },
   infoText: { color: colors.text, fontSize: 14, fontWeight: '800' },
   rows: { paddingTop: 0, paddingBottom: 30, marginTop: -6 }
