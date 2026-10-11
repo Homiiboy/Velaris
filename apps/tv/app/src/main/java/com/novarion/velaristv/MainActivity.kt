@@ -39,6 +39,7 @@ class MainActivity : Activity() {
     private var homeRoot: LinearLayout? = null
     private var activeSection = "Start"
     private var activeCollectionId = ""
+    private var editProfilesMode = false
     @Volatile private var destroyed = false
     private val backStack = java.util.ArrayDeque<()->Unit>()
     private var suppressHistory = false
@@ -1367,168 +1368,277 @@ class MainActivity : Activity() {
             .setDuration(120).start()
     }
 
-    // Subtle, non-interactive Netflix-inspired poster wall behind the profile picker.
-    // Only use artwork from the currently authenticated Jellyfin library.
-    private fun loadProfilePosterWall(screen:FrameLayout, wall:LinearLayout) {
-        val previewServer=server
-        val previewUser=userId
-        if(previewServer.isBlank() || previewUser.isBlank() || token.isBlank())return
+    // Cinematic, non-interactive hero slideshow on the right of the profile picker.
+    // It never starts playback; all focus remains in the profile column.
+    private fun loadProfileHeroCarousel(screen:FrameLayout,hero:FrameLayout) {
+        val requestedServer=server
+        val requestedUser=userId
+        if(requestedServer.isBlank()||requestedUser.isBlank()||token.isBlank())return
         io.execute {
-            val artwork=runCatching {
-                items("/Users/$previewUser/Items?Recursive=true&IncludeItemTypes=Movie,Series" +
-                    "&SortBy=DateCreated&SortOrder=Descending&Limit=60&Fields=ImageTags")
+            val candidates=runCatching {
+                items("/Users/$requestedUser/Items?Recursive=true&IncludeItemTypes=Movie,Series" +
+                    "&SortBy=DateCreated&SortOrder=Descending&Limit=75" +
+                    "&Fields=Overview,ProductionYear,BackdropImageTags")
                     .filter { item ->
                         item.optString("Id").isNotBlank() &&
-                            (item.optJSONObject("ImageTags")?.has("Primary")==true ||
-                                item.optString("PrimaryImageTag").isNotBlank())
+                            (item.optJSONArray("BackdropImageTags")?.length()?:0)>0
                     }
-                    .distinctBy { it.optString("Id") }
-                    .shuffled().take(24)
+                    .distinctBy{it.optString("Id")}.shuffled().take(7)
             }.getOrDefault(emptyList())
-            if(artwork.isEmpty())return@execute
+            if(candidates.isEmpty())return@execute
             runOnUiThread {
-                // The user may already have switched profiles or left this screen.
-                if(!screen.isAttachedToWindow || previewServer!=server ||
-                    previewUser!=userId || destroyed)return@runOnUiThread
-                wall.removeAllViews()
-                wall.alpha=0f
-                repeat(3) { r ->
-                    val row=LinearLayout(this).apply {
-                        orientation=LinearLayout.HORIZONTAL
-                        gravity=Gravity.CENTER
-                        isFocusable=false
-                    }
-                    repeat(8) { c ->
-                        val item=artwork[(r*8+c)%artwork.size]
-                        val cover=ImageView(this).apply {
+                if(!screen.isAttachedToWindow||destroyed ||
+                    requestedServer!=server||requestedUser!=userId)return@runOnUiThread
+                fun render(index:Int) {
+                    if(!screen.isAttachedToWindow || destroyed ||
+                        requestedServer!=server||requestedUser!=userId)return
+                    val item=candidates[index%candidates.size]
+                    hero.animate().cancel()
+                    hero.animate().alpha(0f).setDuration(240).withEndAction {
+                        if(!screen.isAttachedToWindow || destroyed)return@withEndAction
+                        hero.removeAllViews()
+                        val backdrop=ImageView(this).apply {
                             scaleType=ImageView.ScaleType.CENTER_CROP
-                            setBackgroundColor(0xFF181820.toInt())
                             isFocusable=false
                             importantForAccessibility=View.IMPORTANT_FOR_ACCESSIBILITY_NO
                         }
-                        row.addView(cover,LinearLayout.LayoutParams(dp(137),dp(198)).apply {
-                            marginEnd=dp(9)
+                        hero.addView(backdrop,FrameLayout.LayoutParams(-1,-1))
+                        loadImage(backdrop,item.optString("Id"),"Backdrop",1280)
+                        hero.addView(View(this).apply {
+                            background=GradientDrawable(
+                                GradientDrawable.Orientation.LEFT_RIGHT,
+                                intArrayOf(0xD808080D.toInt(),0x4808080D,0x1808080D))
+                        },FrameLayout.LayoutParams(-1,-1))
+                        hero.addView(View(this).apply {
+                            background=GradientDrawable(
+                                GradientDrawable.Orientation.TOP_BOTTOM,
+                                intArrayOf(0x0808080D,0x0808080D,0xE808080D.toInt()))
+                        },FrameLayout.LayoutParams(-1,-1))
+                        val info=LinearLayout(this).apply {
+                            orientation=LinearLayout.VERTICAL
+                            gravity=Gravity.BOTTOM
+                            setPadding(dp(48),0,dp(60),dp(62))
+                        }
+                        info.addView(TextView(this).apply {
+                            text="JETZT AUF VELARIS"
+                            textSize=13f;letterSpacing=0.15f
+                            typeface=Typeface.DEFAULT_BOLD
+                            setTextColor(VelarisDesign.color("accent",0xFF7C5CFC.toInt()))
+                        },params(-1,-2,8))
+                        info.addView(TextView(this).apply {
+                            text=item.optString("Name")
+                            textSize=39f;typeface=Typeface.DEFAULT_BOLD
+                            setTextColor(Color.WHITE);maxLines=2
+                        },params(-1,-2,9))
+                        val year=item.optInt("ProductionYear",0)
+                        if(year>0)info.addView(TextView(this).apply {
+                            text=year.toString();textSize=15f
+                            setTextColor(0xFFE3E3E9.toInt())
+                        },params(-1,-2,8))
+                        val overview=item.optString("Overview")
+                            .replace(Regex("<[^>]+>")," ").trim()
+                        if(overview.isNotBlank())info.addView(TextView(this).apply {
+                            text=overview;textSize=16f;maxLines=3
+                            setTextColor(0xFFE2E2E7.toInt())
+                        },params(-1,-2,20))
+                        info.addView(TextView(this).apply {
+                            text=candidates.indices.joinToString("  ") {
+                                if(it==index%candidates.size)"●" else "○"
+                            }
+                            textSize=18f;setTextColor(Color.WHITE)
                         })
-                        loadImage(cover,item.optString("Id"),"Primary",280)
-                    }
-                    wall.addView(row,LinearLayout.LayoutParams(-1,dp(207)).apply {
-                        bottomMargin=dp(9)
-                    })
+                        hero.addView(info,FrameLayout.LayoutParams(-1,-1))
+                        hero.animate().alpha(1f).setDuration(550).start()
+                    }.start()
                 }
-                wall.animate().alpha(0.92f).setDuration(550).start()
+                render(0)
+                if(candidates.size>1) {
+                    val tick=object:Runnable {
+                        var slide=1
+                        override fun run() {
+                            if(!screen.isAttachedToWindow||destroyed ||
+                                requestedServer!=server||requestedUser!=userId)return
+                            render(slide++)
+                            screen.postDelayed(this,8500L)
+                        }
+                    }
+                    screen.postDelayed(tick,8500L)
+                }
             }
         }
     }
 
-    private fun showProfiles(startup:Boolean=false) {
-        if(!startup) rememberBack { showHome() }
-        val profiles=readProfiles()
-        val root=LinearLayout(this).apply{
-            orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER
-            setPadding(dp(70),dp(34),dp(70),dp(34))
-            setBackgroundColor(Color.TRANSPARENT)
-        }
-        root.addView(TextView(this).apply{
-            text="Wer schaut gerade?";textSize=40f;setTextColor(Color.WHITE)
-            typeface=Typeface.DEFAULT_BOLD;gravity=Gravity.CENTER
-        },params(-1,-2,0))
-        root.addView(TextView(this).apply{
-            text="Wähle dein Profil";textSize=17f;setTextColor(0xFF9B9BA4.toInt());gravity=Gravity.CENTER
-        },params(-1,-2,8))
-
-        val grid=LinearLayout(this).apply{
-            orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER
-            clipChildren=false;clipToPadding=false
-            setPadding(dp(12),dp(26),dp(12),dp(12))
-        }
-        var firstProfile:View?=null
-        var row=LinearLayout(this).apply{
-            orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER
-            clipChildren=false;clipToPadding=false
-        }
-        fun addTile(tile:View,index:Int){
-            if(index>0 && index%5==0){
-                grid.addView(row)
-                row=LinearLayout(this).apply{
-                    orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER
-                    clipChildren=false;clipToPadding=false
+    private fun showProfileAvatarEditor(profile:JSONObject) {
+        val labels=arrayOf("Rot","Blau","Weiße Robbe","Graue Robbe")
+        val avatar=profile.optInt("avatar",0).coerceIn(0,labels.lastIndex)
+        AlertDialog.Builder(this)
+            .setTitle("Avatar für ${profile.optString("name","Profil")} auswählen")
+            .setSingleChoiceItems(labels,avatar) { dialog,selected ->
+                val all=readProfiles()
+                val target=profile.optString("id")
+                val found=(0 until all.length()).firstOrNull {
+                    all.optJSONObject(it)?.optString("id")==target
+                }
+                if(found!=null) {
+                    all.optJSONObject(found)?.put("avatar",selected)
+                    prefs.edit().putString("velaris_profiles",all.toString()).apply()
+                    if(profile.optString("userId")==userId && profile.optString("server")==server)
+                        prefs.edit().putInt("active_profile_avatar",selected).apply()
+                    dialog.dismiss()
+                    showProfiles(true)
+                } else {
+                    dialog.dismiss()
+                    toast("Profil wurde nicht gefunden")
                 }
             }
-            row.addView(tile,LinearLayout.LayoutParams(dp(180),dp(205)).apply{marginEnd=dp(12)})
-        }
-        for(i in 0 until profiles.length()) {
-            val p=profiles.optJSONObject(i) ?: continue
-            val name=p.optString("name","Profil");val av=p.optInt("avatar",i)
-            val picture=avatarFrame(av,name)
-            val tile=LinearLayout(this).apply{
-                orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER
-                isFocusable=true;isClickable=true
-                clipChildren=false;clipToPadding=false
-                setPadding(dp(8),dp(8),dp(8),dp(4))
-                setOnFocusChangeListener{_,focused->highlightAvatar(picture,focused)}
-                setOnClickListener{activateJellyfinProfile(p)}
-            }
-            tile.addView(picture,LinearLayout.LayoutParams(dp(142),dp(142)))
-            tile.addView(TextView(this).apply{
-                text=name;textSize=17f;setTextColor(0xFFBDBDC4.toInt())
-                gravity=Gravity.CENTER;maxLines=1
-            },LinearLayout.LayoutParams(dp(164),dp(42)))
-            if(firstProfile==null)firstProfile=tile
-            addTile(tile,i)
-        }
-        if(profiles.length()<VelarisDesign.maxProfiles()){
-            val addPicture=FrameLayout(this).apply{
-                clipChildren=false;clipToPadding=false
-                addView(TextView(this@MainActivity).apply{
-                    text="+";textSize=54f;setTextColor(0xFFBDBDC4.toInt());gravity=Gravity.CENTER
-                    background=GradientDrawable().apply{
-                        setColor(VelarisDesign.color("surfaceAlt",0xFF222229.toInt()))
-                        cornerRadius=dp(14).toFloat()
-                    }
-                },FrameLayout.LayoutParams(-1,-1).apply{setMargins(dp(4),dp(4),dp(4),dp(4))})
-            }
-            val add=LinearLayout(this).apply{
-                orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER
-                isFocusable=true;isClickable=true
-                clipChildren=false;clipToPadding=false
-                setPadding(dp(8),dp(8),dp(8),dp(4))
-                setOnClickListener{showCreateProfile()}
-                setOnFocusChangeListener{_,focused->highlightAvatar(addPicture,focused)}
-            }
-            add.addView(addPicture,LinearLayout.LayoutParams(dp(142),dp(142)))
-            add.addView(TextView(this).apply{
-                text="Profil hinzufügen";textSize=15f
-                setTextColor(0xFFBDBDC4.toInt())
-                gravity=Gravity.CENTER
-            },LinearLayout.LayoutParams(dp(164),dp(42)))
-            if(firstProfile==null)firstProfile=add
-            addTile(add,profiles.length())
-        }
-        grid.addView(row);root.addView(grid)
+            .setNegativeButton("Abbrechen",null)
+            .show()
+    }
 
+    private fun showProfiles(startup:Boolean=false) {
+        if(!startup) {
+            editProfilesMode=false
+            rememberBack { showHome() }
+        }
+        val profiles=readProfiles()
         val scene=FrameLayout(this).apply {
             setBackgroundColor(VelarisDesign.color("background",0xFF08080D.toInt()))
-            clipChildren=true
         }
-        val wall=LinearLayout(this).apply {
-            orientation=LinearLayout.VERTICAL
-            gravity=Gravity.CENTER
+        val columns=LinearLayout(this).apply {
+            orientation=LinearLayout.HORIZONTAL
             isFocusable=false
+        }
+        scene.addView(columns,FrameLayout.LayoutParams(-1,-1))
+        val rail=LinearLayout(this).apply {
+            orientation=LinearLayout.VERTICAL
+            setPadding(dp(40),dp(40),dp(18),dp(28))
+            setBackgroundColor(0xFF0D0D14.toInt())
+            clipChildren=false;clipToPadding=false
+        }
+        columns.addView(rail,LinearLayout.LayoutParams(dp(372),-1))
+        val hero=FrameLayout(this).apply {
+            isFocusable=false
+            setBackgroundColor(0xFF12121C.toInt())
             importantForAccessibility=View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS
         }
-        scene.addView(wall,FrameLayout.LayoutParams(-1,-1))
-        // Keep the portraits visible at the edges while giving text and avatars
-        // strong contrast in the middle, regardless of the poster colors.
-        scene.addView(View(this).apply {
-            isFocusable=false
-            background=GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
-                intArrayOf(0xA508080D.toInt(),0xE108080D.toInt(),
-                    0xE108080D.toInt(),0xA508080D.toInt()))
-        },FrameLayout.LayoutParams(-1,-1))
-        scene.addView(root,FrameLayout.LayoutParams(-1,-1))
+        columns.addView(hero,LinearLayout.LayoutParams(0,-1,1f))
+        rail.addView(TextView(this).apply {
+            text="VELARIS";textSize=22f;letterSpacing=0.12f
+            typeface=Typeface.DEFAULT_BOLD
+            setTextColor(VelarisDesign.color("accent",0xFF7C5CFC.toInt()))
+        },params(-1,-2,20))
+        rail.addView(TextView(this).apply {
+            text="Wer schaut gerade?"
+            textSize=29f;typeface=Typeface.DEFAULT_BOLD
+            setTextColor(Color.WHITE);maxLines=2
+        },params(-1,-2,7))
+        val hint=TextView(this).apply {
+            text=if(editProfilesMode)"Profil wählen, um den Avatar zu ändern"
+                else "Wähle dein Profil"
+            textSize=15f;setTextColor(0xFFB9B9C3.toInt())
+            maxLines=2
+        }
+        rail.addView(hint,params(-1,-2,17))
+        val list=LinearLayout(this).apply {
+            orientation=LinearLayout.VERTICAL
+            clipChildren=false;clipToPadding=false
+        }
+        val scroller=ScrollView(this).apply {
+            isVerticalScrollBarEnabled=false
+            clipChildren=false;clipToPadding=false
+            fillViewport=false
+            addView(list)
+        }
+        rail.addView(scroller,LinearLayout.LayoutParams(-1,0,1f))
+        val editIndicators=mutableListOf<View>()
+        var firstProfile:View?=null
+        for(i in 0 until profiles.length()) {
+            val profile=profiles.optJSONObject(i)?:continue
+            val name=profile.optString("name","Profil")
+            val picture=avatarFrame(profile.optInt("avatar",i),name)
+            val editIcon=TextView(this).apply {
+                text="✎";textSize=23f
+                setTextColor(VelarisDesign.color("accent",0xFF7C5CFC.toInt()))
+                gravity=Gravity.CENTER
+                visibility=if(editProfilesMode)View.VISIBLE else View.GONE
+            }
+            editIndicators.add(editIcon)
+            val tile=LinearLayout(this).apply {
+                orientation=LinearLayout.HORIZONTAL
+                gravity=Gravity.CENTER_VERTICAL
+                isFocusable=true;isClickable=true
+                setPadding(dp(8),dp(4),dp(9),dp(4))
+                background=GradientDrawable().apply {
+                    setColor(0xFF1A1A24.toInt());cornerRadius=dp(14).toFloat()
+                }
+                setOnClickListener {
+                    if(editProfilesMode)showProfileAvatarEditor(profile)
+                    else activateJellyfinProfile(profile)
+                }
+                setOnFocusChangeListener{v,focused ->
+                    highlightAvatar(picture,focused)
+                    v.background=GradientDrawable().apply {
+                        setColor(if(focused)0xFF302B48.toInt() else 0xFF1A1A24.toInt())
+                        cornerRadius=dp(14).toFloat()
+                        if(focused)setStroke(dp(2),Color.WHITE)
+                    }
+                }
+            }
+            tile.addView(picture,LinearLayout.LayoutParams(dp(65),dp(65)))
+            tile.addView(TextView(this).apply {
+                text=name;maxLines=1;textSize=17f
+                setTextColor(Color.WHITE)
+                typeface=Typeface.DEFAULT_BOLD
+                setPadding(dp(13),0,0,0)
+            },LinearLayout.LayoutParams(0,-2,1f))
+            tile.addView(editIcon,LinearLayout.LayoutParams(dp(32),dp(40)))
+            list.addView(tile,LinearLayout.LayoutParams(-1,dp(81)).apply {
+                bottomMargin=dp(8)
+            })
+            if(firstProfile==null)firstProfile=tile
+        }
+        if(profiles.length()<VelarisDesign.maxProfiles()) {
+            val add=LinearLayout(this).apply {
+                orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL
+                setPadding(dp(15),dp(5),dp(10),dp(5))
+                isFocusable=true;isClickable=true
+                setOnClickListener{showCreateProfile()}
+                setOnFocusChangeListener{v,focused->
+                    v.background=GradientDrawable().apply{
+                        setColor(if(focused)0xFF302B48.toInt() else Color.TRANSPARENT)
+                        cornerRadius=dp(12).toFloat()
+                        if(focused)setStroke(dp(2),Color.WHITE)
+                    }
+                }
+            }
+            add.addView(TextView(this).apply {
+                text="+";textSize=36f;gravity=Gravity.CENTER
+                setTextColor(Color.WHITE)
+            },LinearLayout.LayoutParams(dp(65),dp(60)))
+            add.addView(TextView(this).apply {
+                text="Profil hinzufügen";textSize=16f
+                setTextColor(0xFFB9B9C3.toInt())
+                setPadding(dp(13),0,0,0)
+            })
+            list.addView(add,LinearLayout.LayoutParams(-1,dp(75)))
+            if(firstProfile==null)firstProfile=add
+        }
+        val editor=actionButton(if(editProfilesMode)"✓  Fertig" else "✎  Profile bearbeiten",false){}
+        editor.setOnClickListener {
+            editProfilesMode=!editProfilesMode
+            editor.text=if(editProfilesMode)"✓  Fertig" else "✎  Profile bearbeiten"
+            hint.text=if(editProfilesMode)"Profil wählen, um den Avatar zu ändern"
+                else "Wähle dein Profil"
+            editIndicators.forEach {
+                it.visibility=if(editProfilesMode)View.VISIBLE else View.GONE
+            }
+        }
+        rail.addView(editor,LinearLayout.LayoutParams(-1,dp(54)).apply {
+            topMargin=dp(14)
+        })
         setContentView(scene)
-        root.post{firstProfile?.requestFocus()}
-        loadProfilePosterWall(scene,wall)
+        scene.post { firstProfile?.requestFocus() }
+        loadProfileHeroCarousel(scene,hero)
     }
 
     private fun avatarFace(index:Int,initial:String):View {
