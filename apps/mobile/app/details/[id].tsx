@@ -8,6 +8,8 @@ import { colors } from '@/theme';
 import { VelarisHeader } from '@/components/VelarisHeader';
 import { PlayGlyph } from '@/components/PlayGlyph';
 import { CinematicShade } from '@/components/CinematicShade';
+import { LoadingSkeleton } from '@/components/LoadingSkeleton';
+import { EmptyState } from '@/components/EmptyState';
 import { downloadItem, isDownloaded, removeDownload } from '@/services/downloads';
 import { allEpisodesWatched, isWatched } from '@/services/watchStatus';
 import { episodeHeading } from '@/services/episodeTitles';
@@ -17,6 +19,8 @@ export default function DetailsScreen(){
  const {id}=useLocalSearchParams<{id:string}>(); const {session}=useAuth();
  const goBack=()=>{if(router.canGoBack())router.back();else router.replace('/(tabs)/home')};
  const fade=useRef(new Animated.Value(0)).current;
+ const [loadFailed,setLoadFailed]=useState(false);
+ const [loadRevision,setLoadRevision]=useState(0);
  const [downloading,setDownloading]=useState(false),[downloaded,setDownloaded]=useState(false),[downloadProgress,setDownloadProgress]=useState(0),[downloadError,setDownloadError]=useState(''); const [item,setItem]=useState<JellyfinItem|null>(null),[favorite,setFavoriteState]=useState(false),[seasons,setSeasons]=useState<JellyfinItem[]>([]),[episodesBySeason,setEpisodesBySeason]=useState<Record<string,JellyfinItem[]>>({}),[seriesComplete,setSeriesComplete]=useState(false),[season,setSeason]=useState(''),[seasonMenu,setSeasonMenu]=useState(false);
  useEffect(()=>{Animated.timing(fade,{toValue:1,duration:350,useNativeDriver:true}).start()},[]);
  useEffect(()=>{if(session&&id)isDownloaded(session,id).then(setDownloaded)},[session,id]);
@@ -25,6 +29,7 @@ export default function DetailsScreen(){
  useFocusEffect(useCallback(()=>{
    if(!session||!id)return;
    let active=true;
+   setLoadFailed(false);
    setEpisodesBySeason({});
    setSeriesComplete(false);
    getItem(session,id).then(async x=>{
@@ -50,12 +55,22 @@ export default function DetailsScreen(){
        if(active)setSeriesComplete(available.length>0&&results.every(result=>
          result.status==='fulfilled'&&allEpisodesWatched(result.value)));
      }catch{if(active){setSeasons([]);setEpisodesBySeason({});setSeriesComplete(false)}}
-   }).catch(()=>{});
+   }).catch(()=>{if(active){setLoadFailed(true);setItem(null)}});
    return ()=>{active=false};
- },[session,id]));
+ },[session,id,loadRevision]));
  const episodes=episodesBySeason[season]??[];
  const completedSeasons=new Set(seasons.filter(s=>allEpisodesWatched(episodesBySeason[s.Id]??[])).map(s=>s.Id));
- if(!session)return <Redirect href="/connect"/>; if(!item)return <View style={styles.loading}><View style={styles.skeletonHero}/><View style={styles.skeletonBody}><View style={styles.skeletonTitle}/><View style={styles.skeletonMeta}/><View style={styles.skeletonButton}/><View style={styles.skeletonLine}/><View style={styles.skeletonLine}/></View></View>;
+ if(!session)return <Redirect href="/connect"/>;
+ if(!item)return <View style={styles.loading}>
+  {loadFailed?
+   <View style={styles.detailsError}>
+    <EmptyState title="Details nicht erreichbar"
+      message="Velaris konnte die Informationen von Jellyfin nicht laden."
+      onRetry={()=>setLoadRevision(value=>value+1)}/>
+   </View>:
+   <LoadingSkeleton variant="details"/>}
+  <VelarisHeader overlay back/>
+ </View>;
  const mins=item.RunTimeTicks?Math.round(item.RunTimeTicks/600000000):undefined, tag=item.PrimaryImageTag??item.ImageTags?.Primary;
  const remaining=minutesRemaining(item);
  const isResumable=hasResumeProgress(item);
@@ -98,7 +113,7 @@ export default function DetailsScreen(){
  </Text>}
  <Text numberOfLines={2} style={styles.epOverview}>{ep.Overview||'Keine Beschreibung verfügbar.'}</Text></View></Pressable>})}</View>}</View></ScrollView><VelarisHeader overlay back/></Animated.View>
 }
-const styles=StyleSheet.create({page:{flex:1,backgroundColor:colors.background},loading:{flex:1,backgroundColor:colors.background},skeletonHero:{height:390,backgroundColor:'#171717'},skeletonBody:{padding:16,gap:14},skeletonTitle:{height:34,width:'65%',backgroundColor:'#222',borderRadius:4},skeletonMeta:{height:14,width:'45%',backgroundColor:'#1c1c1c',borderRadius:4},skeletonButton:{height:50,width:'100%',backgroundColor:'#242424',borderRadius:5},skeletonLine:{height:13,width:'92%',backgroundColor:'#191919',borderRadius:4},hero:{height:410,backgroundColor:colors.surfaceAlt},backButton:{width:40,height:40,borderRadius:20,backgroundColor:'rgba(0,0,0,.6)',alignItems:'center',justifyContent:'center'},back:{color:'#fff',fontSize:32,lineHeight:34},body:{paddingHorizontal:20,paddingTop:18,paddingBottom:70,marginTop:-100,backgroundColor:'rgba(8,8,13,.93)'},
+const styles=StyleSheet.create({page:{flex:1,backgroundColor:colors.background},loading:{flex:1,backgroundColor:colors.background},detailsError:{paddingTop:112,flex:1,justifyContent:'center'},hero:{height:410,backgroundColor:colors.surfaceAlt},backButton:{width:40,height:40,borderRadius:20,backgroundColor:'rgba(0,0,0,.6)',alignItems:'center',justifyContent:'center'},back:{color:'#fff',fontSize:32,lineHeight:34},body:{paddingHorizontal:20,paddingTop:18,paddingBottom:70,marginTop:-100,backgroundColor:'rgba(8,8,13,.93)'},
 eyebrow:{color:colors.accent,fontSize:11,fontWeight:'900',letterSpacing:1.4,marginBottom:9},
 title:{color:colors.text,fontSize:33,lineHeight:39,fontWeight:'900',letterSpacing:-0.7},watchedBanner:{color:colors.success,fontWeight:'900',fontSize:13,marginTop:9},meta:{color:'#EBE9F3',fontSize:13,marginTop:11,lineHeight:20,fontWeight:'700'},mainActions:{flexDirection:'row',gap:12,marginTop:23},play:{flex:1,height:50,borderRadius:9,backgroundColor:'#fff',alignItems:'center',justifyContent:'center',flexDirection:'row',gap:10},pressed:{opacity:0.83,transform:[{scale:0.985}]},favorite:{width:92,height:50,borderRadius:9,backgroundColor:'#242424',alignItems:'center',justifyContent:'center'},favoriteIcon:{color:'#fff',fontSize:20,lineHeight:20},favoriteActive:{color:'#fff'},favoriteLabel:{color:'#fff',fontSize:9,fontWeight:'700',marginTop:2},playText:{color:'#08090B',fontSize:16,fontWeight:'900'},
 resumeHint:{color:'#DCCFFF',fontSize:12,fontWeight:'800',marginTop:10},download:{height:46,borderRadius:9,backgroundColor:colors.surfaceAlt,borderWidth:1,borderColor:colors.border,alignItems:'center',justifyContent:'center',marginTop:10},downloadText:{color:'#fff',fontSize:13,fontWeight:'800'},downloadError:{color:colors.danger,fontSize:11,marginTop:8},storySection:{marginTop:27,paddingTop:19,borderTopWidth:1,borderTopColor:colors.border},
