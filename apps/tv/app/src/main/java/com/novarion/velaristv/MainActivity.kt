@@ -426,6 +426,50 @@ class MainActivity : Activity() {
         },9000)
     }
 
+
+    /** Identical cinematic shading for home, movie and series backdrops. */
+    private fun addCinematicHeroShades(hero:FrameLayout) {
+        hero.addView(View(this).apply {
+            isFocusable=false
+            background=GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,
+                intArrayOf(0xF708080D.toInt(),0xD208080D.toInt(),0x7408080D,0x1008080D))
+        },FrameLayout.LayoutParams(-1,-1))
+        hero.addView(View(this).apply {
+            isFocusable=false
+            background=GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
+                intArrayOf(0x0008080D,0x1908080D,0xEB08080D.toInt()))
+        },FrameLayout.LayoutParams(-1,dp(260),Gravity.BOTTOM))
+    }
+
+    private fun heroEyebrow(label:String)=TextView(this).apply {
+        text=label;maxLines=1
+        textSize=13f;letterSpacing=0.15f
+        typeface=Typeface.DEFAULT_BOLD
+        setTextColor(VelarisDesign.color("accent",0xFF7C5CFC.toInt()))
+        setPadding(0,0,0,dp(10))
+    }
+
+    private fun heroMediaMeta(item:JSONObject):String {
+        val year=item.optInt("ProductionYear",0)
+        val rating=item.optDouble("CommunityRating",0.0)
+        val runtime=item.optLong("RunTimeTicks",0L)/600_000_000L
+        val type=when(item.optString("Type")) {
+            "Series"->"Serie";"Episode"->"Episode";"Movie"->"Film";else->"Titel"
+        }
+        return listOfNotNull(
+            year.takeIf{it>0}?.toString(),type,
+            runtime.takeIf{it>0 && item.optString("Type")!="Series"}?.let{"$it Min."},
+            rating.takeIf{it>0}?.let{"★ %.1f".format(it)}
+        ).joinToString("   ·   ")
+    }
+
+    private fun heroGenres(item:JSONObject):String {
+        val genres=item.optJSONArray("Genres")?:return ""
+        return (0 until minOf(3,genres.length()))
+            .mapNotNull{genres.optString(it).takeIf(String::isNotBlank)}
+            .joinToString("   ·   ")
+    }
+
     private fun addHero(item: JSONObject?) {
         if(item==null) return
         val id=item.optString("Id"); if(id.isBlank()) return
@@ -443,41 +487,30 @@ class MainActivity : Activity() {
         hero.addView(image, FrameLayout.LayoutParams(-1,dp(515)))
         loadImage(image,id,"Backdrop",1600)
 
-        val shade=View(this).apply {
-            background=GradientDrawable(
-                GradientDrawable.Orientation.LEFT_RIGHT,
-                intArrayOf(0xFB08080D.toInt(),0xD008080D.toInt(),0x5008080D,0x0808080D)
-            )
-        }
-        hero.addView(shade,FrameLayout.LayoutParams(-1,-1))
-        hero.addView(View(this).apply {
-            background=GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,intArrayOf(0x0008080D,0x1108080D,0xF508080D.toInt()))
-        },FrameLayout.LayoutParams(-1,dp(180),Gravity.BOTTOM))
+        addCinematicHeroShades(hero)
 
         val info=LinearLayout(this).apply {
             orientation=LinearLayout.VERTICAL
             gravity=Gravity.BOTTOM
-            setPadding(dp(64),0,dp(58),dp(55))
+            setPadding(dp(64),0,dp(58),dp(50))
         }
-        info.addView(TextView(this).apply {
-            text=VelarisDesign.themeText("heroLabel","IM RAMPENLICHT")
-            textSize=13f; letterSpacing=0.17f; typeface=Typeface.DEFAULT_BOLD
-            setTextColor(VelarisDesign.color("accent",0xFF7C5CFC.toInt()))
-            setPadding(0,0,0,dp(12))
-        })
+        info.addView(heroEyebrow(VelarisDesign.themeText("heroLabel","IM RAMPENLICHT")))
         val logo=ImageView(this).apply{scaleType=ImageView.ScaleType.FIT_START;visibility=View.INVISIBLE}
         info.addView(logo,LinearLayout.LayoutParams(dp(430),dp(120)))
         loadImageWithFallback(logo,id,"Logo",700) {
             logo.visibility=View.GONE
             info.addView(TextView(this).apply { text=title; textSize=48f; setTextColor(Color.WHITE); typeface=Typeface.DEFAULT_BOLD;maxLines=2 },1)
         }
-        val meta=listOfNotNull(
-            if(year>0) year.toString() else null,
-            if(rating>0) "★ %.1f".format(rating) else null
-        ).joinToString("   •   ")
-        if(meta.isNotBlank()) info.addView(TextView(this).apply {
-            text=meta; textSize=17f; setTextColor(Color.LTGRAY); setPadding(0,dp(8),0,0)
+        val meta=heroMediaMeta(item)
+        if(meta.isNotBlank())info.addView(TextView(this).apply {
+            text=meta;textSize=16f;setTextColor(0xFFEBE9F3.toInt())
+            setPadding(0,dp(10),0,0)
         })
+        val genres=heroGenres(item)
+        if(genres.isNotBlank())info.addView(TextView(this).apply{
+            text=genres;textSize=14f;maxLines=1
+            setTextColor(0xFFC5BFDB.toInt());setPadding(0,dp(7),0,0)
+        },LinearLayout.LayoutParams(dp(650),-2))
         watchedLabel(item)?.let { label ->
             info.addView(TextView(this).apply {
                 text=label;setTextColor(VelarisDesign.color("success",0xFF46D369.toInt()))
@@ -485,7 +518,8 @@ class MainActivity : Activity() {
             })
         }
         if(overview.isNotBlank()) info.addView(TextView(this).apply {
-            text=overview; textSize=17f; setTextColor(Color.WHITE); maxLines=3;setLineSpacing(0f,1.2f)
+            text=overview;textSize=16f;setTextColor(0xFFE6E3ED.toInt())
+            maxLines=3;setLineSpacing(dp(2).toFloat(),1.06f)
             setPadding(0,dp(12),0,0)
         },LinearLayout.LayoutParams(dp(650),-2))
 
@@ -1134,16 +1168,35 @@ class MainActivity : Activity() {
                     val root=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; setBackgroundColor(VelarisDesign.color("background",0xFF08080D.toInt())) }
                     val hero=FrameLayout(this)
                     val bg=ImageView(this).apply{scaleType=ImageView.ScaleType.CENTER_CROP}; hero.addView(bg,FrameLayout.LayoutParams(-1,dp(390))); loadImage(bg,seriesId,"Backdrop",1600)
-                    hero.addView(View(this).apply{background=GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,intArrayOf(0xF708080D.toInt(),0xA808080D.toInt(),0x2208080D))},FrameLayout.LayoutParams(-1,-1))
+                    addCinematicHeroShades(hero)
                     val info=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;gravity=Gravity.BOTTOM;setPadding(dp(54),dp(80),dp(54),dp(38))}
-                    info.addView(TextView(this).apply{text=series.optString("Name");textSize=40f;setTextColor(Color.WHITE);typeface=Typeface.DEFAULT_BOLD})
+                    info.addView(heroEyebrow("SERIE AUF VELARIS"))
+                    info.addView(TextView(this).apply{
+                        text=series.optString("Name");textSize=40f;maxLines=2
+                        setTextColor(Color.WHITE);typeface=Typeface.DEFAULT_BOLD
+                    },LinearLayout.LayoutParams(dp(770),-2))
+                    val seriesMeta=heroMediaMeta(series)
+                    if(seriesMeta.isNotBlank())info.addView(TextView(this).apply{
+                        text=seriesMeta;textSize=16f
+                        setTextColor(0xFFE6E3ED.toInt());setPadding(0,dp(9),0,0)
+                    })
+                    val seriesGenres=heroGenres(series)
+                    if(seriesGenres.isNotBlank())info.addView(TextView(this).apply{
+                        text=seriesGenres;textSize=14f;maxLines=1
+                        setTextColor(0xFFC5BFDB.toInt());setPadding(0,dp(7),0,0)
+                    })
                     if(seriesComplete)info.addView(TextView(this).apply {
                         text="✓ SERIE VOLLSTÄNDIG GESEHEN"
                         textSize=16f;typeface=Typeface.DEFAULT_BOLD
                         setTextColor(VelarisDesign.color("success",0xFF46D369.toInt()))
                         setPadding(0,dp(9),0,0)
                     })
-                    info.addView(TextView(this).apply{text=series.optString("Overview");textSize=16f;setTextColor(Color.LTGRAY);maxLines=3;setPadding(0,dp(10),0,0)},LinearLayout.LayoutParams(dp(720),-2))
+                    if(series.optString("Overview").isNotBlank())
+                        info.addView(TextView(this).apply{
+                            text=series.optString("Overview");textSize=16f;maxLines=2
+                            setTextColor(0xFFE6E3ED.toInt());setLineSpacing(dp(2).toFloat(),1.04f)
+                            setPadding(0,dp(11),0,0)
+                        },LinearLayout.LayoutParams(dp(740),-2))
                     val favorite=series.optJSONObject("UserData")?.optBoolean("IsFavorite",false)?:false
                     val acts=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;setPadding(0,dp(16),0,0)}
                     acts.addView(actionButton(if(favorite)"✓  Meine Liste" else "+  Meine Liste",false){setFavorite(seriesId,!favorite){showSeries(seriesId)}},LinearLayout.LayoutParams(dp(220),dp(56)).apply{marginEnd=dp(10)})
@@ -1317,19 +1370,39 @@ class MainActivity : Activity() {
                     val outer=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; setBackgroundColor(VelarisDesign.color("background",0xFF08080D.toInt())) }
                     val hero=FrameLayout(this)
                     val bg=ImageView(this).apply{scaleType=ImageView.ScaleType.CENTER_CROP}; hero.addView(bg,FrameLayout.LayoutParams(-1,dp(500))); loadImage(bg,id,"Backdrop",1600)
-                    hero.addView(View(this).apply{background=GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,intArrayOf(0xF708080D.toInt(),0xB008080D.toInt(),0x2208080D))},FrameLayout.LayoutParams(-1,-1))
+                    addCinematicHeroShades(hero)
                     val info=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;gravity=Gravity.BOTTOM;setPadding(dp(58),dp(90),dp(58),dp(42))}
-                    info.addView(TextView(this).apply{text=if(x.optString("Type")=="Episode")episodeTitle(x) else x.optString("Name");textSize=42f;setTextColor(Color.WHITE);typeface=Typeface.DEFAULT_BOLD})
-                    val year=x.optInt("ProductionYear",0); val rating=x.optDouble("CommunityRating",0.0); val runtime=x.optLong("RunTimeTicks",0L)/600_000_000L
-                    val meta=listOfNotNull(if(year>0)year.toString()else null,if(runtime>0)"$runtime Min."else null,if(rating>0)"★ %.1f".format(rating)else null).joinToString("  •  ")
-                    if(meta.isNotBlank()) info.addView(TextView(this).apply{text=meta;textSize=16f;setTextColor(Color.LTGRAY)})
+                    info.addView(heroEyebrow(when(x.optString("Type")){
+                        "Series"->"SERIE AUF VELARIS";"Episode"->"EPISODE AUF VELARIS"
+                        else->"FILM AUF VELARIS"
+                    }))
+                    info.addView(TextView(this).apply{
+                        text=if(x.optString("Type")=="Episode")episodeTitle(x) else x.optString("Name")
+                        textSize=42f;maxLines=2
+                        setTextColor(Color.WHITE);typeface=Typeface.DEFAULT_BOLD
+                    },LinearLayout.LayoutParams(dp(790),-2))
+                    val meta=heroMediaMeta(x)
+                    if(meta.isNotBlank())info.addView(TextView(this).apply{
+                        text=meta;textSize=16f;setTextColor(0xFFE6E3ED.toInt())
+                        setPadding(0,dp(10),0,0)
+                    })
+                    val detailGenres=heroGenres(x)
+                    if(detailGenres.isNotBlank())info.addView(TextView(this).apply{
+                        text=detailGenres;textSize=14f;maxLines=1
+                        setTextColor(0xFFC5BFDB.toInt());setPadding(0,dp(7),0,0)
+                    })
                     watchedLabel(x)?.let { label ->
                         info.addView(TextView(this).apply {
                             text=label;typeface=Typeface.DEFAULT_BOLD;textSize=16f
                             setTextColor(VelarisDesign.color("success",0xFF46D369.toInt()))
                         },params(-1,-2,9))
                     }
-                    info.addView(TextView(this).apply{text=x.optString("Overview");textSize=17f;setTextColor(Color.WHITE);maxLines=4;setPadding(0,dp(12),0,0)},LinearLayout.LayoutParams(dp(700),-2))
+                    if(x.optString("Overview").isNotBlank())
+                        info.addView(TextView(this).apply{
+                            text=x.optString("Overview");textSize=16f;maxLines=3
+                            setTextColor(0xFFE6E3ED.toInt());setLineSpacing(dp(2).toFloat(),1.06f)
+                            setPadding(0,dp(12),0,0)
+                        },LinearLayout.LayoutParams(dp(750),-2))
                     val ud=x.optJSONObject("UserData"); val ticks=ud?.optLong("PlaybackPositionTicks",0L)?:0L; val fav=ud?.optBoolean("IsFavorite",false)?:false
                     val actions=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;setPadding(0,dp(20),0,0)}
                     actions.addView(actionButton(if(ticks>0)"▶  Fortsetzen" else "▶  Abspielen",true){playNative(id,ticks)},LinearLayout.LayoutParams(dp(220),dp(58)).apply{marginEnd=dp(12)})
