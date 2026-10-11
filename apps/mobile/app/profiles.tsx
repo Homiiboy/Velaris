@@ -49,10 +49,10 @@ export default function ProfilesScreen(){
 }
 const styles=StyleSheet.create({
  page:{flex:1,backgroundColor:colors.background,paddingHorizontal:20,paddingTop:100,alignItems:'center'},
- posterBackdrop:{...StyleSheet.absoluteFillObject,overflow:'hidden'},
+ posterBackdrop:{position:'absolute',top:0,left:0,right:0,bottom:0,overflow:'hidden'},
  posterGrid:{width:'126%',marginLeft:'-13%',flexDirection:'row',flexWrap:'wrap',justifyContent:'center',gap:8,transform:[{rotate:'-7deg'}],opacity:0.8},
  poster:{width:102,height:150,borderRadius:6,backgroundColor:colors.surface},
- posterScrim:{...StyleSheet.absoluteFillObject,backgroundColor:'rgba(8,8,13,0.63)'},
+ posterScrim:{position:'absolute',top:0,left:0,right:0,bottom:0,backgroundColor:'rgba(8,8,13,0.63)'},
  profileScrim:{position:'absolute',top:'20%',bottom:'19%',left:0,right:0,backgroundColor:'rgba(8,8,13,0.27)'},
  brand:{color:colors.text,fontSize:19,fontWeight:'900',letterSpacing:5},
  title:{color:colors.text,fontSize:31,fontWeight:'900',marginTop:60,marginBottom:45,letterSpacing:-.6,textAlign:'center'},
