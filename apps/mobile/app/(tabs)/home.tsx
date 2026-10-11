@@ -9,6 +9,8 @@ import { colors, design } from '@/theme';
 import { VelarisHeader } from '@/components/VelarisHeader';
 import { PlayGlyph } from '@/components/PlayGlyph';
 import { CinematicShade } from '@/components/CinematicShade';
+import { LoadingSkeleton } from '@/components/LoadingSkeleton';
+import { EmptyState } from '@/components/EmptyState';
 
 const AVATARS = [
   require('../../assets/AvatarRot.png'),
@@ -26,6 +28,8 @@ export default function HomeScreen() {
   const [recommended, setRecommended] = useState<JellyfinItem[]>([]);
   const [becauseTitle, setBecauseTitle] = useState('');
   const [refreshing, setRefreshing] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [hasLoadError, setHasLoadError] = useState(false);
   const entrance = useRef(new Animated.Value(0)).current;
 
   const load = useCallback(async () => {
@@ -33,6 +37,8 @@ export default function HomeScreen() {
     const [a, b, c, d] = await Promise.allSettled([
       getResumeItems(session), getLatest(session), getFavorites(session), getPlayedItems(session)
     ]);
+    setHasLoadError([a,b,c,d].every(result=>result.status==='rejected'));
+    setInitialLoading(false);
     if (a.status === 'fulfilled') setResume(a.value.Items);
     if (b.status === 'fulfilled') setLatest(b.value.Items);
     if (c.status === 'fulfilled') setFavorites(c.value.Items);
@@ -91,14 +97,22 @@ export default function HomeScreen() {
               </View>
             </View>
           </ImageBackground>
-        ) : <View style={styles.heroEmpty} />}
-        <Animated.View style={[styles.rows, { opacity: entrance }]}>
+        ) : initialLoading ? <LoadingSkeleton variant="home"/> : <View style={styles.heroEmpty}>
+          <EmptyState
+            title={hasLoadError?'Verbindung zu Jellyfin fehlgeschlagen':'Bereit für deinen Filmabend?'}
+            message={hasLoadError
+              ?'Wir konnten deine Mediathek gerade nicht laden. Prüfe die Serververbindung.'
+              :'Sobald Jellyfin Filme oder Serien bereitstellt, findest du sie hier.'}
+            onRetry={()=>{setInitialLoading(true);void load()}}
+          />
+        </View>}
+        {!initialLoading&&<Animated.View style={[styles.rows, { opacity: entrance }]}>
           <MediaRow title={design.homeRows.topTen} items={recommended.length ? recommended : latest} session={session} topTen />
           <MediaRow title={design.homeRows.resume} items={resume} session={session} continueWatching />
           <MediaRow title={design.homeRows.favorites} items={favorites} session={session} />
           {!!becauseTitle && <MediaRow title={`${design.homeRows.becausePrefix} „${becauseTitle}“ gesehen hast`} items={recommended} session={session} />}
           <MediaRow title={design.homeRows.latest} items={latest} session={session} />
-        </Animated.View>
+        </Animated.View>}
       </ScrollView>
       <VelarisHeader home overlay />
     </View>
@@ -128,7 +142,7 @@ const styles = StyleSheet.create({
   categoryText: { color: colors.text, fontSize: 13 },
   categoryArrow: { color: colors.muted, fontSize: 20 },
   hero: { justifyContent: 'flex-end', backgroundColor: colors.surface },
-  heroEmpty: { height: 160, backgroundColor: colors.background },
+  heroEmpty: { minHeight: 315, backgroundColor: colors.background,paddingTop:86 },
 
   heroContent: { paddingHorizontal: 22, paddingBottom: 56, alignItems: 'center', width:'100%' },
   eyebrow: { color: colors.text, fontSize: 10, fontWeight: '900', letterSpacing: 2.5, marginBottom: 12 },
