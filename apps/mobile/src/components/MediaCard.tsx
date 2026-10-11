@@ -4,7 +4,7 @@ import { router } from 'expo-router';
 import { getPrimaryImageUrl, setFavorite } from '@/services/jellyfin';
 import type { JellyfinItem, Session } from '@/types/jellyfin';
 import { colors } from '@/theme';
-import { watchedLabel } from '@/services/watchStatus';
+import { playbackPercent,hasResumeProgress,statusBadge } from '@/services/playbackPresentation';
 
 export function MediaCard({ item, session, width = 128, showMeta = false, showFavorite = true, onFavoriteChange }: { item: JellyfinItem; session: Session; width?: number; showMeta?: boolean; showFavorite?: boolean; onFavoriteChange?: (favorite:boolean)=>void }) {
   const [imageFailed,setImageFailed]=useState(false);
@@ -25,6 +25,8 @@ export function MediaCard({ item, session, width = 128, showMeta = false, showFa
   useEffect(()=>{setImageFailed(false)},[item.Id,imageTag]);
   const meta=[item.Type==='Series'?'SERIE':item.Type==='BoxSet'?'SAMMLUNG':'FILM',
     item.ProductionYear].filter(Boolean).join('  ·  ');
+  const badge=statusBadge(item);
+  const progress=hasResumeProgress(item)?playbackPercent(item):0;
   const toggleFavorite=async()=>{
     if(saving||item.Type==='BoxSet')return;
     const next=!favorite; setFavoriteState(next); setSaving(true);
@@ -53,7 +55,14 @@ export function MediaCard({ item, session, width = 128, showMeta = false, showFa
        <Animated.View pointerEvents="none" style={[styles.focusMeta,{opacity:detailOpacity}]}>
         <Text numberOfLines={1} style={styles.focusMetaText}>{meta}</Text>
        </Animated.View>
-       {!!watchedLabel(item)&&<View style={styles.watchedBadge}><Text style={styles.watchedText}>✓ {watchedLabel(item)}</Text></View>}
+       {!!badge&&<View style={[styles.statusBadge,badge.kind==='watched'?styles.watchedBadge:styles.resumeBadge]}>
+         <Text style={[styles.statusText,badge.kind==='watched'?styles.watchedText:styles.resumeText]}>
+          {badge.kind==='watched'?'✓  ':''}{badge.text}
+         </Text>
+       </View>}
+       {progress>0&&<View pointerEvents="none" style={styles.progressTrack}>
+        <View style={[styles.progressFill,{width:`${progress}%`}]}/>
+       </View>}
        {showFavorite&&item.Type!=='BoxSet'&&<Pressable hitSlop={8} onPress={(e)=>{e.stopPropagation();toggleFavorite()}} accessibilityRole="button" accessibilityLabel={favorite?'Aus Meine Liste entfernen':'Zu Meine Liste hinzufügen'} style={styles.heart}><Text style={[styles.heartText,favorite&&styles.heartActive]}>{favorite?'♥':'♡'}</Text></Pressable>}
       </View></Animated.View>
       <Text numberOfLines={1} style={[styles.name,highlighted&&styles.nameFocused]}>{item.Name}</Text>
@@ -72,8 +81,14 @@ const styles = StyleSheet.create({
   focusMetaText:{color:colors.text,fontWeight:'900',fontSize:9,letterSpacing:.4},
   placeholder:{alignItems:'center',justifyContent:'center',borderWidth:1,borderColor:colors.border},
   logo:{color:colors.accent,fontWeight:'900',fontSize:11,letterSpacing:2},
-  watchedBadge:{position:'absolute',left:5,bottom:6,backgroundColor:'rgba(8,8,13,.88)',paddingHorizontal:7,paddingVertical:4,borderRadius:5,borderWidth:1,borderColor:colors.success},
-  watchedText:{color:colors.success,fontSize:10,fontWeight:'900'},
+  statusBadge:{position:'absolute',left:6,bottom:9,maxWidth:'93%',paddingHorizontal:7,paddingVertical:5,borderRadius:5,borderWidth:1},
+  watchedBadge:{backgroundColor:'rgba(12,37,25,.92)',borderColor:colors.success},
+  resumeBadge:{backgroundColor:'rgba(35,24,70,.92)',borderColor:'rgba(180,157,255,.76)'},
+  statusText:{fontSize:9,fontWeight:'900',letterSpacing:.25},
+  watchedText:{color:colors.success},
+  resumeText:{color:'#E6DEFF'},
+  progressTrack:{position:'absolute',left:0,right:0,bottom:0,height:3,backgroundColor:'rgba(255,255,255,.28)'},
+  progressFill:{height:3,backgroundColor:colors.progress},
   heart:{position:'absolute',right:7,top:7,width:30,height:30,borderRadius:15,backgroundColor:'rgba(0,0,0,.78)',borderWidth:1,borderColor:'rgba(255,255,255,.3)',alignItems:'center',justifyContent:'center'},
   heartText:{color:'#fff',fontSize:21,lineHeight:25,includeFontPadding:false,textAlign:'center'},heartActive:{color:'#fff'},
   name:{color:colors.text,fontWeight:'700',fontSize:12,marginTop:8,letterSpacing:.1},
