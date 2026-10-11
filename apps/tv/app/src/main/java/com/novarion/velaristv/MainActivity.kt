@@ -1367,12 +1367,66 @@ class MainActivity : Activity() {
             .setDuration(120).start()
     }
 
+    // Subtle, non-interactive Netflix-inspired poster wall behind the profile picker.
+    // Only use artwork from the currently authenticated Jellyfin library.
+    private fun loadProfilePosterWall(screen:FrameLayout, wall:LinearLayout) {
+        val previewServer=server
+        val previewUser=userId
+        if(previewServer.isBlank() || previewUser.isBlank() || token.isBlank())return
+        io.execute {
+            val artwork=runCatching {
+                items("/Users/$previewUser/Items?Recursive=true&IncludeItemTypes=Movie,Series" +
+                    "&SortBy=DateCreated&SortOrder=Descending&Limit=60&Fields=ImageTags")
+                    .filter { item ->
+                        item.optString("Id").isNotBlank() &&
+                            (item.optJSONObject("ImageTags")?.has("Primary")==true ||
+                                item.optString("PrimaryImageTag").isNotBlank())
+                    }
+                    .distinctBy { it.optString("Id") }
+                    .shuffled().take(24)
+            }.getOrDefault(emptyList())
+            if(artwork.isEmpty())return@execute
+            runOnUiThread {
+                // The user may already have switched profiles or left this screen.
+                if(!screen.isAttachedToWindow || previewServer!=server ||
+                    previewUser!=userId || destroyed)return@runOnUiThread
+                wall.removeAllViews()
+                wall.alpha=0f
+                repeat(3) { r ->
+                    val row=LinearLayout(this).apply {
+                        orientation=LinearLayout.HORIZONTAL
+                        gravity=Gravity.CENTER
+                        isFocusable=false
+                    }
+                    repeat(8) { c ->
+                        val item=artwork[(r*8+c)%artwork.size]
+                        val cover=ImageView(this).apply {
+                            scaleType=ImageView.ScaleType.CENTER_CROP
+                            setBackgroundColor(0xFF181820.toInt())
+                            isFocusable=false
+                            importantForAccessibility=View.IMPORTANT_FOR_ACCESSIBILITY_NO
+                        }
+                        row.addView(cover,LinearLayout.LayoutParams(dp(137),dp(198)).apply {
+                            marginEnd=dp(9)
+                        })
+                        loadImage(cover,item.optString("Id"),"Primary",280)
+                    }
+                    wall.addView(row,LinearLayout.LayoutParams(-1,dp(207)).apply {
+                        bottomMargin=dp(9)
+                    })
+                }
+                wall.animate().alpha(0.92f).setDuration(550).start()
+            }
+        }
+    }
+
     private fun showProfiles(startup:Boolean=false) {
         if(!startup) rememberBack { showHome() }
         val profiles=readProfiles()
         val root=LinearLayout(this).apply{
             orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER
-            setPadding(dp(70),dp(34),dp(70),dp(34));setBackgroundColor(VelarisDesign.color("background",0xFF08080D.toInt()))
+            setPadding(dp(70),dp(34),dp(70),dp(34))
+            setBackgroundColor(Color.TRANSPARENT)
         }
         root.addView(TextView(this).apply{
             text="Wer schaut gerade?";textSize=40f;setTextColor(Color.WHITE)
@@ -1451,8 +1505,30 @@ class MainActivity : Activity() {
             addTile(add,profiles.length())
         }
         grid.addView(row);root.addView(grid)
-        setContentView(root)
+
+        val scene=FrameLayout(this).apply {
+            setBackgroundColor(VelarisDesign.color("background",0xFF08080D.toInt()))
+            clipChildren=true
+        }
+        val wall=LinearLayout(this).apply {
+            orientation=LinearLayout.VERTICAL
+            gravity=Gravity.CENTER
+            isFocusable=false
+            importantForAccessibility=View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS
+        }
+        scene.addView(wall,FrameLayout.LayoutParams(-1,-1))
+        // Keep the portraits visible at the edges while giving text and avatars
+        // strong contrast in the middle, regardless of the poster colors.
+        scene.addView(View(this).apply {
+            isFocusable=false
+            background=GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
+                intArrayOf(0xA508080D.toInt(),0xE108080D.toInt(),
+                    0xE108080D.toInt(),0xA508080D.toInt()))
+        },FrameLayout.LayoutParams(-1,-1))
+        scene.addView(root,FrameLayout.LayoutParams(-1,-1))
+        setContentView(scene)
         root.post{firstProfile?.requestFocus()}
+        loadProfilePosterWall(scene,wall)
     }
 
     private fun avatarFace(index:Int,initial:String):View {
