@@ -25,6 +25,15 @@ const AVATARS=[
   require('../../assets/AvatarRobbeGrau.png'),
 ];
 
+// A font-independent search icon, centered inside the same touch target
+// used by Download, Settings and Profile.
+function SearchGlyph(){
+ return <View style={styles.searchGlyph} pointerEvents="none">
+  <View style={styles.searchRing}/>
+  <View style={styles.searchHandle}/>
+ </View>;
+}
+
 /** Same visual/navigation contract on every mobile media screen. */
 export function VelarisHeader({scope='home',collectionId,home=false,overlay=false,back=false}:Props) {
   const scroller=useRef<ScrollView>(null);
@@ -60,7 +69,9 @@ export function VelarisHeader({scope='home',collectionId,home=false,overlay=fals
   return <View style={[styles.header,overlay&&styles.overlay]}>
     <View style={styles.top}>
       <View style={styles.wordmarkArea}>
-        {back&&<Pressable hitSlop={10} accessibilityLabel="Zurück" onPress={()=>router.canGoBack()?router.back():router.replace('/(tabs)/home')}>
+        {back&&<Pressable accessibilityRole="button" hitSlop={8} accessibilityLabel="Zurück"
+          style={({pressed})=>[styles.actionTouch,pressed&&styles.actionTouchPressed]}
+          onPress={()=>router.canGoBack()?router.back():router.replace('/(tabs)/home')}>
           <Text style={styles.back}>‹</Text>
         </Pressable>}
         <Pressable onPress={()=>router.push('/(tabs)/home')} accessibilityLabel="Velaris Startseite">
@@ -68,17 +79,24 @@ export function VelarisHeader({scope='home',collectionId,home=false,overlay=fals
         </Pressable>
       </View>
       <View style={styles.actions}>
-        <Pressable accessibilityLabel={`Suche in ${sectionName}`} hitSlop={10} onPress={search}>
-          <Text style={styles.action}>⌕</Text>
+        <Pressable accessibilityRole="button" accessibilityLabel={`Suche in ${sectionName}`}
+          style={({pressed})=>[styles.actionTouch,pressed&&styles.actionTouchPressed]} onPress={search}>
+          <SearchGlyph/>
         </Pressable>
         {home&&<>
-          <Pressable accessibilityLabel="Downloads" hitSlop={10} onPress={()=>router.push('/downloads')}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Downloads"
+            style={({pressed})=>[styles.actionTouch,pressed&&styles.actionTouchPressed]}
+            onPress={()=>router.push('/downloads')}>
             <Text style={styles.smallAction}>⇩</Text>
           </Pressable>
-          <Pressable accessibilityLabel="Einstellungen" hitSlop={10} onPress={()=>router.push('/(tabs)/profile')}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Einstellungen"
+            style={({pressed})=>[styles.actionTouch,pressed&&styles.actionTouchPressed]}
+            onPress={()=>router.push('/(tabs)/profile')}>
             <Text style={styles.smallAction}>⚙</Text>
           </Pressable>
-          <Pressable accessibilityLabel="Profil" hitSlop={10} onPress={()=>router.push('/profiles')}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Profil"
+            style={({pressed})=>[styles.actionTouch,pressed&&styles.actionTouchPressed]}
+            onPress={()=>router.push('/profiles')}>
             <View style={styles.avatar}>
               <Image source={profile?.photoUri?{uri:profile.photoUri}:AVATARS[(profile?.avatar??0)%AVATARS.length]} style={styles.avatarImage}/>
             </View>
@@ -98,10 +116,11 @@ export function VelarisHeader({scope='home',collectionId,home=false,overlay=fals
           onLayout={e=>{const {x,width}=e.nativeEvent.layout;tabEnds.current[index]=x+width;}}
           accessibilityRole="button" accessibilityState={{selected:scope===item.key}}
           onPress={()=>router.push(item.href as any)}
-          style={[styles.chip,scope===item.key&&styles.activeChip]}>
+          style={({pressed})=>[styles.chip,scope===item.key&&styles.activeChip,pressed&&styles.chipPressed]}>
           <Text style={[styles.chipText,scope===item.key&&styles.activeChipText]}>{item.label}</Text>
         </Pressable>)}
-        {home&&<Pressable style={[styles.chip,genresOpen&&styles.activeChip]}
+        {home&&<Pressable accessibilityRole="button" accessibilityLabel="Genres"
+          style={({pressed})=>[styles.chip,genresOpen&&styles.activeChip,pressed&&styles.chipPressed]}
           onLayout={e=>{const {x,width}=e.nativeEvent.layout;tabEnds.current[menu.length]=x+width;}}
           onPress={()=>setGenresOpen(v=>!v)}>
           <Text style={[styles.chipText,genresOpen&&styles.activeChipText]}>Genres</Text>
@@ -134,12 +153,16 @@ const styles=StyleSheet.create({
   overlay:{position:'absolute',top:0,left:0,right:0,backgroundColor:'rgba(8,8,13,.89)'},
   top:{height:40,paddingHorizontal:16,flexDirection:'row',alignItems:'center',justifyContent:'space-between'},
   wordmarkArea:{flexDirection:'row',alignItems:'center',gap:13},
-  back:{fontSize:31,color:colors.text,fontWeight:'600',lineHeight:34},
+  back:{fontSize:31,color:colors.text,fontWeight:'600',lineHeight:36,textAlign:'center',includeFontPadding:false},
   brand:{fontSize:20,color:colors.text,fontWeight:'900',letterSpacing:2.2},
   brandPurple:{color:colors.accent},
-  actions:{flexDirection:'row',alignItems:'center',gap:16},
-  action:{fontSize:30,color:colors.text,fontWeight:'700'},
-  smallAction:{fontSize:20,color:colors.text,fontWeight:'700'},
+  actions:{flexDirection:'row',alignItems:'center',gap:3},
+  actionTouch:{width:37,height:40,borderRadius:12,alignItems:'center',justifyContent:'center'},
+  actionTouchPressed:{backgroundColor:'rgba(124,92,252,.22)',transform:[{scale:0.96}]},
+  smallAction:{fontSize:23,color:colors.text,fontWeight:'700',lineHeight:28,textAlign:'center',includeFontPadding:false},
+  searchGlyph:{width:26,height:26},
+  searchRing:{position:'absolute',left:3,top:2,width:16,height:16,borderRadius:8,borderWidth:2,borderColor:colors.text},
+  searchHandle:{position:'absolute',left:17,top:18,width:10,height:2,backgroundColor:colors.text,borderRadius:1,transform:[{rotate:'45deg'}]},
   avatar:{width:31,height:31,borderRadius:7,overflow:'hidden',borderWidth:1,borderColor:colors.border},
   avatarImage:{width:'100%',height:'100%'},
   strip:{marginTop:14,height:46,flexDirection:'row',alignItems:'center',paddingRight:14},
@@ -147,6 +170,7 @@ const styles=StyleSheet.create({
   stripContent:{paddingLeft:18,paddingRight:12,gap:16,alignItems:'center'},
   trailingGap:{width:20,height:1},
   chip:{height:36,borderRadius:20,paddingHorizontal:15,justifyContent:'center',alignItems:'center',backgroundColor:'transparent'},
+  chipPressed:{backgroundColor:'rgba(124,92,252,.16)'},
   activeChip:{backgroundColor:colors.accent,shadowColor:colors.accent,shadowOpacity:0.24,shadowRadius:8,elevation:3},
   chipText:{color:'rgba(255,255,255,0.78)',fontWeight:'700',fontSize:13},
   activeChipText:{color:colors.text,fontWeight:'900'},
