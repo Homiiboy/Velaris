@@ -532,6 +532,32 @@ class MainActivity : Activity() {
         }
         frame.addView(poster,FrameLayout.LayoutParams(-1,-1))
         loadImage(poster,item.optString("Id"),imageType,requestedWidth)
+        // A focused card reveals a small metadata ribbon inside the artwork.
+        // Keeping the ribbon INSIDE the poster avoids resizing or cutting edges.
+        val year=item.optInt("ProductionYear",0)
+        val kind=when(item.optString("Type")) {
+            "Series" -> "SERIE"
+            "Episode" -> "EPISODE"
+            "BoxSet" -> "SAMMLUNG"
+            else -> "FILM"
+        }
+        val focusInfo=listOfNotNull(kind,year.takeIf{it>0}?.toString()).joinToString("  ·  ")
+        val focusCaption=TextView(this).apply {
+            tag="velaris_poster_focus_caption"
+            text=focusInfo
+            textSize=12f
+            typeface=Typeface.DEFAULT_BOLD
+            setTextColor(Color.WHITE)
+            setPadding(dp(12),dp(9),dp(12),dp(10))
+            background=GradientDrawable(
+                GradientDrawable.Orientation.TOP_BOTTOM,
+                intArrayOf(0x10101017,0xEE101017.toInt())
+            )
+            isFocusable=false
+            alpha=0f
+            visibility=View.GONE
+        }
+        frame.addView(focusCaption,FrameLayout.LayoutParams(-1,-2,Gravity.BOTTOM))
         watchedLabel(item)?.let{label->
             frame.addView(TextView(this).apply{
                 text=label;setTextColor(Color.WHITE);textSize=12f;typeface=Typeface.DEFAULT_BOLD
@@ -607,7 +633,8 @@ class MainActivity : Activity() {
             }
             thumb.addView(poster,FrameLayout.LayoutParams(-1,-1))
             loadImage(poster,id,imageType,720)
-            thumb.addView(playCircle(),FrameLayout.LayoutParams(dp(46),dp(46),Gravity.CENTER))
+            thumb.addView(playCircle().apply{tag="velaris_continue_play"},
+                FrameLayout.LayoutParams(dp(46),dp(46),Gravity.CENTER))
             if(total>0 && progressTicks>0)thumb.addView(
                 ProgressBar(this,null,android.R.attr.progressBarStyleHorizontal).apply{
                     max=1000
@@ -655,7 +682,7 @@ class MainActivity : Activity() {
     private fun addRankedRow(title:String,data:List<JSONObject>) {
         if(data.isEmpty()) return
         homeRoot?.addView(sectionTitle(title))
-        val row=LinearLayout(this).apply { orientation=LinearLayout.HORIZONTAL; setPadding(dp(52),dp(12),dp(40),dp(44)); clipChildren=false; clipToPadding=false }
+        val row=LinearLayout(this).apply { orientation=LinearLayout.HORIZONTAL; setPadding(dp(52),dp(12),dp(56),dp(44)); clipChildren=false; clipToPadding=false }
         data.take(10).forEachIndexed { index,item ->
             val cover=watchedPoster(item,154,218,"Primary",380)
             val wrap=LinearLayout(this).apply {
@@ -666,7 +693,7 @@ class MainActivity : Activity() {
             }
             wrap.addView(TextView(this).apply { text="${index+1}"; textSize=68f; typeface=Typeface.DEFAULT_BOLD; setTextColor(VelarisDesign.color("surfaceAlt",0xFF202027.toInt())); gravity=Gravity.BOTTOM },LinearLayout.LayoutParams(dp(58),dp(218)))
             wrap.addView(cover,LinearLayout.LayoutParams(dp(154),dp(218)))
-            row.addView(wrap,LinearLayout.LayoutParams(dp(220),dp(228)).apply{marginEnd=dp(4)})
+            row.addView(wrap,LinearLayout.LayoutParams(dp(220),dp(228)).apply{marginEnd=dp(12)})
         }
         homeRoot?.addView(HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;clipChildren=false;addView(row)},LinearLayout.LayoutParams(-1,dp(300)))
     }
@@ -680,24 +707,46 @@ class MainActivity : Activity() {
         v.setOnFocusChangeListener { _,focused ->
             val target=poster ?: v
             if(poster is FrameLayout) {
-                // Foreground draws above the poster artwork; background borders
-                // were hidden behind the full-size ImageView.
                 poster.foreground=if(focused)GradientDrawable().apply{
                     setColor(Color.TRANSPARENT)
                     cornerRadius=dp(10).toFloat()
                     setStroke(dp(2),0xFFDCCFFF.toInt())
                 } else null
+                val caption=poster.findViewWithTag<TextView>("velaris_poster_focus_caption")
+                if(caption!=null) {
+                    caption.animate().cancel()
+                    if(focused) {
+                        caption.alpha=0f
+                        caption.visibility=View.VISIBLE
+                        caption.animate().alpha(1f).setDuration(150).start()
+                    } else {
+                        caption.animate().alpha(0f).setDuration(115)
+                            .withEndAction { if(!v.hasFocus())caption.visibility=View.GONE }
+                            .start()
+                    }
+                }
+                // Play bubble stays in the middle while changing only its tint.
+                val bubble=poster.findViewWithTag<View>("velaris_continue_play")
+                if(bubble!=null) {
+                    bubble.background=GradientDrawable().apply{
+                        setColor(if(focused)0xD95B3EC4.toInt() else 0xAA101016.toInt())
+                        cornerRadius=dp(23).toFloat()
+                        setStroke(dp(2),if(focused)0xFFDCCFFF.toInt() else Color.WHITE)
+                    }
+                }
             } else {
                 v.background=GradientDrawable().apply {
-                    setColor(if(focused) 0x302E2E38 else Color.TRANSPARENT)
+                    setColor(if(focused)0x302E2E38 else Color.TRANSPARENT)
                     cornerRadius=dp(12).toFloat()
                     if(focused)setStroke(dp(2),0xFFDCCFFF.toInt())
                 }
             }
-            // Keep posters at their true size, with a border-only D-pad focus.
-            // Enlarging image cards clipped the first, last and bottom pixels.
+            // Premium lift, not zoom: no focus clipping at the TV safe area
+            // or at the first and last poster in a horizontal row.
+            target.animate().cancel()
             target.animate().scaleX(1f).scaleY(1f)
-                .translationZ(if(focused)dp(8).toFloat() else 0f).setDuration(100).start()
+                .translationZ(if(focused)dp(10).toFloat() else 0f)
+                .setDuration(if(focused)150 else 120).start()
         }
     }
 
@@ -706,7 +755,7 @@ class MainActivity : Activity() {
         homeRoot?.addView(sectionTitle(title))
         val row=LinearLayout(this).apply {
             orientation=LinearLayout.HORIZONTAL
-            setPadding(dp(52),dp(8),dp(52),dp(30))
+            setPadding(dp(52),dp(12),dp(56),dp(34))
             clipChildren=false
             clipToPadding=false
         }
@@ -729,11 +778,12 @@ class MainActivity : Activity() {
                 max=1000; this.progress=((progress.toDouble()/total)*1000).toInt().coerceIn(0,1000)
                 progressTintList=android.content.res.ColorStateList.valueOf(VelarisDesign.color("progress",0xFFE50914.toInt()))
             },LinearLayout.LayoutParams(dp(176),dp(5)))
-            row.addView(card,LinearLayout.LayoutParams(dp(188),dp(304)).apply { marginEnd=dp(8) })
+            row.addView(card,LinearLayout.LayoutParams(dp(188),dp(304)).apply { marginEnd=dp(12) })
         }
         homeRoot?.addView(HorizontalScrollView(this).apply {
-            isHorizontalScrollBarEnabled=false; clipChildren=false; clipToPadding=false; addView(row)
-        },LinearLayout.LayoutParams(-1,dp(350)))
+            isHorizontalScrollBarEnabled=false; clipChildren=false; clipToPadding=false
+            addView(row)
+        },LinearLayout.LayoutParams(-1,dp(354)))
     }
 
 
