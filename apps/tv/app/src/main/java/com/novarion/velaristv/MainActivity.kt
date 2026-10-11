@@ -322,6 +322,45 @@ class MainActivity : Activity() {
         setContentView(frame)
     }
 
+    /** A single pulsing placeholder scene with automatically cancelled animation. */
+    private fun premiumLoadingScene(home:Boolean=false):LinearLayout {
+        val shell=LinearLayout(this).apply {
+            orientation=LinearLayout.VERTICAL
+            setPadding(if(home)dp(52)else 0,dp(18),dp(48),dp(34))
+            isFocusable=false
+            importantForAccessibility=View.IMPORTANT_FOR_ACCESSIBILITY_NO
+        }
+        fun bar(w:Int,h:Int):View=View(this).apply {
+            isFocusable=false
+            background=GradientDrawable().apply {
+                setColor(0xFF292633.toInt());cornerRadius=dp(10).toFloat()
+            }
+            layoutParams=LinearLayout.LayoutParams(if(w<0)w else dp(w),dp(h))
+        }
+        shell.addView(bar(if(home)-1 else 370,if(home)330 else 30))
+        shell.addView(bar(230,15),LinearLayout.LayoutParams(dp(230),dp(15)).apply{
+            topMargin=dp(20)
+        })
+        val row=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
+        repeat(5){
+            row.addView(bar(140,203),LinearLayout.LayoutParams(dp(140),dp(203)).apply{
+                marginEnd=dp(18)
+            })
+        }
+        shell.addView(row,LinearLayout.LayoutParams(-1,dp(203)).apply{topMargin=dp(25)})
+        val pulse=android.animation.ValueAnimator.ofFloat(0.55f,0.95f).apply {
+            duration=850
+            repeatCount=android.animation.ValueAnimator.INFINITE
+            repeatMode=android.animation.ValueAnimator.REVERSE
+            addUpdateListener{shell.alpha=it.animatedValue as Float}
+        }
+        shell.addOnAttachStateChangeListener(object:View.OnAttachStateChangeListener {
+            override fun onViewAttachedToWindow(v:View){pulse.start()}
+            override fun onViewDetachedFromWindow(v:View){pulse.cancel()}
+        })
+        return shell
+    }
+
     private fun showHome() {
         activeSection="Start";activeCollectionId=""
         if(!suppressHistory) backStack.clear()
@@ -333,7 +372,7 @@ class MainActivity : Activity() {
             clipToPadding=false
         }
         homeRoot=content
-
+        content.addView(premiumLoadingScene(home=true),LinearLayout.LayoutParams(-1,-2))
         val scroll=ScrollView(this).apply {
             isVerticalScrollBarEnabled=false
             clipChildren=false;clipToPadding=false
@@ -349,6 +388,7 @@ class MainActivity : Activity() {
     }
 
     private fun loadHome() {
+        val requestRoot=homeRoot?:return
         io.execute {
             try {
                 fun async(path:String)=java.util.concurrent.CompletableFuture.supplyAsync({ items(path) },io)
@@ -370,7 +410,9 @@ class MainActivity : Activity() {
                     runCatching{items("/Items/$watchedId/Similar?UserId=$userId&Limit=18&Fields=PrimaryImageAspectRatio,CommunityRating")}.getOrDefault(emptyList())
                 }?:emptyList()
                 runOnUiThread {
-                    homeRoot?.let { if(it.childCount>2) it.removeViews(2,it.childCount-2) }
+                    if(destroyed || homeRoot!==requestRoot || !requestRoot.isAttachedToWindow)
+                        return@runOnUiThread
+                    requestRoot.removeAllViews()
                     addHeroCarousel((latest+recommended).distinctBy{it.optString("Id")}.take(5))
                     addRankedRow(VelarisDesign.homeRow("topTen","Top 10 für dich"),topTen)
                     addContinueRow(resume)
@@ -382,10 +424,24 @@ class MainActivity : Activity() {
                     addRow("Noch einmal ansehen",replay)
                 }
             } catch(e:Exception) { runOnUiThread {
-                val root=homeRoot ?: return@runOnUiThread
-                root.let { if(it.childCount>2) it.removeViews(2,it.childCount-2) }
-                root.addView(TextView(this).apply{text="Velaris konnte den Server gerade nicht erreichen.";textSize=20f;setTextColor(Color.LTGRAY);gravity=Gravity.CENTER;setPadding(0,dp(32),0,dp(18))})
-                root.addView(button("Erneut versuchen"){loadHome()},params(260,60,8))
+                if(destroyed || homeRoot!==requestRoot || !requestRoot.isAttachedToWindow)
+                    return@runOnUiThread
+                requestRoot.removeAllViews()
+                requestRoot.addView(TextView(this).apply {
+                    text="Velaris konnte den Server gerade nicht erreichen."
+                    textSize=22f;typeface=Typeface.DEFAULT_BOLD
+                    setTextColor(Color.WHITE);setPadding(dp(52),dp(72),dp(52),dp(18))
+                })
+                requestRoot.addView(TextView(this).apply{
+                    text="Prüfe deine Jellyfin-Verbindung und versuche es erneut."
+                    textSize=17f;setTextColor(0xFFB9B9C3.toInt())
+                    setPadding(dp(52),0,dp(52),dp(18))
+                })
+                requestRoot.addView(button("Erneut versuchen"){
+                    requestRoot.removeAllViews()
+                    requestRoot.addView(premiumLoadingScene(home=true))
+                    loadHome()
+                },LinearLayout.LayoutParams(dp(250),dp(54)).apply{leftMargin=dp(52)})
             }}
         }
     }
@@ -909,7 +965,7 @@ class MainActivity : Activity() {
         rememberBack { showHome() }
         val root=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; setPadding(dp(48),dp(28),dp(48),dp(28)); setBackgroundColor(VelarisDesign.color("background",0xFF08080D.toInt())) }
         root.addView(TextView(this).apply { text=title; textSize=32f; setTextColor(Color.WHITE); typeface=Typeface.DEFAULT_BOLD })
-        root.addView(ProgressBar(this))
+        root.addView(premiumLoadingScene(),LinearLayout.LayoutParams(-1,-2))
         showAppPage(ScrollView(this).apply { addView(root) })
         io.execute {
             try {
@@ -943,7 +999,7 @@ class MainActivity : Activity() {
         rememberBack { showHome() }
         val root=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; setPadding(dp(48),dp(28),dp(48),dp(28)); setBackgroundColor(VelarisDesign.color("background",0xFF08080D.toInt())) }
         root.addView(TextView(this).apply { text=title; textSize=32f; setTextColor(Color.WHITE) })
-        root.addView(ProgressBar(this))
+        root.addView(premiumLoadingScene(),LinearLayout.LayoutParams(-1,-2))
         showAppPage(ScrollView(this).apply { addView(root) })
         io.execute {
             try {
@@ -979,8 +1035,8 @@ class MainActivity : Activity() {
         root.addView(TextView(this).apply {
             text="Sammlung wird geladen …";textSize=26f;setTextColor(Color.WHITE)
         })
-        val spinner=ProgressBar(this)
-        root.addView(spinner,params(60,60,24))
+        val spinner=premiumLoadingScene()
+        root.addView(spinner,LinearLayout.LayoutParams(-1,-2))
         showAppPage(ScrollView(this).apply{
             isVerticalScrollBarEnabled=false;clipChildren=false;clipToPadding=false
             addView(root)
@@ -1029,7 +1085,7 @@ class MainActivity : Activity() {
         rememberBack { showHome() }
         val root=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; setPadding(dp(48),dp(28),dp(48),dp(28)); setBackgroundColor(VelarisDesign.color("background",0xFF08080D.toInt())) }
         root.addView(TextView(this).apply { text=title; textSize=32f; setTextColor(Color.WHITE) })
-        root.addView(ProgressBar(this))
+        root.addView(premiumLoadingScene(),LinearLayout.LayoutParams(-1,-2))
         showAppPage(ScrollView(this).apply { addView(root) })
         io.execute {
             try {
@@ -1048,7 +1104,7 @@ class MainActivity : Activity() {
         rememberBack { showHome() }
         val root=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; setPadding(dp(48),dp(28),dp(48),dp(28)); setBackgroundColor(VelarisDesign.color("background",0xFF08080D.toInt())) }
         root.addView(TextView(this).apply { text="Meine Liste"; textSize=32f; setTextColor(Color.WHITE) })
-        root.addView(ProgressBar(this))
+        root.addView(premiumLoadingScene(),LinearLayout.LayoutParams(-1,-2))
         showAppPage(ScrollView(this).apply { addView(root) })
         io.execute {
             try {
@@ -2025,7 +2081,14 @@ class MainActivity : Activity() {
                             runCatching{disk.writeBytes(bytes)}
                             val waiting=synchronized(pendingImages){pendingImages[cacheKey]?.toList().orEmpty()}
                             runOnUiThread{
-                                if(!isFinishing&&!isDestroyed)waiting.forEach{it.setImageBitmap(bmp)}
+                                if(!isFinishing&&!isDestroyed)waiting.forEach{image->
+                                    image.animate().cancel()
+                                    val visible=image.isAttachedToWindow
+                                    if(visible)image.alpha=0f
+                                    image.setImageBitmap(bmp)
+                                    if(visible)image.animate().alpha(1f)
+                                        .setDuration(260).start()
+                                }
                             }
                         }
                     }

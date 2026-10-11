@@ -13,6 +13,7 @@ export function MediaCard({ item, session, width = 128, showMeta = false, showFa
   const [highlighted,setHighlighted]=useState(false);
   const scale=useRef(new Animated.Value(1)).current;
   const detailOpacity=useRef(new Animated.Value(0)).current;
+  const artworkOpacity=useRef(new Animated.Value(0)).current;
   const animateScale=(value:number)=>Animated.spring(scale,{
     toValue:value,useNativeDriver:true,speed:24,bounciness:2
   }).start();
@@ -22,7 +23,10 @@ export function MediaCard({ item, session, width = 128, showMeta = false, showFa
     Animated.timing(detailOpacity,{toValue:value?1:0,duration:150,useNativeDriver:true}).start();
   };
   const imageTag=item.PrimaryImageTag ?? item.ImageTags?.Primary;
-  useEffect(()=>{setImageFailed(false)},[item.Id,imageTag]);
+  useEffect(()=>{
+    setImageFailed(false);
+    artworkOpacity.setValue(0);
+  },[item.Id,imageTag,artworkOpacity]);
   const meta=[item.Type==='Series'?'SERIE':item.Type==='BoxSet'?'SAMMLUNG':'FILM',
     item.ProductionYear].filter(Boolean).join('  ·  ');
   const badge=statusBadge(item);
@@ -50,7 +54,12 @@ export function MediaCard({ item, session, width = 128, showMeta = false, showFa
         elevation:highlighted?8:1
       }]}><View style={[styles.posterShell,highlighted&&styles.posterFocused,
         {width,height:Math.round(width*1.5)}]}>
-       {!imageFailed ? <Image source={{ uri: getPrimaryImageUrl(session, item.Id, imageTag) }} onError={()=>setImageFailed(true)} style={styles.poster} resizeMode="contain" /> :
+       {!imageFailed ? <Animated.Image source={{ uri: getPrimaryImageUrl(session, item.Id, imageTag) }}
+          onLoad={()=>Animated.timing(artworkOpacity,{
+            toValue:1,duration:260,useNativeDriver:true
+          }).start()}
+          onError={()=>setImageFailed(true)}
+          style={[styles.poster,{opacity:artworkOpacity}]} resizeMode="contain" /> :
         <View style={[styles.poster, styles.placeholder]}><Text style={styles.logo}>VELARIS</Text></View>}
        <Animated.View pointerEvents="none" style={[styles.focusMeta,{opacity:detailOpacity}]}>
         <Text numberOfLines={1} style={styles.focusMetaText}>{meta}</Text>

@@ -7,6 +7,8 @@ import { MediaCard } from '@/components/MediaCard';
 import type { JellyfinItem } from '@/types/jellyfin';
 import { colors } from '@/theme';
 import { VelarisHeader } from '@/components/VelarisHeader';
+import { LoadingSkeleton } from '@/components/LoadingSkeleton';
+import { EmptyState } from '@/components/EmptyState';
 
 export function LibraryCategoryScreen({kind,title,description}:{kind:MediaLibraryKind;title:string;description:string}) {
  const {session}=useAuth();
@@ -14,23 +16,31 @@ export function LibraryCategoryScreen({kind,title,description}:{kind:MediaLibrar
  const cardWidth=Math.floor((screenWidth-42)/3);
  const [items,setItems]=useState<JellyfinItem[]>([]);
  const [loading,setLoading]=useState(true);
+ const [loadError,setLoadError]=useState(false);
+ const [retryKey,setRetryKey]=useState(0);
  useFocusEffect(useCallback(()=>{
    if(!session)return;
    let cancelled=false;
    setLoading(true);
-   getLibraryItems(session,kind).then(r=>{if(!cancelled)setItems(r.Items)}).catch(()=>{if(!cancelled)setItems([])})
-     .finally(()=>{if(!cancelled)setLoading(false)});
+   setLoadError(false);
+   getLibraryItems(session,kind).then(r=>{if(!cancelled)setItems(r.Items)}).catch(()=>{
+     if(!cancelled){setItems([]);setLoadError(true)}
+   }).finally(()=>{if(!cancelled)setLoading(false)});
    return ()=>{cancelled=true};
- },[session,kind]));
+ },[session,kind,retryKey]));
  if(!session)return <Redirect href="/connect"/>;
- return <View style={{flex:1,backgroundColor:colors.background}}><VelarisHeader scope={kind}/><FlatList style={styles.page} contentContainerStyle={styles.content}
+ return <View style={{flex:1,backgroundColor:colors.background}}><VelarisHeader scope={kind}/>
+ {loading?<LoadingSkeleton variant="library" columns={3}/>:<FlatList style={styles.page} contentContainerStyle={styles.content}
    data={items} numColumns={3} columnWrapperStyle={styles.row}
    ListHeaderComponent={<View style={styles.header}><Text style={styles.eyebrow}>VELARIS</Text>
       <View style={styles.titleRow}><Text style={styles.title}>{title}</Text><Text style={styles.count}>{items.length}</Text></View>
       <Text style={styles.sub}>{description}</Text></View>}
-   ListEmptyComponent={!loading?<Text style={styles.empty}>Noch keine Titel gefunden. Prüfe, ob in Jellyfin eine Bibliothek namens „{title}“ vorhanden ist.</Text>:<Text style={styles.empty}>Wird geladen …</Text>}
+   ListEmptyComponent={<EmptyState
+      title={loadError?'Mediathek nicht erreichbar':'Noch keine Titel'}
+      message={loadError?'Prüfe die Verbindung zu Jellyfin und versuche es erneut.':`Prüfe, ob in Jellyfin eine Bibliothek namens „${title}“ vorhanden ist.`}
+      onRetry={()=>setRetryKey(value=>value+1)}/>} 
    renderItem={({item})=><MediaCard item={item} session={session} width={cardWidth}/>}
-   keyExtractor={item=>item.Id}/></View>;
+   keyExtractor={item=>item.Id}/>}</View>;
 }
 const styles=StyleSheet.create({
  page:{backgroundColor:colors.background},content:{padding:12,paddingTop:10,paddingBottom:30},
