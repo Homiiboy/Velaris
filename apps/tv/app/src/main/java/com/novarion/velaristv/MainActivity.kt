@@ -2081,7 +2081,14 @@ class MainActivity : Activity() {
                             runCatching{disk.writeBytes(bytes)}
                             val waiting=synchronized(pendingImages){pendingImages[cacheKey]?.toList().orEmpty()}
                             runOnUiThread{
-                                if(!isFinishing&&!isDestroyed)waiting.forEach{it.setImageBitmap(bmp)}
+                                if(!isFinishing&&!isDestroyed)waiting.forEach{image->
+                                    image.animate().cancel()
+                                    val visible=image.isAttachedToWindow
+                                    if(visible)image.alpha=0f
+                                    image.setImageBitmap(bmp)
+                                    if(visible)image.animate().alpha(1f)
+                                        .setDuration(260).start()
+                                }
                             }
                         }
                     }
