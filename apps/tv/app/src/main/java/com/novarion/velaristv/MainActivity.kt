@@ -551,6 +551,39 @@ class MainActivity : Activity() {
         }
     }
 
+    private fun playbackPercent(item:JSONObject):Int {
+        val user=item.optJSONObject("UserData")?:return 0
+        if(user.optBoolean("Played",false))return 100
+        val ticks=user.optLong("PlaybackPositionTicks",0L).coerceAtLeast(0L)
+        val duration=item.optLong("RunTimeTicks",0L)
+        val measured=if(duration>0)ticks.toDouble()/duration*100.0 else 0.0
+        val reported=user.optDouble("PlayedPercentage",0.0).takeIf{it.isFinite()}?:0.0
+        return maxOf(measured,reported).coerceIn(0.0,100.0).toInt()
+    }
+
+    private fun hasResumeProgress(item:JSONObject):Boolean {
+        val pct=playbackPercent(item)
+        return item.optJSONObject("UserData")?.optBoolean("Played",false)!=true &&
+            pct in 1..99
+    }
+
+    private fun remainingMinutes(item:JSONObject):Long? {
+        if(!hasResumeProgress(item))return null
+        val duration=item.optLong("RunTimeTicks",0L)
+        if(duration<=0L)return null
+        val position=item.optJSONObject("UserData")?.optLong("PlaybackPositionTicks",0L)?:0L
+        val fraction=maxOf(position.toDouble()/duration,playbackPercent(item)/100.0)
+            .coerceIn(0.0,1.0)
+        val remaining=kotlin.math.ceil(duration.toDouble()*(1-fraction)/600_000_000.0).toLong()
+        return remaining.takeIf{it>0L}
+    }
+
+    private fun statusBadge(item:JSONObject):Pair<String,Boolean>? {
+        val played=watchedLabel(item)
+        if(played!=null)return played to true
+        return if(hasResumeProgress(item))"FORTSETZEN" to false else null
+    }
+
     private fun watchedPoster(item:JSONObject,w:Int,h:Int,imageType:String,requestedWidth:Int,landscape:Boolean=false):FrameLayout {
         val frame=FrameLayout(this).apply {
             background=GradientDrawable().apply{
@@ -592,14 +625,17 @@ class MainActivity : Activity() {
             visibility=View.GONE
         }
         frame.addView(focusCaption,FrameLayout.LayoutParams(-1,-2,Gravity.BOTTOM))
-        watchedLabel(item)?.let{label->
+        statusBadge(item)?.let{(label,watched)->
             frame.addView(TextView(this).apply{
-                text=label;setTextColor(Color.WHITE);textSize=12f;typeface=Typeface.DEFAULT_BOLD
-                gravity=Gravity.CENTER
+                text=label;setTextColor(if(watched)0xFF80ECA3.toInt() else 0xFFE6DEFF.toInt())
+                textSize=11f;typeface=Typeface.DEFAULT_BOLD;gravity=Gravity.CENTER
                 setPadding(dp(9),dp(5),dp(9),dp(5))
                 background=GradientDrawable().apply{
-                    setColor(0xEE172A22.toInt());cornerRadius=dp(6).toFloat()
-                    setStroke(dp(1),VelarisDesign.color("success",0xFF46D369.toInt()))
+                    setColor(if(watched)0xEE172A22.toInt() else 0xEE231846.toInt())
+                    cornerRadius=dp(6).toFloat()
+                    setStroke(dp(1),if(watched)
+                        VelarisDesign.color("success",0xFF46D369.toInt())
+                        else 0xFFB49DFF.toInt())
                 }
             },FrameLayout.LayoutParams(-2,-2,Gravity.TOP or Gravity.RIGHT).apply{
                 setMargins(dp(6),dp(7),dp(7),0)
@@ -653,6 +689,8 @@ class MainActivity : Activity() {
             if(id.isBlank())return@forEach
             val progressTicks=item.optJSONObject("UserData")?.optLong("PlaybackPositionTicks",0L)?:0L
             val total=item.optLong("RunTimeTicks",0L)
+            val percent=playbackPercent(item)
+            val remaining=remainingMinutes(item)
             val thumb=FrameLayout(this).apply{
                 background=GradientDrawable().apply{
                     setColor(VelarisDesign.color("surface",0xFF15151B.toInt()))
@@ -669,14 +707,25 @@ class MainActivity : Activity() {
             loadImage(poster,id,imageType,720)
             thumb.addView(playCircle().apply{tag="velaris_continue_play"},
                 FrameLayout.LayoutParams(dp(46),dp(46),Gravity.CENTER))
-            if(total>0 && progressTicks>0)thumb.addView(
+            if(hasResumeProgress(item))thumb.addView(TextView(this).apply{
+                text="FORTSETZEN";textSize=11f;typeface=Typeface.DEFAULT_BOLD
+                setTextColor(0xFFE6DEFF.toInt())
+                setPadding(dp(9),dp(6),dp(9),dp(6))
+                background=GradientDrawable().apply{
+                    setColor(0xEE231846.toInt());cornerRadius=dp(6).toFloat()
+                    setStroke(dp(1),0xFFB49DFF.toInt())
+                }
+            },FrameLayout.LayoutParams(-2,-2,Gravity.TOP or Gravity.LEFT).apply{
+                leftMargin=dp(10);topMargin=dp(10)
+            })
+            if(percent in 1..99)thumb.addView(
                 ProgressBar(this,null,android.R.attr.progressBarStyleHorizontal).apply{
                     max=1000
-                    progress=((progressTicks.toDouble()/total)*1000).toInt().coerceIn(0,1000)
+                    progress=percent*10
                     progressTintList=android.content.res.ColorStateList.valueOf(
                         VelarisDesign.color("progress",0xFFE50914.toInt()))
                     progressBackgroundTintList=android.content.res.ColorStateList.valueOf(0xAA888888.toInt())
-                },FrameLayout.LayoutParams(-1,dp(5),Gravity.BOTTOM)
+                },FrameLayout.LayoutParams(-1,dp(4),Gravity.BOTTOM)
             )
             val card=LinearLayout(this).apply {
                 orientation=LinearLayout.VERTICAL;isFocusable=true;isClickable=true
@@ -693,16 +742,20 @@ class MainActivity : Activity() {
             },LinearLayout.LayoutParams(dp(310),dp(34)))
             val episode=item.optInt("IndexNumber",0)
             val season=item.optInt("ParentIndexNumber",0)
-            val remaining=if(total>0)((total-progressTicks).coerceAtLeast(0L)/600_000_000L)else 0L
-            val description=listOfNotNull(
-                if(season>0&&episode>0)"S$season:E$episode" else null,
-                if(remaining>0)"Noch $remaining Min." else null
-            ).joinToString("  •  ")
+            val series=if(item.optString("Type")=="Episode")
+                item.optString("SeriesName").takeIf(String::isNotBlank) else null
+            val episodeCode=if(episode>0)"S$season:E$episode" else null
+            val description=listOfNotNull(series,episodeCode).joinToString("   ·   ")
             if(description.isNotBlank())card.addView(TextView(this).apply{
-                text=description;textSize=13f;setTextColor(Color.LTGRAY)
+                text=description;textSize=13f;maxLines=1;setTextColor(0xFFD5D0E3.toInt())
                 setPadding(dp(4),0,0,0)
-            },LinearLayout.LayoutParams(dp(310),dp(27)))
-            row.addView(card,LinearLayout.LayoutParams(dp(326),dp(251)).apply{
+            },LinearLayout.LayoutParams(dp(310),dp(26)))
+            if(remaining!=null)card.addView(TextView(this).apply{
+                text="Noch $remaining Min.";textSize=13f
+                typeface=Typeface.DEFAULT_BOLD;setTextColor(0xFFDCCFFF.toInt())
+                setPadding(dp(4),0,0,0)
+            },LinearLayout.LayoutParams(dp(310),dp(25)))
+            row.addView(card,LinearLayout.LayoutParams(dp(326),dp(280)).apply{
                 marginEnd=dp(16)
             })
         }
@@ -710,7 +763,7 @@ class MainActivity : Activity() {
             isHorizontalScrollBarEnabled=false
             clipChildren=false;clipToPadding=false
             addView(row)
-        },LinearLayout.LayoutParams(-1,dp(320)))
+        },LinearLayout.LayoutParams(-1,dp(343)))
     }
 
     private fun addRankedRow(title:String,data:List<JSONObject>) {
@@ -806,12 +859,14 @@ class MainActivity : Activity() {
             }
             card.addView(cover,LinearLayout.LayoutParams(dp(176),dp(248)))
             card.setOnLongClickListener { openMediaItem(item); true }
-            val progress=item.optJSONObject("UserData")?.optLong("PlaybackPositionTicks",0L) ?: 0L
-            val total=item.optLong("RunTimeTicks",0L)
-            if(progress>0 && total>0) card.addView(ProgressBar(this,null,android.R.attr.progressBarStyleHorizontal).apply {
-                max=1000; this.progress=((progress.toDouble()/total)*1000).toInt().coerceIn(0,1000)
-                progressTintList=android.content.res.ColorStateList.valueOf(VelarisDesign.color("progress",0xFFE50914.toInt()))
-            },LinearLayout.LayoutParams(dp(176),dp(5)))
+            val percent=playbackPercent(item)
+            if(percent in 1..99)card.addView(ProgressBar(this,null,android.R.attr.progressBarStyleHorizontal).apply {
+                max=1000;progress=percent*10
+                progressTintList=android.content.res.ColorStateList.valueOf(
+                    VelarisDesign.color("progress",0xFFE50914.toInt()))
+                progressBackgroundTintList=android.content.res.ColorStateList.valueOf(
+                    0xAA888888.toInt())
+            },LinearLayout.LayoutParams(dp(176),dp(4)))
             row.addView(card,LinearLayout.LayoutParams(dp(188),dp(304)).apply { marginEnd=dp(12) })
         }
         homeRoot?.addView(HorizontalScrollView(this).apply {
