@@ -1,6 +1,7 @@
 package com.novarion.velaristv
 
 import android.app.Activity
+import android.app.AlertDialog
 import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
@@ -1546,7 +1547,7 @@ class MainActivity : Activity() {
         val scroller=ScrollView(this).apply {
             isVerticalScrollBarEnabled=false
             clipChildren=false;clipToPadding=false
-            fillViewport=false
+            isFillViewport=false
             addView(list)
         }
         rail.addView(scroller,LinearLayout.LayoutParams(-1,0,1f))
