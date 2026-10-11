@@ -548,6 +548,38 @@ class MainActivity : Activity() {
         return frame
     }
 
+    // Draw the play triangle with its visual center on the circle's center.
+    // Android font glyphs (▶) have asymmetric side bearings on different TVs.
+    private fun playCircle(diameter:Int=46):View = object:View(this) {
+        private val paint=android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+            color=Color.WHITE
+            style=android.graphics.Paint.Style.FILL
+        }
+        override fun onDraw(canvas:android.graphics.Canvas) {
+            super.onDraw(canvas)
+            val x=width/2f
+            val y=height/2f
+            val halfHeight=dp(9).toFloat()*diameter/46f
+            val leftOffset=dp(5).toFloat()*diameter/46f
+            val rightOffset=leftOffset*2f
+            val triangle=android.graphics.Path().apply {
+                moveTo(x-leftOffset,y-halfHeight)
+                lineTo(x+rightOffset,y)
+                lineTo(x-leftOffset,y+halfHeight)
+                close()
+            }
+            canvas.drawPath(triangle,paint)
+        }
+    }.apply {
+        contentDescription="Abspielen"
+        importantForAccessibility=View.IMPORTANT_FOR_ACCESSIBILITY_NO
+        background=GradientDrawable().apply {
+            setColor(0xAA101016.toInt())
+            cornerRadius=dp(diameter/2).toFloat()
+            setStroke(dp(2),0xFFF4F0FF.toInt())
+        }
+    }
+
     private fun addContinueRow(data:List<JSONObject>) {
         if(data.isEmpty())return
         homeRoot?.addView(sectionTitle(VelarisDesign.homeRow("resume","Weiterschauen")))
@@ -575,14 +607,7 @@ class MainActivity : Activity() {
             }
             thumb.addView(poster,FrameLayout.LayoutParams(-1,-1))
             loadImage(poster,id,imageType,720)
-            thumb.addView(TextView(this).apply{
-                text="▶";gravity=Gravity.CENTER;textSize=21f;setTextColor(Color.WHITE)
-                background=GradientDrawable().apply{
-                    setColor(0xAA101016.toInt())
-                    cornerRadius=dp(23).toFloat()
-                    setStroke(dp(2),Color.WHITE)
-                }
-            },FrameLayout.LayoutParams(dp(46),dp(46),Gravity.CENTER))
+            thumb.addView(playCircle(),FrameLayout.LayoutParams(dp(46),dp(46),Gravity.CENTER))
             if(total>0 && progressTicks>0)thumb.addView(
                 ProgressBar(this,null,android.R.attr.progressBarStyleHorizontal).apply{
                     max=1000
@@ -660,13 +685,13 @@ class MainActivity : Activity() {
                 poster.foreground=if(focused)GradientDrawable().apply{
                     setColor(Color.TRANSPARENT)
                     cornerRadius=dp(10).toFloat()
-                    setStroke(dp(3),Color.WHITE)
+                    setStroke(dp(2),0xFFDCCFFF.toInt())
                 } else null
             } else {
                 v.background=GradientDrawable().apply {
                     setColor(if(focused) 0x302E2E38 else Color.TRANSPARENT)
                     cornerRadius=dp(12).toFloat()
-                    if(focused)setStroke(dp(2),Color.WHITE)
+                    if(focused)setStroke(dp(2),0xFFDCCFFF.toInt())
                 }
             }
             // Keep posters at their true size, with a border-only D-pad focus.
@@ -1362,10 +1387,10 @@ class MainActivity : Activity() {
         frame.background=GradientDrawable().apply {
             setColor(Color.TRANSPARENT)
             cornerRadius=dp(20).toFloat()
-            if(focused)setStroke(dp(3),Color.WHITE)
+            if(focused)setStroke(dp(2),0xFFDCCFFF.toInt())
             else if(selected)setStroke(dp(2),VelarisDesign.color("accent",0xFF7C5CFC.toInt()))
         }
-        frame.animate().scaleX(if(focused)1.045f else 1f).scaleY(if(focused)1.045f else 1f)
+        frame.animate().scaleX(if(focused)1.025f else 1f).scaleY(if(focused)1.025f else 1f)
             .setDuration(120).start()
     }
 
@@ -1956,7 +1981,7 @@ class MainActivity : Activity() {
                 else -> Color.TRANSPARENT
             })
             cornerRadius=dp(24).toFloat()
-            if(focused)setStroke(dp(2),Color.WHITE)
+            if(focused)setStroke(dp(2),0xFFDCCFFF.toInt())
         }
         button.setTextColor(if(selected||focused)Color.WHITE else 0xCCDCDCE4.toInt())
         button.typeface=if(selected)Typeface.DEFAULT_BOLD else Typeface.DEFAULT
@@ -1995,28 +2020,53 @@ class MainActivity : Activity() {
         }
     }
 
-    private fun actionButton(label:String, primary:Boolean, click:()->Unit)=Button(this).apply {
-        text=label; contentDescription=label; isAllCaps=false; textSize=17f; typeface=Typeface.DEFAULT_BOLD
-        setTextColor(if(primary) Color.BLACK else Color.WHITE); isFocusable=true
-        background=GradientDrawable().apply {
-            setColor(if(primary) Color.WHITE else 0xD034343B.toInt()); cornerRadius=dp(10).toFloat()
-        }
-        setOnClickListener { click() }
-        setOnFocusChangeListener { v, focused ->
+    private fun actionButton(label:String,primary:Boolean,click:()->Unit)=Button(this).apply {
+        text=label;contentDescription=label;isAllCaps=false
+        textSize=17f;typeface=Typeface.DEFAULT_BOLD;includeFontPadding=false
+        gravity=Gravity.CENTER;minWidth=0;minimumWidth=0
+        setPadding(dp(14),0,dp(14),0)
+        stateListAnimator=null;elevation=0f
+        isFocusable=true;isClickable=true
+        fun style(focused:Boolean) {
             background=GradientDrawable().apply {
-                setColor(if(focused) VelarisDesign.color("focus",0xFF7E57FF.toInt()) else if(primary) Color.WHITE else 0x99282830.toInt())
-                cornerRadius=dp(8).toFloat()
-                if(focused)setStroke(dp(2),Color.WHITE)
+                setColor(when {
+                    focused -> VelarisDesign.color("focus",0xFF7E57FF.toInt())
+                    primary -> Color.WHITE
+                    else -> 0xD034343B.toInt()
+                })
+                cornerRadius=dp(10).toFloat()
+                if(focused)setStroke(dp(2),0xFFDCCFFF.toInt())
             }
-            setTextColor(if(focused || !primary) Color.WHITE else Color.BLACK)
-            // No zoom on edge-aligned buttons: prevents clipping at the TV safe area.
-            v.animate().scaleX(1f).scaleY(1f).setDuration(100).start()
+            setTextColor(if(focused||!primary)Color.WHITE else 0xFF101016.toInt())
+        }
+        style(false)
+        setOnClickListener{click()}
+        setOnFocusChangeListener{v,focused->
+            style(focused)
+            // Focus ring, no overscan/cropped scaling at screen edges.
+            v.animate().scaleX(1f).scaleY(1f).setDuration(110).start()
         }
     }
 
-    private fun button(label:String, click:()->Unit)=Button(this).apply {
-        text=label; contentDescription=label; isAllCaps=false; textSize=17f; setTextColor(Color.WHITE); isFocusable=true; minHeight=dp(48)
-        backgroundTintList=android.content.res.ColorStateList.valueOf(Color.rgb(83,50,205)); setOnClickListener{click()}
+    private fun button(label:String,click:()->Unit)=Button(this).apply {
+        text=label;contentDescription=label;isAllCaps=false
+        textSize=17f;typeface=Typeface.DEFAULT_BOLD;includeFontPadding=false
+        gravity=Gravity.CENTER
+        minHeight=dp(48);setPadding(dp(16),0,dp(16),0)
+        stateListAnimator=null;elevation=0f
+        isFocusable=true;isClickable=true
+        fun style(focused:Boolean) {
+            background=GradientDrawable().apply {
+                setColor(if(focused)VelarisDesign.color("focus",0xFF7E57FF.toInt())
+                    else VelarisDesign.color("accent",0xFF7C5CFC.toInt()))
+                cornerRadius=dp(10).toFloat()
+                if(focused)setStroke(dp(2),0xFFDCCFFF.toInt())
+            }
+            setTextColor(Color.WHITE)
+        }
+        style(false)
+        setOnClickListener{click()}
+        setOnFocusChangeListener{_,focused->style(focused)}
     }
     private fun params(w:Int,h:Int,top:Int)=LinearLayout.LayoutParams(if(w<0)w else dp(w),if(h<0)h else dp(h)).apply{topMargin=dp(top)}
     private fun normalize(raw:String):String? { var v=raw.trim();if(v.isBlank())return null;if(!v.contains("://"))v="http://$v";val u=runCatching{Uri.parse(v)}.getOrNull()?:return null;return if(u.host.isNullOrBlank() || (u.scheme!="http" && u.scheme!="https"))null else v.trimEnd('/') }

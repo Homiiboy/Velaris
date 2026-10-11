@@ -24,13 +24,15 @@ export function MediaCard({ item, session, width = 128, showMeta = false, showFa
     <Pressable
       onPressIn={()=>press(.985)} onPressOut={()=>press(1)}
       onPress={() => item.Type === 'BoxSet' ? router.push({ pathname: '/collection/[id]', params: { id: item.Id } }) : router.push({ pathname: '/details/[id]', params: { id: item.Id } })}
+      accessibilityRole="button"
+      accessibilityLabel={item.Name}
       style={{width}}
     >
       <Animated.View style={{transform:[{scale}],width}}><View style={[styles.posterShell,{width,height:Math.round(width*1.5)}]}>
        {!imageFailed ? <Image source={{ uri: getPrimaryImageUrl(session, item.Id, imageTag) }} onError={()=>setImageFailed(true)} style={styles.poster} resizeMode="contain" /> :
         <View style={[styles.poster, styles.placeholder]}><Text style={styles.logo}>VELARIS</Text></View>}
        {!!watchedLabel(item)&&<View style={styles.watchedBadge}><Text style={styles.watchedText}>✓ {watchedLabel(item)}</Text></View>}
-       {showFavorite&&item.Type!=='BoxSet'&&<Pressable hitSlop={8} onPress={(e)=>{e.stopPropagation();toggleFavorite()}} style={styles.heart}><Text style={[styles.heartText,favorite&&styles.heartActive]}>{favorite?'♥':'♡'}</Text></Pressable>}
+       {showFavorite&&item.Type!=='BoxSet'&&<Pressable hitSlop={8} onPress={(e)=>{e.stopPropagation();toggleFavorite()}} accessibilityRole="button" accessibilityLabel={favorite?'Aus Meine Liste entfernen':'Zu Meine Liste hinzufügen'} style={styles.heart}><Text style={[styles.heartText,favorite&&styles.heartActive]}>{favorite?'♥':'♡'}</Text></Pressable>}
       </View></Animated.View>
       <Text numberOfLines={1} style={styles.name}>{item.Name}</Text>
       {showMeta&&<Text numberOfLines={1} style={styles.meta}>{item.ProductionYear ?? (item.Type === 'Series' ? 'Serie' : item.Type === 'Episode' ? 'Episode' : 'Film')}</Text>}
@@ -45,7 +47,7 @@ const styles = StyleSheet.create({
   watchedBadge:{position:'absolute',left:5,bottom:6,backgroundColor:'rgba(8,8,13,.88)',paddingHorizontal:7,paddingVertical:4,borderRadius:5,borderWidth:1,borderColor:colors.success},
   watchedText:{color:colors.success,fontSize:10,fontWeight:'900'},
   heart:{position:'absolute',right:7,top:7,width:30,height:30,borderRadius:15,backgroundColor:'rgba(0,0,0,.78)',borderWidth:1,borderColor:'rgba(255,255,255,.3)',alignItems:'center',justifyContent:'center'},
-  heartText:{color:'#fff',fontSize:21,lineHeight:23},heartActive:{color:'#fff'},
+  heartText:{color:'#fff',fontSize:21,lineHeight:25,includeFontPadding:false,textAlign:'center'},heartActive:{color:'#fff'},
   name:{color:colors.text,fontWeight:'700',fontSize:12,marginTop:7,letterSpacing:.1},
   meta:{color:colors.muted,fontSize:10,marginTop:3},
 });

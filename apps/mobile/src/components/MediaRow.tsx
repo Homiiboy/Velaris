@@ -5,6 +5,7 @@ import { getPrimaryImageUrl, getBackdropUrl } from '@/services/jellyfin';
 import type { JellyfinItem, Session } from '@/types/jellyfin';
 import { colors } from '@/theme';
 import { episodeTitle } from '@/services/episodeTitles';
+import { PlayGlyph } from '@/components/PlayGlyph';
 
 function ContinueCard({item,session}:{item:JellyfinItem;session:Session}){
  const progress=Math.max(0,Math.min(100,item.UserData?.PlayedPercentage ?? (
@@ -16,10 +17,12 @@ function ContinueCard({item,session}:{item:JellyfinItem;session:Session}){
  const subtitle=item.Type==='Episode'
   ? [item.SeriesName,item.ParentIndexNumber!=null&&item.IndexNumber!=null?`S${item.ParentIndexNumber} · E${item.IndexNumber}`:undefined].filter(Boolean).join('  •  ')
   : item.Name;
- return <Pressable style={({pressed})=>[styles.continueCard,{opacity:pressed?.75:1}]} onPress={()=>router.push({pathname:'/player/[id]',params:{id:item.Id}})}>
+ return <Pressable accessibilityRole="button" accessibilityLabel={`${item.Name} fortsetzen`}
+  style={({pressed})=>[styles.continueCard,pressed&&styles.continuePressed]}
+  onPress={()=>router.push({pathname:'/player/[id]',params:{id:item.Id}})}>
   <View style={styles.thumbWrap}>
    <Image source={{uri:thumbnailUri}} style={styles.thumb} resizeMode={hasBackdrop?'cover':'contain'}/>
-   <View style={styles.playBubble}><Text style={styles.playIcon}>▶</Text></View>
+   <View style={styles.playBubble}><PlayGlyph size={17}/></View>
    <View style={styles.progressTrack}><View style={[styles.progressFill,{width:`${progress}%`}]} /></View>
   </View>
   <Text numberOfLines={1} style={styles.continueTitle}>{item.Type==='Episode'?episodeTitle(item):item.Name}</Text>
@@ -46,10 +49,11 @@ const styles = StyleSheet.create({
   title:{color:colors.text,fontSize:20,fontWeight:'900',paddingHorizontal:18,marginBottom:14,letterSpacing:-0.35},
   row:{paddingHorizontal:18,paddingTop:3,paddingBottom:13,gap:14},
   continueCard:{width:238},
+  continuePressed:{opacity:0.78,transform:[{scale:0.985}]},
   thumbWrap:{width:238,aspectRatio:16/9,backgroundColor:colors.surfaceAlt,borderRadius:8,overflow:'hidden',borderWidth:1,borderColor:'rgba(255,255,255,.12)'},
   thumb:{width:'100%',height:'100%'},
-  playBubble:{position:'absolute',left:'50%',top:'50%',marginLeft:-19,marginTop:-19,width:38,height:38,borderRadius:19,borderWidth:2,borderColor:'rgba(255,255,255,.9)',backgroundColor:'rgba(0,0,0,.48)',alignItems:'center',justifyContent:'center'},
-  playIcon:{color:'#fff',fontSize:15,marginLeft:2},
+  playBubble:{position:'absolute',left:'50%',top:'50%',marginLeft:-20,marginTop:-20,width:40,height:40,borderRadius:20,borderWidth:2,borderColor:'rgba(255,255,255,.92)',backgroundColor:'rgba(8,8,13,.62)',alignItems:'center',justifyContent:'center'},
+
   progressTrack:{position:'absolute',left:0,right:0,bottom:0,height:4,backgroundColor:'rgba(255,255,255,.28)'},
   progressFill:{height:4,backgroundColor:colors.progress},
   continueTitle:{color:'#fff',fontSize:13,fontWeight:'800',marginTop:9},
