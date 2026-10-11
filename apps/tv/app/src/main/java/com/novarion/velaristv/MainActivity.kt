@@ -142,9 +142,29 @@ class MainActivity : Activity() {
         }
         val root = setupPage("Willkommen bei Velaris", "Mit deinem Jellyfin-Konto anmelden", user)
         root.addView(pass, params(600, 62, 12))
-        val signInButton=button("Anmelden") { login(user.text.toString(), pass.text.toString()) }
-        root.addView(signInButton, params(260,64,18))
-        root.addView(button("Server ändern") { clearConnection(); showServer() }, params(260,58,10))
+        // Two equally sized actions in one row: consistent with the TV login card.
+        // Reserve enough space for a visible D-pad focus ring on both buttons.
+        val actions=LinearLayout(this).apply {
+            orientation=LinearLayout.HORIZONTAL
+            gravity=Gravity.CENTER_VERTICAL
+            clipChildren=false
+            clipToPadding=false
+        }
+        val signInButton=button("Anmelden") { login(user.text.toString(), pass.text.toString()) }.apply {
+            id=View.generateViewId()
+        }
+        val backButton=actionButton("Zurück",false) { clearConnection(); showServer() }.apply {
+            id=View.generateViewId()
+        }
+        actions.addView(signInButton,LinearLayout.LayoutParams(0,dp(64),1f).apply {
+            marginEnd=dp(10)
+        })
+        actions.addView(backButton,LinearLayout.LayoutParams(0,dp(64),1f).apply {
+            marginStart=dp(10)
+        })
+        root.addView(actions,params(600,64,18))
+        signInButton.nextFocusRightId=backButton.id
+        backButton.nextFocusLeftId=signInButton.id
         configureTvInput(user,pass)
         configureTvInput(pass,signInButton,done=true)
         setContentView(root)
