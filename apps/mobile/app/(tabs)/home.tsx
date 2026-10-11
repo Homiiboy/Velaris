@@ -8,6 +8,7 @@ import type { JellyfinItem } from '@/types/jellyfin';
 import { colors, design } from '@/theme';
 import { VelarisHeader } from '@/components/VelarisHeader';
 import { PlayGlyph } from '@/components/PlayGlyph';
+import { CinematicShade } from '@/components/CinematicShade';
 
 const AVATARS = [
   require('../../assets/AvatarRot.png'),
@@ -68,15 +69,18 @@ export default function HomeScreen() {
       >
         {hero ? (
           <ImageBackground source={{ uri: getBackdropUrl(session, hero) }} style={[styles.hero, { height: Math.max(565, height * 0.76) }]} resizeMode="cover">
-            <View pointerEvents="none" style={styles.topShade} />
-            <View pointerEvents="none" style={styles.middleShade} />
-            <View pointerEvents="none" style={styles.lowerShade} />
-            <View pointerEvents="none" style={styles.bottomShade} />
+            <CinematicShade/>
             <View style={styles.heroContent}>
               <Text style={styles.eyebrow}><Text style={styles.eyebrowDot}>●  </Text>{colors.heroLabel}</Text>
               <Text style={styles.heroTitle} numberOfLines={3}>{hero.Name}</Text>
-              <Text style={styles.heroMeta}>{[hero.ProductionYear, hero.Type === 'Series' ? 'Serie' : 'Film', hero.CommunityRating ? '★ ' + hero.CommunityRating.toFixed(1) : null].filter(Boolean).join('   •   ')}</Text>
+              <Text style={styles.heroMeta}>{[
+                hero.ProductionYear,
+                hero.Type === 'Series' ? 'Serie' : 'Film',
+                hero.Type!=='Series' && hero.RunTimeTicks ? `${Math.round(hero.RunTimeTicks/600000000)} Min.` : null,
+                hero.CommunityRating ? '★ ' + hero.CommunityRating.toFixed(1) : null
+              ].filter(Boolean).join('   ·   ')}</Text>
               {!!hero.Genres?.length && <Text style={styles.heroGenres} numberOfLines={1}>{hero.Genres.slice(0, 3).join('   ·   ')}</Text>}
+              {!!hero.Overview && <Text style={styles.heroOverview} numberOfLines={3}>{hero.Overview}</Text>}
               <View style={styles.heroButtons}>
                 <Pressable accessibilityRole="button" style={({pressed}) => [styles.play, pressed && styles.pressed]} onPress={() => router.push({ pathname: '/player/[id]', params: { id: hero.Id } })}>
                   <PlayGlyph size={17} color="#101016"/><Text style={styles.playText}>Abspielen</Text>
@@ -125,17 +129,15 @@ const styles = StyleSheet.create({
   categoryArrow: { color: colors.muted, fontSize: 20 },
   hero: { justifyContent: 'flex-end', backgroundColor: colors.surface },
   heroEmpty: { height: 160, backgroundColor: colors.background },
-  topShade: { position: 'absolute', left: 0, right: 0, top: 0, height: 200, backgroundColor: 'rgba(0,0,0,0.30)' },
-  middleShade: { position: 'absolute', left: 0, right: 0, bottom: 0, height: '64%', backgroundColor: 'rgba(0,0,0,0.24)' },
-  lowerShade: { position: 'absolute', left: 0, right: 0, bottom: 0, height: '41%', backgroundColor: 'rgba(0,0,0,0.45)' },
-  bottomShade: { position: 'absolute', left: 0, right: 0, bottom: 0, height: '15%', backgroundColor: 'rgba(8,8,13,0.88)' },
-  heroContent: { paddingHorizontal: 20, paddingBottom: 49, alignItems: 'center' },
+
+  heroContent: { paddingHorizontal: 22, paddingBottom: 56, alignItems: 'center', width:'100%' },
   eyebrow: { color: colors.text, fontSize: 10, fontWeight: '900', letterSpacing: 2.5, marginBottom: 12 },
   eyebrowDot: { color: colors.accent },
-  heroTitle: { color: colors.text, fontSize: 40, lineHeight: 44, fontWeight: '900', letterSpacing: -1, textAlign: 'center' },
-  heroMeta: { color: '#EEEEF0', fontSize: 12, fontWeight: '800', marginTop: 12 },
-  heroGenres: { color: colors.muted, fontSize: 12, fontWeight: '600', marginTop: 9 },
-  heroButtons: { flexDirection: 'row', gap: 10, marginTop: 24, alignSelf: 'stretch' },
+  heroTitle: { color: colors.text, fontSize: 38, lineHeight: 43, fontWeight: '900', letterSpacing: -0.8, textAlign: 'center' },
+  heroMeta: { color: '#EBE9F3', fontSize: 12, fontWeight: '800', marginTop: 13, textAlign:'center' },
+  heroGenres: { color: '#C5BFDB', fontSize: 12, fontWeight: '700', marginTop: 8, textAlign:'center' },
+  heroOverview: { color: '#E6E3ED', fontSize: 13, lineHeight: 19, marginTop: 12, textAlign:'center', maxWidth:490 },
+  heroButtons: { flexDirection: 'row', gap: 12, marginTop: 22, alignSelf: 'stretch' },
   play: { flex: 1, height: 48, borderRadius: 9, backgroundColor: '#FFFFFF', flexDirection: 'row', gap: 9, justifyContent: 'center', alignItems: 'center' },
   info: { flex: 1, height: 48, borderRadius: 9, backgroundColor: 'rgba(84,84,92,0.84)', flexDirection: 'row', gap: 9, justifyContent: 'center', alignItems: 'center' },
   infoIcon: { width: 17, height: 17, borderRadius: 9, borderWidth: 1.5, borderColor: colors.text, alignItems: 'center', justifyContent: 'center' },
