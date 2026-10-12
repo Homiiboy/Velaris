@@ -7,6 +7,8 @@ import { defaultPluginSettings,loadPluginSettings,savePluginSettings,type Plugin
 const rows:[keyof PluginSettings,string,string][]=[
  ['introSkipper','Intro Skipper','Zeigt „Intro überspringen“, wenn Jellyfin ein Intro-Segment liefert.'],
  ['creditsSkip','Credits / Abspann','Verwendet erkannte Outro-/Credits-Segmente im Player.'],
+ ['autoSkipIntro','Intro automatisch überspringen','Überspringt bekannte Intro- und Rückblick-Segmente automatisch.'],
+ ['autoSkipCredits','Abspann automatisch überspringen','Überspringt erkannte Outro-/Credits-Segmente automatisch.'],
  ['autoNext','Nächste Episode','Spielt nach einer Episode automatisch die nächste Episode ab.'],
  ['cast','Google Cast','Aktiviert die Cast-Steuerung im Velaris Player.']
 ];
