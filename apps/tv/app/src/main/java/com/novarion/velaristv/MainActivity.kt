@@ -526,7 +526,10 @@ class MainActivity : Activity() {
             clipChildren=false
             clipToPadding=false
         }
-        homeRoot?.addView(holder,LinearLayout.LayoutParams(-1,dp(525)).apply{bottomMargin=dp(-12)})
+        val wrapper=FrameLayout(this).apply { clipChildren=false;clipToPadding=false }
+        wrapper.addView(holder,FrameLayout.LayoutParams(-1,-1))
+        homeRoot?.addView(wrapper,LinearLayout.LayoutParams(-1,dp(525)).apply{bottomMargin=dp(-12)})
+        val indicators=mutableListOf<View>()
         var currentIndex=-1
         fun render(index:Int) {
             if(destroyed || items.isEmpty() || index==currentIndex) return
@@ -546,6 +549,14 @@ class MainActivity : Activity() {
             hero.alpha=if(shouldAnimate)0f else 1f
             holder.addView(hero,FrameLayout.LayoutParams(-1,-1))
             currentIndex=index
+            indicators.forEachIndexed { dotIndex,dot ->
+                dot.background=GradientDrawable().apply {
+                    setColor(if(dotIndex==currentIndex)VelarisDesign.color("accent",0xFF7C5CFC.toInt())
+                        else 0x99FFFFFF.toInt())
+                    cornerRadius=dp(5).toFloat()
+                }
+                dot.alpha=if(dotIndex==currentIndex)1f else 0.65f
+            }
             if(shouldAnimate) {
                 hero.animate().alpha(1f).setDuration(550).withEndAction {
                     if(oldHero?.parent===holder)holder.removeView(oldHero)
@@ -553,10 +564,41 @@ class MainActivity : Activity() {
             } else if(oldHero?.parent===holder) holder.removeView(oldHero)
         }
         render(0)
+        if(items.size>1) {
+            val pagination=LinearLayout(this).apply {
+                orientation=LinearLayout.HORIZONTAL
+                gravity=Gravity.CENTER_VERTICAL
+                clipChildren=false;clipToPadding=false
+            }
+            items.forEachIndexed { index,_ ->
+                val dot=View(this).apply {
+                    isFocusable=true
+                    isClickable=true
+                    contentDescription="Highlight ${index+1} von ${items.size}"
+                    background=GradientDrawable().apply {
+                        setColor(if(index==0)VelarisDesign.color("accent",0xFF7C5CFC.toInt())
+                            else 0x99FFFFFF.toInt())
+                        cornerRadius=dp(5).toFloat()
+                    }
+                    setOnFocusChangeListener { view,focused->
+                        view.animate().scaleX(if(focused)1.25f else 1f)
+                            .scaleY(if(focused)1.25f else 1f).setDuration(110).start()
+                    }
+                    setOnClickListener { render(index) }
+                }
+                indicators.add(dot)
+                pagination.addView(dot,LinearLayout.LayoutParams(dp(22),dp(8)).apply {
+                    marginStart=dp(10)
+                })
+            }
+            wrapper.addView(pagination,FrameLayout.LayoutParams(-2,dp(35),Gravity.END or Gravity.BOTTOM).apply {
+                marginEnd=dp(62);bottomMargin=dp(32)
+            })
+        }
         if(items.size>1 && prefs.getBoolean("auto_hero",true)) holder.postDelayed(object:Runnable {
             var index=1
             override fun run() {
-                if(holder.isAttachedToWindow && !holder.hasFocus()) {
+                if(wrapper.isAttachedToWindow && !wrapper.hasFocus()) {
                     render(index)
                     index=(index+1)%items.size
                 }
