@@ -44,6 +44,7 @@ export function getAnime(s:Session){return getLibraryItems(s,'anime');}
 export function getAnimeMovies(s:Session){return getLibraryItems(s,'animeMovies');}
 export function getAnimation(s:Session){return getLibraryItems(s,'animation');}
 export function getCartoons(s:Session){return getLibraryItems(s,'cartoons');}
+export function getPersonItems(s:Session,person:string){return getItems(s,{Recursive:'true',IncludeItemTypes:'Movie,Series',Person:person,Limit:'100'});}
 export function searchItems(s:Session,t:string){return getItems(s,{Recursive:'true',IncludeItemTypes:'Movie,Series,Episode',SearchTerm:t,Limit:'60'});}
 export async function getGenres(s:Session){const r=await getItems(s,{Recursive:'true',IncludeItemTypes:'Movie,Series',Limit:'500'});return [...new Set(r.Items.flatMap(i=>i.Genres??[]))].filter(Boolean).sort((a,b)=>a.localeCompare(b));}
 export function getGenreItems(s:Session,genre:string){return getItems(s,{Recursive:'true',IncludeItemTypes:'Movie,Series',Genres:genre,SortBy:'CommunityRating,SortName',SortOrder:'Descending',Limit:'200'});}
