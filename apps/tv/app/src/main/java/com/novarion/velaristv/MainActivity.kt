@@ -1253,14 +1253,15 @@ class MainActivity : Activity() {
         showAppPage(root);input.requestFocus()
     }
 
-    private fun search(query:String) {
+    private fun search(query:String, person:Boolean=false) {
         rememberBack { showSearch() }
         val encoded=java.net.URLEncoder.encode(query,"UTF-8")
         val scope=activeSection
         val collectionId=activeCollectionId
         io.execute {
             try {
-                val queryParts=mutableListOf("Recursive=true","Limit=150","SearchTerm=$encoded",
+                val queryParts=mutableListOf("Recursive=true","Limit=150",
+                    if(person)"Person=$encoded" else "SearchTerm=$encoded",
                     "Fields=PrimaryImageAspectRatio,ProductionYear","EnableUserData=true")
                 if(collectionId.isNotBlank()) {
                     queryParts.add("ParentId=$collectionId")
@@ -1666,7 +1667,7 @@ class MainActivity : Activity() {
                             peopleRow.addView(actionButton(name,false) {
                                 activeSection="Start"
                                 activeCollectionId=""
-                                search(name)
+                                search(name,true)
                             },LinearLayout.LayoutParams(dp(190),dp(57)).apply { marginEnd=dp(12) })
                         }
                         outer.addView(HorizontalScrollView(this).apply {
