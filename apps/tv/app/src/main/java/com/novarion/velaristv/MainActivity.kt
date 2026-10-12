@@ -815,14 +815,16 @@ class MainActivity : Activity() {
     }
 
     private fun addContinueRow(data:List<JSONObject>) {
-        if(data.isEmpty())return
+        val hidden=prefs.getStringSet("hidden_resume_$userId",emptySet<String>()).orEmpty()
+        val visible=data.filter { !hidden.contains(it.optString("Id")) }
+        if(visible.isEmpty())return
         homeRoot?.addView(sectionTitle(VelarisDesign.homeRow("resume","Weiterschauen")))
         val row=LinearLayout(this).apply{
             orientation=LinearLayout.HORIZONTAL
             setPadding(dp(52),dp(12),dp(48),dp(34))
             clipChildren=false;clipToPadding=false
         }
-        data.forEach{item->
+        visible.forEach{item->
             val id=item.optString("Id")
             if(id.isBlank())return@forEach
             val progressTicks=item.optJSONObject("UserData")?.optLong("PlaybackPositionTicks",0L)?:0L
@@ -870,6 +872,18 @@ class MainActivity : Activity() {
                 clipChildren=false;clipToPadding=false
                 setPadding(dp(3),dp(3),dp(3),dp(3))
                 setOnClickListener{playNative(id,progressTicks)}
+                setOnLongClickListener {
+                    AlertDialog.Builder(this@MainActivity)
+                        .setTitle("Aus Weiterschauen ausblenden?")
+                        .setMessage("Der Jellyfin-Fortschritt von \"${item.optString("Name")}\" bleibt gespeichert.")
+                        .setNegativeButton("Abbrechen",null)
+                        .setPositiveButton("Ausblenden"){_,_->
+                            val old=prefs.getStringSet("hidden_resume_$userId",emptySet<String>()).orEmpty()
+                            prefs.edit().putStringSet("hidden_resume_$userId",old+id).apply()
+                            showHome()
+                        }.show()
+                    true
+                }
                 applyCardFocus(this,thumb)
             }
             card.addView(thumb,LinearLayout.LayoutParams(dp(310),dp(174)))
@@ -2413,6 +2427,11 @@ class MainActivity : Activity() {
                 showAppearanceSettings()
             },LinearLayout.LayoutParams(-1,dp(73)).apply { bottomMargin=dp(9) })
         }
+        root.addView(settingsCard("↺","Weiterschauen wiederherstellen","Ausgeblendete Titel wieder einblenden") {
+            prefs.edit().remove("hidden_resume_$userId").apply()
+            toast("Ausgeblendete Titel werden wieder angezeigt.")
+            showAppearanceSettings()
+        },LinearLayout.LayoutParams(-1,dp(75)).apply{bottomMargin=dp(12)})
         root.addView(settingsCard("Aa","Untertitelgröße","Klein, Standard oder Groß"){showSubtitleSizeSettings()},
             LinearLayout.LayoutParams(-1,dp(75)).apply{bottomMargin=dp(12)})
         root.addView(actionButton("Zurück",false){showSettingsDialog()},params(190,54,13))
