@@ -461,20 +461,44 @@ class MainActivity : Activity() {
                     requestRoot.addView(randomButton,LinearLayout.LayoutParams(dp(255),dp(54)).apply {
                         leftMargin=dp(52);topMargin=dp(7);bottomMargin=dp(12)
                     })
-                    addRankedRow(VelarisDesign.homeRow("topTen","Top 10 für dich"),topTen)
-                    addContinueRow(resume)
-                    addRow(VelarisDesign.homeRow("favorites","Meine Liste"),favorites)
-                    if(becauseTitle.isNotBlank()) addRow("${VelarisDesign.homeRow("becausePrefix","Weil du")} „$becauseTitle“ gesehen hast",because)
-                    addRow(VelarisDesign.homeRow("latest","Kürzlich hinzugefügt"),latest)
-                    addRow(VelarisDesign.homeRow("recommended","Für dich"),recommended)
-                    addRow("Für deinen Filmabend",recommended.filter{it.optString("Type")=="Movie"})
-                    addRow("Noch nicht angesehen",latest.filter{it.optJSONObject("UserData")?.optBoolean("Played",false)!=true})
-                    addRow("Demnächst",latest.filter { item ->
-                        val date=item.optString("PremiereDate").take(10)
+                    val unwatched=latest.filter{it.optJSONObject("UserData")?.optBoolean("Played",false)!=true}
+                    val popular=(latest+recommended).distinctBy{it.optString("Id")}
+                        .filter{it.optDouble("CommunityRating",0.0)>0}
+                        .sortedByDescending{it.optDouble("CommunityRating",0.0)}
+                    val hiddenGems=latest.filter {
+                        it.optJSONObject("UserData")?.optBoolean("Played",false)!=true &&
+                            it.optDouble("CommunityRating",0.0)>=7.0
+                    }
+                    val shortFilms=latest.filter {
+                        it.optString("Type")=="Movie" &&
+                            it.optLong("RunTimeTicks",0L) in 1..60_000_000_000L
+                    }
+                    val upcoming=latest.filter {
+                        val date=it.optString("PremiereDate").take(10)
                         date.length==10 && date>java.time.LocalDate.now().toString()
-                    })
-                    addRow("Action",action); addRow("Komödien",comedy); addRow("Science-Fiction",sciFi)
-                    addRow("Noch einmal ansehen",replay)
+                    }
+                    val rowData=mapOf(
+                        "topTen" to topTen,"resume" to resume,"favorites" to favorites,
+                        "because" to because,"latest" to latest,"recommended" to recommended,
+                        "movieNight" to recommended.filter{it.optString("Type")=="Movie"},
+                        "unwatched" to unwatched,"upcoming" to upcoming,
+                        "popular" to popular,"hiddenGems" to hiddenGems,
+                        "short" to shortFilms,"action" to action,"comedy" to comedy,
+                        "scifi" to sciFi,"replay" to replay
+                    )
+                    val hiddenRows=prefs.getStringSet("hidden_home_rows_$userId",emptySet<String>()).orEmpty()
+                    savedHomeOrder().filterNot{it in hiddenRows}.forEach { key ->
+                        val data=rowData[key].orEmpty()
+                        if(data.isNotEmpty() && !(key=="because" && becauseTitle.isBlank())) {
+                            val title=if(key=="because")"Weil du „$becauseTitle“ gesehen hast"
+                                else homeRowKeys().firstOrNull{it.first==key}?.second ?:key
+                            when(key) {
+                                "topTen" -> addRankedRow(title,data)
+                                "resume" -> addContinueRow(data)
+                                else -> addRow(title,data)
+                            }
+                        }
+                    }
                     requestRoot.animate().alpha(1f).setDuration(280).start()
                     val focusId=restoreMediaFocusId
                     if(focusId.isNotBlank()) {
