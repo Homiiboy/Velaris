@@ -137,3 +137,23 @@ button:disabled{cursor:wait;opacity:.65}
 .episode-arrow{font-size:28px;color:#a893ed}
 @media(max-width:420px){.detail-hero{height:310px}.detail-content{margin-top:-73px;padding-left:18px;padding-right:18px}.detail-content h1{font-size:33px}.detail-actions{max-width:none}.episode-art{flex-basis:118px}.episode-card{gap:10px}.episode-arrow{display:none}.episode-body strong{font-size:13px}.episode-overview{-webkit-line-clamp:2}}
 @media(min-width:850px){.detail-return{left:6vw}.detail-content{padding-left:6vw;padding-right:6vw}.episode-card{padding:18px 10px}}
+
+
+/* UI Pass 7 — Search and Player */
+.search-page>.eyebrow{color:#bca5ff;font-weight:900;letter-spacing:.15em;font-size:11px}
+.search-page h1{font-size:clamp(29px,4vw,43px);margin:9px 0 26px}
+.search-box{display:flex;align-items:center;gap:12px;background:#201c2a;border:1px solid #594e75;border-radius:13px;padding:0 16px;max-width:760px;min-height:55px}
+.search-box:focus-within{border-color:#ad90ff;box-shadow:0 0 0 3px #7c5cfc30}
+.search-box span{color:#bba7ff;font-size:25px}
+.search-box input{appearance:none;-webkit-appearance:none;flex:1;min-width:0;width:100%;background:none;border:0;color:white;outline:0;padding:17px 0;font:inherit}
+.search-box input::placeholder{color:#a8a2b3}
+.search-results{margin-top:20px}
+.search-empty{grid-column:1/-1;padding:52px 12px;text-align:center;color:#bdb8c8}
+.search-empty span{font-size:52px;color:#987dff}
+.search-empty h2{color:white;margin:12px 0}
+.player-top{position:absolute;top:calc(12px + env(safe-area-inset-top));left:16px;right:16px;display:flex;align-items:center;gap:18px;z-index:60;pointer-events:none}
+.player-top>*{pointer-events:auto}
+.player-top .video-close{position:static}
+.player-title{font-weight:800;color:white;text-shadow:0 2px 12px black;max-width:70%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.player-note{position:absolute;bottom:calc(28px + env(safe-area-inset-bottom));left:20px;right:20px;text-align:center;font-size:12px;color:#d7caff;pointer-events:none}
+@media(max-width:420px){.search-page{padding:25px 16px}.search-box{min-height:52px}.player-title{font-size:12px}}
