@@ -35,6 +35,7 @@ export default function HomeScreen() {
   const [becauseTitle, setBecauseTitle] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const [heroIndex, setHeroIndex] = useState(0);
+  const [logoFailed,setLogoFailed]=useState(false);
   const heroOpacity = useRef(new Animated.Value(1)).current;
   const [initialLoading, setInitialLoading] = useState(true);
   const [hasLoadError, setHasLoadError] = useState(false);
@@ -100,6 +101,7 @@ export default function HomeScreen() {
     }, 9000);
     return () => clearInterval(timer);
   }, [heroItems.length,display.autoHero]);
+  useEffect(()=>{setLogoFailed(false)},[hero?.Id]);
   useEffect(() => {
     heroOpacity.setValue(display.animations ? 0 : 1);
     const animation = Animated.timing(heroOpacity, {
@@ -127,9 +129,10 @@ export default function HomeScreen() {
             <CinematicShade/>
             <View style={styles.heroContent}>
               <Text style={styles.eyebrow}><Text style={[styles.eyebrowDot,{color:accentColor}]}>●  </Text>{colors.heroLabel}</Text>
-              {getLogoUrl(session,hero)?<Image
+              {!logoFailed&&getLogoUrl(session,hero)?<Image
                 source={{uri:getLogoUrl(session,hero)!}}
                 resizeMode="contain"
+                onError={()=>setLogoFailed(true)}
                 style={styles.heroLogo}
                 accessibilityLabel={hero.Name}
               />:<Text style={styles.heroTitle} numberOfLines={3}>{hero.Name}</Text>}
