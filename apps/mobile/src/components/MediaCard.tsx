@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Animated, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { getPrimaryImageUrl, setFavorite } from '@/services/jellyfin';
 import type { JellyfinItem, Session } from '@/types/jellyfin';
@@ -47,6 +47,13 @@ export function MediaCard({ item, session, width = 128, showMeta = false, showFa
       onHoverIn={()=>setFocus(true)} onHoverOut={()=>setFocus(false)}
       onPressIn={()=>{setPressedState(true);animateScale(.98)}} onPressOut={()=>{setPressedState(false);animateScale(highlighted?1.02:1)}}
       onPress={() => item.Type === 'BoxSet' ? router.push({ pathname: '/collection/[id]', params: { id: item.Id } }) : router.push({ pathname: '/details/[id]', params: { id: item.Id } })}
+      onLongPress={()=>{if(!display.previews)return;
+        Alert.alert(item.Name,
+          [item.ProductionYear, item.Genres?.slice(0,2).join(' · '),item.RunTimeTicks?`${Math.round(item.RunTimeTicks/600_000_000)} Min.`:null]
+            .filter(Boolean).join('   ·   ')||'Mehr Informationen zu diesem Titel',
+          [{text:'Abbrechen',style:'cancel'},
+           {text:'Details',onPress:()=>router.push({pathname:'/details/[id]',params:{id:item.Id}})}]);
+      }}
       accessibilityRole="button"
       accessibilityLabel={item.Name}
       style={{width, opacity:pressedState?0.93:1}}
