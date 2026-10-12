@@ -100,6 +100,10 @@ class PlayerActivity : Activity() {
                 if (show) updatePlaybackTime()
             })
             setShowBuffering(PlayerView.SHOW_BUFFERING_WHEN_PLAYING)
+            // Respect the user's TV subtitle size without changing the font family.
+            subtitleView?.setFractionalTextSize(
+                getSharedPreferences("velaris_tv",MODE_PRIVATE).getFloat("subtitle_scale",0.0533f)
+            )
         }
         playerViewRef=playerView
         root.addView(playerView, FrameLayout.LayoutParams(-1, -1))
