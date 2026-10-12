@@ -53,6 +53,7 @@ class PlayerActivity : Activity() {
     private var activeSegment: MediaSegment? = null
     private var statsText: TextView? = null
     private var titleText: TextView? = null
+    private var playbackTimeText: TextView? = null
     private var nextOverlay: TextView? = null
     private var autoNextEnabled = true
     private var lastPlaybackLabel = "Auto"
@@ -66,6 +67,7 @@ class PlayerActivity : Activity() {
     private val introUiTick = object : Runnable {
         override fun run() {
             updateIntroButton()
+            updatePlaybackTime()
             introUiHandler.postDelayed(this, 500L)
         }
     }
@@ -91,6 +93,12 @@ class PlayerActivity : Activity() {
             useController = true
             controllerShowTimeoutMs = 4000
             controllerHideOnTouch = true
+            setControllerVisibilityListener(PlayerView.ControllerVisibilityListener { visibility ->
+                val show = visibility == View.VISIBLE
+                titleText?.visibility = if (show) View.VISIBLE else View.GONE
+                playbackTimeText?.visibility = if (show) View.VISIBLE else View.GONE
+                if (show) updatePlaybackTime()
+            })
             setShowBuffering(PlayerView.SHOW_BUFFERING_WHEN_PLAYING)
         }
         playerViewRef=playerView
@@ -123,8 +131,18 @@ class PlayerActivity : Activity() {
         })
         statsText=TextView(this).apply { textSize=14f; setTextColor(Color.WHITE); setBackgroundColor(0xAA000000.toInt()); setPadding(18,12,18,12); visibility=View.GONE }
         root.addView(statsText,FrameLayout.LayoutParams(-2,-2,android.view.Gravity.START or android.view.Gravity.TOP).apply { marginStart=28; topMargin=54 })
-        titleText=TextView(this).apply{textSize=18f;setTextColor(Color.WHITE);typeface=Typeface.DEFAULT_BOLD;setBackgroundColor(0x77000000);setPadding(20,12,20,12)}
+        titleText=TextView(this).apply{textSize=18f;setTextColor(Color.WHITE);typeface=Typeface.DEFAULT_BOLD;setPadding(0,12,0,12);visibility=View.GONE}
         root.addView(titleText,FrameLayout.LayoutParams(-2,-2,android.view.Gravity.START or android.view.Gravity.BOTTOM).apply{marginStart=34;bottomMargin=42})
+        playbackTimeText = TextView(this).apply {
+            textSize = 16f
+            setTextColor(Color.WHITE)
+            typeface = Typeface.DEFAULT_BOLD
+            setPadding(0, 12, 0, 12)
+            visibility = View.GONE
+        }
+        root.addView(playbackTimeText, FrameLayout.LayoutParams(-2, -2, android.view.Gravity.END or android.view.Gravity.BOTTOM).apply {
+            marginEnd = 34; bottomMargin = 42
+        })
         nextOverlay=TextView(this).apply{text="Nächste Folge";textSize=16f;setTextColor(Color.WHITE);setBackgroundColor(0xAA202026.toInt());setPadding(18,12,18,12);visibility=View.GONE}
         root.addView(nextOverlay,FrameLayout.LayoutParams(-2,-2,android.view.Gravity.END or android.view.Gravity.BOTTOM).apply{marginEnd=42;bottomMargin=140})
         loadPlayerTitle(itemId)
@@ -296,6 +314,26 @@ class PlayerActivity : Activity() {
                 } finally { c.disconnect() }
             } catch(_:Exception) {}
         }
+    }
+
+    private fun formatPlaybackTime(ms: Long): String {
+        val seconds = (ms.coerceAtLeast(0L) / 1000L)
+        val hours = seconds / 3600L
+        val minutes = (seconds % 3600L) / 60L
+        val remainder = seconds % 60L
+        return if (hours > 0L) "%d:%02d:%02d".format(hours, minutes, remainder)
+        else "%02d:%02d".format(minutes, remainder)
+    }
+
+    private fun updatePlaybackTime() {
+        val view = playbackTimeText ?: return
+        if (view.visibility != View.VISIBLE) return
+        val exo = player ?: return
+        val position = exo.currentPosition.coerceAtLeast(0L)
+        val duration = exo.duration
+        view.text = if (duration > 0L && duration != C.TIME_UNSET) {
+            "${formatPlaybackTime(position)} / ${formatPlaybackTime(duration)}"
+        } else formatPlaybackTime(position)
     }
 
     private fun updateIntroButton() {
