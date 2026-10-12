@@ -2382,6 +2382,8 @@ class MainActivity : Activity() {
                 showAppearanceSettings()
             },LinearLayout.LayoutParams(-1,dp(73)).apply { bottomMargin=dp(9) })
         }
+        root.addView(settingsCard("Aa","Untertitelgröße","Klein, Standard oder Groß"){showSubtitleSizeSettings()},
+            LinearLayout.LayoutParams(-1,dp(75)).apply{bottomMargin=dp(12)})
         root.addView(actionButton("Zurück",false){showSettingsDialog()},params(190,54,13))
         showAppPage(ScrollView(this).apply {
             isVerticalScrollBarEnabled=false
@@ -2390,6 +2392,33 @@ class MainActivity : Activity() {
             addView(root)
         })
         root.post { choices.getChildAt(0)?.requestFocus() }
+    }
+
+    private fun showSubtitleSizeSettings() {
+        val options=listOf(
+            "Klein" to 0.038f,
+            "Standard" to 0.0533f,
+            "Groß" to 0.070f
+        )
+        val current=prefs.getFloat("subtitle_scale",0.0533f)
+        val root=LinearLayout(this).apply {
+            orientation=LinearLayout.VERTICAL
+            setPadding(dp(52),dp(38),dp(52),dp(60))
+            setBackgroundColor(VelarisDesign.color("background",0xFF08080D.toInt()))
+        }
+        root.addView(TextView(this).apply {
+            text="Untertitelgröße";textSize=34f;typeface=Typeface.DEFAULT_BOLD
+            setTextColor(Color.WHITE)
+        },params(-1,-2,18))
+        options.forEach{(label,scale)->
+            root.addView(settingsCard(if(kotlin.math.abs(scale-current)<0.001f)"✓" else "Aa",label,
+                if(kotlin.math.abs(scale-current)<0.001f)"Ausgewählt" else "Untertitelgröße einstellen") {
+                prefs.edit().putFloat("subtitle_scale",scale).apply()
+                showSubtitleSizeSettings()
+            },LinearLayout.LayoutParams(-1,dp(82)).apply {bottomMargin=dp(10)})
+        }
+        root.addView(actionButton("Zurück",false){showAppearanceSettings()},params(180,54,16))
+        showAppPage(ScrollView(this).apply { addView(root) })
     }
 
     private fun showPlaybackSettings() {
