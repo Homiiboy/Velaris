@@ -1670,6 +1670,17 @@ class MainActivity : Activity() {
                     val favorite=series.optJSONObject("UserData")?.optBoolean("IsFavorite",false)?:false
                     val acts=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;setPadding(0,dp(16),0,0)}
                     acts.addView(actionButton(if(favorite)"✓  Meine Liste" else "+  Meine Liste",false){setFavorite(seriesId,!favorite){showSeries(seriesId)}},LinearLayout.LayoutParams(dp(220),dp(56)).apply{marginEnd=dp(10)})
+                    val orderedEpisodes=seasons.flatMap{episodesBySeason[it.optString("Id")].orEmpty()}
+                    val nextUnwatched=orderedEpisodes.firstOrNull{
+                        (it.optJSONObject("UserData")?.optLong("PlaybackPositionTicks",0L)?:0L)>0L &&
+                            it.optJSONObject("UserData")?.optBoolean("Played",false)!=true
+                    } ?: orderedEpisodes.firstOrNull{
+                        it.optJSONObject("UserData")?.optBoolean("Played",false)!=true
+                    }
+                    if(nextUnwatched!=null)acts.addView(actionButton("▶  Nächste Folge",true) {
+                        playNative(nextUnwatched.optString("Id"),
+                            nextUnwatched.optJSONObject("UserData")?.optLong("PlaybackPositionTicks",0L)?:0L)
+                    },LinearLayout.LayoutParams(dp(225),dp(56)).apply {marginEnd=dp(10)})
                     acts.addView(actionButton("Zufällige Folge",false){playRandomEpisode(seriesId)},LinearLayout.LayoutParams(dp(200),dp(56)))
                     info.addView(acts); hero.addView(info,FrameLayout.LayoutParams(-1,-1)); root.addView(hero,LinearLayout.LayoutParams(-1,dp(440)))
                     // Netflix-style season selector: show season 1 episodes immediately
