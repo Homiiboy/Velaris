@@ -4,6 +4,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { Redirect, router } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
 import { colors, profileLimit } from '@/theme';
+import { useVelarisTheme } from '@/context/ThemeContext';
 import { getBackdropUrl, getLatest } from '@/services/jellyfin';
 import { updateProfileAvatar, updateProfilePhoto, type VelarisProfile } from '@/services/session';
 
@@ -18,6 +19,7 @@ type Hero={id:string;name:string;year?:number;description?:string;image:string};
 
 export default function ProfilesScreen(){
  const {session,profiles,switchProfile,refreshProfiles}=useAuth();
+ const {accentColor,display}=useVelarisTheme();
  const [heroes,setHeroes]=useState<Hero[]>([]);
  const [slide,setSlide]=useState(0);
  const [editing,setEditing]=useState(false);
@@ -44,16 +46,16 @@ export default function ProfilesScreen(){
  },[session?.serverUrl,session?.user.Id,session?.accessToken,fade]);
 
  useEffect(()=>{
-  if(heroes.length<2)return;
+  if(heroes.length<2||!display.autoHero)return;
   const timer=setInterval(()=>{
-   Animated.timing(fade,{toValue:0,duration:400,useNativeDriver:true}).start(({finished})=>{
+   Animated.timing(fade,{toValue:0,duration:display.animations?400:0,useNativeDriver:true}).start(({finished})=>{
     if(!finished)return;
     setSlide(index=>(index+1)%heroes.length);
-    Animated.timing(fade,{toValue:1,duration:600,useNativeDriver:true}).start();
+    Animated.timing(fade,{toValue:1,duration:display.animations?600:0,useNativeDriver:true}).start();
    });
   },8500);
   return ()=>{clearInterval(timer);fade.stopAnimation()};
- },[heroes,fade]);
+ },[heroes,fade,display.autoHero,display.animations]);
 
  async function selectAvatar(i:number){
   if(!selected||saving)return;
@@ -86,7 +88,7 @@ export default function ProfilesScreen(){
    <View style={styles.heroShade}/>
    <View style={styles.heroBottomShade}/>
    {hero&&<Animated.View style={[styles.heroCaption,{opacity:fade}]}>
-    <Text style={styles.eyebrow}>JETZT AUF VELARIS</Text>
+    <Text style={[styles.eyebrow,{color:accentColor}]}>JETZT AUF VELARIS</Text>
     <Text numberOfLines={2} style={styles.heroTitle}>{hero.name}</Text>
     {!!hero.year&&<Text style={styles.heroYear}>{hero.year}</Text>}
     <Text numberOfLines={3} style={styles.heroDescription}>{hero.description??''}</Text>
@@ -94,7 +96,7 @@ export default function ProfilesScreen(){
    </Animated.View>}
   </View>
   <View style={styles.rail}>
-   <Text style={styles.brand}>VELARIS</Text>
+   <Text style={[styles.brand,{color:accentColor}]}>VELARIS</Text>
    <Text style={styles.title}>Wer schaut gerade?</Text>
    <Text style={styles.hint}>{editing?'Avatar zum Bearbeiten auswählen':'Wähle dein Profil'}</Text>
    <ScrollView style={styles.profilesScroll} contentContainerStyle={styles.profileList} showsVerticalScrollIndicator={false}>
