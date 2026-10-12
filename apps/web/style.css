@@ -202,3 +202,10 @@ button:disabled{cursor:wait;opacity:.65}
 .p8-dialog .primary{background:var(--accent)}
 @media(min-width:850px){.p8-ranked{flex-basis:220px;min-width:220px;padding-left:55px}.p8-ranked .poster{width:156px;flex-basis:156px}.p8-rank{font-size:172px}.p8-collection-hero{padding:34px 6vw 60px;min-height:500px}}
 @media(max-width:420px){.p8-ranked{flex-basis:160px;min-width:160px;padding-left:34px}.p8-ranked .poster{width:118px;flex-basis:118px}.p8-rank{font-size:102px}.p8-collection-hero{min-height:330px;padding:16px 18px 30px}.p8-option{padding:11px 9px;gap:4px}.p8-option label{font-size:13px}.p8-option button{width:32px;min-height:36px;margin-left:2px}.p8-theme-options button{min-width:auto}}
+
+/* Pass 8 theme-linked accents */
+.hero .eyebrow,.row-arrow,.watched-banner,.series-section .section-kicker{color:var(--accent)}
+.hero-dot.active,.tabs button.selected:before,.poster .progress i,.episode-progress i{background:var(--accent)}
+.top .avatar{border-color:var(--accent)}
+.p8-settings-trigger{color:var(--accent)}
+.p8-dialog button:focus-visible,.p8-option button:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
