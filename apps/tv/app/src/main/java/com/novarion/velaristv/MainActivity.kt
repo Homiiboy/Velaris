@@ -432,6 +432,8 @@ class MainActivity : Activity() {
                 runOnUiThread {
                     if(destroyed || homeRoot!==requestRoot || !requestRoot.isAttachedToWindow)
                         return@runOnUiThread
+                    requestRoot.animate().cancel()
+                    requestRoot.alpha=0f
                     requestRoot.removeAllViews()
                     addHeroCarousel((latest+recommended).distinctBy{it.optString("Id")}.take(5))
                     addRankedRow(VelarisDesign.homeRow("topTen","Top 10 für dich"),topTen)
@@ -442,6 +444,7 @@ class MainActivity : Activity() {
                     addRow(VelarisDesign.homeRow("recommended","Für dich"),recommended)
                     addRow("Action",action); addRow("Komödien",comedy); addRow("Science-Fiction",sciFi)
                     addRow("Noch einmal ansehen",replay)
+                    requestRoot.animate().alpha(1f).setDuration(280).start()
                 }
             } catch(e:Exception) { runOnUiThread {
                 if(destroyed || homeRoot!==requestRoot || !requestRoot.isAttachedToWindow)
@@ -921,12 +924,14 @@ class MainActivity : Activity() {
                     if(focused)setStroke(dp(2),0xFFDCCFFF.toInt())
                 }
             }
-            // Premium lift, not zoom: no focus clipping at the TV safe area
-            // or at the first and last poster in a horizontal row.
+            // A restrained 2% cinematic focus lift. Existing poster rows
+            // provide safe-area padding and disable child clipping.
             target.animate().cancel()
-            target.animate().scaleX(1f).scaleY(1f)
+            target.animate()
+                .scaleX(if(focused)1.02f else 1f)
+                .scaleY(if(focused)1.02f else 1f)
                 .translationZ(if(focused)dp(10).toFloat() else 0f)
-                .setDuration(if(focused)150 else 120).start()
+                .setDuration(if(focused)170 else 130).start()
         }
     }
 
