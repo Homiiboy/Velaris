@@ -54,7 +54,9 @@ class PlayerActivity : Activity() {
     private var statsText: TextView? = null
     private var titleText: TextView? = null
     private var playbackTimeText: TextView? = null
-    private var nextOverlay: TextView? = null
+    private var nextOverlay: Button? = null
+    private var nextEpisodeLabel = ""
+    private var nextResolvedFor = ""
     private var autoNextEnabled = true
     private var lastPlaybackLabel = "Auto"
     private var triedCompatibleFallback = false
@@ -68,6 +70,7 @@ class PlayerActivity : Activity() {
         override fun run() {
             updateIntroButton()
             updatePlaybackTime()
+            updateNextOverlay()
             introUiHandler.postDelayed(this, 500L)
         }
     }
@@ -147,8 +150,20 @@ class PlayerActivity : Activity() {
         root.addView(playbackTimeText, FrameLayout.LayoutParams(-2, -2, android.view.Gravity.END or android.view.Gravity.BOTTOM).apply {
             marginEnd = 34; bottomMargin = 42
         })
-        nextOverlay=TextView(this).apply{text="Nächste Folge";textSize=16f;setTextColor(Color.WHITE);setBackgroundColor(0xAA202026.toInt());setPadding(18,12,18,12);visibility=View.GONE}
-        root.addView(nextOverlay,FrameLayout.LayoutParams(-2,-2,android.view.Gravity.END or android.view.Gravity.BOTTOM).apply{marginEnd=42;bottomMargin=140})
+        nextOverlay=Button(this).apply {
+            text="Nächste Folge";textSize=17f;isAllCaps=false
+            setTextColor(Color.WHITE)
+            stateListAnimator=null
+            background=GradientDrawable().apply{
+                setColor(0xF0181822.toInt())
+                cornerRadius=16f
+                setStroke(2,VelarisDesign.color("accent",0xFF7C5CFC.toInt()))
+            }
+            visibility=View.GONE
+            setOnClickListener { playNextEpisodeNow() }
+        }
+        root.addView(nextOverlay,FrameLayout.LayoutParams(420,90,android.view.Gravity.END or android.view.Gravity.BOTTOM).apply{marginEnd=42;bottomMargin=140})
+        VelarisDesign.load(this)
         loadPlayerTitle(itemId)
         setContentView(root)
         // Wait for the player view to attach before changing system bars.
@@ -186,6 +201,7 @@ class PlayerActivity : Activity() {
             }
             override fun onPlaybackStateChanged(state:Int) {
                 if(state==Player.STATE_ENDED) {
+                    nextOverlay?.visibility=View.GONE
                     reportStoppedOnce()
                     if(nextItemId.isNotBlank() && autoNextEnabled) {
                         itemId=nextItemId;nextItemId=""
@@ -250,9 +266,12 @@ class PlayerActivity : Activity() {
     private fun preparePlayback(exo:ExoPlayer,id:String,resumeTicks:Long,forceCompatible:Boolean=false) {
         synchronized(mediaSegments){mediaSegments.clear()}
         activeSegment=null
+        nextOverlay?.visibility=View.GONE
         skipIntroButton?.visibility=View.GONE
         loadMediaSegments(id)
         val request=++playbackRequestSerial
+        nextItemId=""
+        nextEpisodeLabel=""
         io.execute {
             val result=runCatching{resolvePlaybackUrl(id,forceCompatible)}
             runOnUiThread {
@@ -278,6 +297,73 @@ class PlayerActivity : Activity() {
         }
     }
 
+    private fun playNextEpisodeNow() {
+        val target=nextItemId
+        val exo=player
+        if(target.isBlank() || exo==null)return
+        reportStoppedOnce()
+        nextOverlay?.visibility=View.GONE
+        nextItemId=""
+        itemId=target
+        stoppedReported=false
+        sessionStarted=false
+        triedCompatibleFallback=false
+        loadFollowingEpisodeAndPlay(exo,target)
+    }
+
+    private fun updateNextOverlay() {
+        val exo=player ?: return
+        val button=nextOverlay ?: return
+        val total=exo.duration
+        val remaining=if(total>0L && total!=C.TIME_UNSET)total-exo.currentPosition else Long.MAX_VALUE
+        if(nextItemId.isBlank()||remaining !in 1..90_000L) {
+            if(button.visibility==View.VISIBLE)button.visibility=View.GONE
+            return
+        }
+        val seconds=((remaining+999L)/1000L).coerceAtLeast(1L)
+        button.text="▶  Nächste Folge\n${nextEpisodeLabel.ifBlank{"Jetzt weiterschauen"}} · ${seconds}s"
+        if(button.visibility!=View.VISIBLE)button.visibility=View.VISIBLE
+    }
+
+    // Resolve the actual next episode from this series, rather than guessing an ID.
+    private fun resolveFollowingEpisode(current:JSONObject,id:String) {
+        val seriesId=current.optString("SeriesId")
+        if(seriesId.isBlank())return
+        nextResolvedFor=id
+        io.execute {
+            var following=""
+            var label=""
+            try {
+                val path="/Shows/$seriesId/Episodes?UserId=$userId&Limit=1000&Fields=Overview,PrimaryImageAspectRatio"
+                val connection=URL("$server$path").openConnection() as HttpURLConnection
+                try {
+                    connection.connectTimeout=6000
+                    connection.readTimeout=10000
+                    connection.setRequestProperty("Authorization",authorizationHeader().trim())
+                    if(connection.responseCode in 200..299) {
+                        val json=JSONObject(connection.inputStream.bufferedReader().use{it.readText()})
+                        val episodes=json.optJSONArray("Items") ?: JSONArray()
+                        for(index in 0 until episodes.length()-1) {
+                            if(episodes.optJSONObject(index)?.optString("Id")==id) {
+                                val next=episodes.optJSONObject(index+1)
+                                following=next?.optString("Id").orEmpty()
+                                label=next?.optString("Name").orEmpty()
+                                break
+                            }
+                        }
+                    }
+                } finally { connection.disconnect() }
+            } catch(_:Exception) {}
+            runOnUiThread {
+                if(itemId==id && nextResolvedFor==id && !isFinishing) {
+                    nextItemId=following
+                    nextEpisodeLabel=label
+                    nextOverlay?.visibility=View.GONE
+                }
+            }
+        }
+    }
+
     private fun loadPlayerTitle(id:String) {
         io.execute {
             try {
@@ -288,7 +374,12 @@ class PlayerActivity : Activity() {
                         val x=JSONObject(c.inputStream.bufferedReader().use{it.readText()})
                         val name=x.optString("Name");val series=x.optString("SeriesName");val season=x.optInt("ParentIndexNumber",0);val ep=x.optInt("IndexNumber",0)
                         val label=if(series.isNotBlank()) "$series  •  S$season:E$ep  •  $name" else name
-                        runOnUiThread{titleText?.text=label}
+                        runOnUiThread {
+                            if(itemId==id) {
+                                titleText?.text=label
+                                if(x.optString("Type")=="Episode")resolveFollowingEpisode(x,id)
+                            }
+                        }
                     }
                 } finally {c.disconnect()}
             } catch(_:Exception){}
