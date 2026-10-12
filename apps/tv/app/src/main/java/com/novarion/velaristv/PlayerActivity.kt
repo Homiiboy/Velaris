@@ -270,8 +270,7 @@ class PlayerActivity : Activity() {
         skipIntroButton?.visibility=View.GONE
         loadMediaSegments(id)
         val request=++playbackRequestSerial
-        nextItemId=""
-        nextEpisodeLabel=""
+        nextOverlay?.visibility=View.GONE
         io.execute {
             val result=runCatching{resolvePlaybackUrl(id,forceCompatible)}
             runOnUiThread {
@@ -469,7 +468,8 @@ class PlayerActivity : Activity() {
             .put("VideoCodec","h264").put("AudioCodec","aac")
             .put("Conditions",JSONArray()))
         return JSONObject().put("Name","Velaris Android TV (H.264/AAC)")
-            .put("MaxStreamingBitrate",8_000_000)
+            .put("MaxStreamingBitrate",getSharedPreferences("velaris_tv",MODE_PRIVATE)
+                .getInt("max_video_bitrate",8_000_000))
             .put("MaxStaticBitrate",8_000_000)
             .put("DirectPlayProfiles",direct)
             .put("TranscodingProfiles",transcode)
