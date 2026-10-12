@@ -41,6 +41,7 @@ class MainActivity : Activity() {
     private var activeSection = "Start"
     private var activeCollectionId = ""
     private var editProfilesMode = false
+    private var restoreMediaFocusId = ""
     @Volatile private var destroyed = false
     private val backStack = java.util.ArrayDeque<()->Unit>()
     private var suppressHistory = false
@@ -449,6 +450,15 @@ class MainActivity : Activity() {
                     addRow("Action",action); addRow("Komödien",comedy); addRow("Science-Fiction",sciFi)
                     addRow("Noch einmal ansehen",replay)
                     requestRoot.animate().alpha(1f).setDuration(280).start()
+                    val focusId=restoreMediaFocusId
+                    if(focusId.isNotBlank()) {
+                        restoreMediaFocusId=""
+                        requestRoot.post {
+                            if(requestRoot.isAttachedToWindow) {
+                                requestRoot.findViewWithTag<View>("velaris_media_$focusId")?.requestFocus()
+                            }
+                        }
+                    }
                 }
             } catch(e:Exception) { runOnUiThread {
                 if(destroyed || homeRoot!==requestRoot || !requestRoot.isAttachedToWindow)
@@ -954,6 +964,7 @@ class MainActivity : Activity() {
             if(id.isBlank()) return@forEach
             val cover=watchedPoster(item,176,248,"Primary",420)
             val card=LinearLayout(this).apply {
+                tag="velaris_media_$id"
                 orientation=LinearLayout.VERTICAL; isFocusable=true; isClickable=true
                 setPadding(dp(4),dp(4),dp(4),dp(4))
                 setOnClickListener { openMediaItem(item) }
@@ -1062,6 +1073,7 @@ class MainActivity : Activity() {
     private fun openMediaItem(item:JSONObject) {
         val id=item.optString("Id")
         if(id.isBlank())return
+        restoreMediaFocusId=id
         when(item.optString("Type")) {
             "BoxSet" -> showCollection(id)
             "Series" -> showSeries(id)
