@@ -13,6 +13,7 @@ import { CinematicShade } from '@/components/CinematicShade';
 import { LoadingSkeleton } from '@/components/LoadingSkeleton';
 import { EmptyState } from '@/components/EmptyState';
 import { getHiddenResume, hideResumeItem } from '@/services/continueVisibility';
+import {loadHomeRowPreferences,homeRowOptions,defaultRowOrder,type HomeRowKey,type HomeRowPreferences} from '@/services/homeRows';
 
 const AVATARS = [
   require('../../assets/AvatarRot.png'),
@@ -28,6 +29,7 @@ export default function HomeScreen() {
   const [latest, setLatest] = useState<JellyfinItem[]>([]);
   const [resume, setResume] = useState<JellyfinItem[]>([]);
   const [hiddenResume,setHiddenResume]=useState<string[]>([]);
+  const [rowPreferences,setRowPreferences]=useState<HomeRowPreferences>({order:[...defaultRowOrder],hidden:[]});
   const [favorites, setFavorites] = useState<JellyfinItem[]>([]);
   const [recommended, setRecommended] = useState<JellyfinItem[]>([]);
   const [becauseTitle, setBecauseTitle] = useState('');
@@ -62,7 +64,9 @@ export default function HomeScreen() {
   useFocusEffect(useCallback(() => {
     // Refresh Jellyfin played flags after returning from the media player.
     load();
-    if(session)getHiddenResume(session).then(setHiddenResume).catch(()=>setHiddenResume([]));
+    if(session){getHiddenResume(session).then(setHiddenResume).catch(()=>setHiddenResume([]));
+      loadHomeRowPreferences(session).then(setRowPreferences).catch(()=>{});
+    }
   }, [load, session]));
   useEffect(() => {
     Animated.timing(entrance, { toValue: 1, duration: 500, useNativeDriver: true }).start();
@@ -78,6 +82,9 @@ export default function HomeScreen() {
   const visibleResume=useMemo(()=>resume.filter(item=>!hiddenResume.includes(item.Id)),[resume,hiddenResume]);
   const movies=useMemo(()=>(recommended.length?recommended:latest).filter(item=>item.Type==='Movie'),[recommended,latest]);
   const upcoming=useMemo(()=>latest.filter(item=>item.PremiereDate && Date.parse(item.PremiereDate)>Date.now()),[latest]);
+  const popular=useMemo(()=>[...latest].filter(item=>(item.CommunityRating??0)>0).sort((a,b)=>(b.CommunityRating??0)-(a.CommunityRating??0)),[latest]);
+  const hiddenGems=useMemo(()=>latest.filter(item=>!item.UserData?.Played && (item.CommunityRating??0)>=7),[latest]);
+  const shortFilms=useMemo(()=>latest.filter(item=>item.Type==='Movie' && !!item.RunTimeTicks && item.RunTimeTicks<=100*600_000_000),[latest]);
   const randomMovie=()=>{
     if(!movies.length)return;
     const movie=movies[Math.floor(Math.random()*movies.length)];
@@ -168,15 +175,21 @@ export default function HomeScreen() {
               <Text style={styles.randomLabel}>✦  Zufälliger Film</Text>
             </Pressable>
           </View>}
-          <MediaRow title={design.homeRows.topTen} items={recommended.length ? recommended : latest} session={session} topTen />
-          <MediaRow title={design.homeRows.resume} items={visibleResume} session={session} continueWatching
-            onHide={id=>{void hideResumeItem(session,id).then(()=>setHiddenResume(previous=>[...new Set([...previous,id])])).catch(()=>{})}} />
-          <MediaRow title={design.homeRows.favorites} items={favorites} session={session} />
-          {!!becauseTitle && <MediaRow title={`${design.homeRows.becausePrefix} „${becauseTitle}“ gesehen hast`} items={recommended} session={session} />}
-          <MediaRow title={design.homeRows.latest} items={latest} session={session} />
-          <MediaRow title="Für deinen Filmabend" items={movies} session={session} />
-          <MediaRow title="Noch nicht angesehen" items={unwatched} session={session} />
-          <MediaRow title="Demnächst" items={upcoming} session={session} />
+          {rowPreferences.order.filter(key=>!rowPreferences.hidden.includes(key)).map(key=>{
+            const data:Record<HomeRowKey,JellyfinItem[]>={
+              topTen:popular.length?popular:latest,
+              resume:visibleResume,favorites,
+              because:recommended,latest,movieNight:movies,
+              unwatched,upcoming,popular,hiddenGems,short:shortFilms
+            };
+            const items=data[key];
+            if(!items.length||key==='because'&&!becauseTitle)return null;
+            const title=key==='because'?`${design.homeRows.becausePrefix} „${becauseTitle}“ gesehen hast`:
+              homeRowOptions.find(row=>row.key===key)?.label??key;
+            return <MediaRow key={key} title={title} items={items} session={session}
+              topTen={key==='topTen'} continueWatching={key==='resume'}
+              onHide={key==='resume'?id=>{void hideResumeItem(session,id).then(()=>setHiddenResume(previous=>[...new Set([...previous,id])])).catch(()=>{})}:undefined} />;
+          })}
         </Animated.View>}
       </ScrollView>
       <VelarisHeader home overlay />
