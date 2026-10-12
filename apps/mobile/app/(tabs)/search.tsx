@@ -35,9 +35,13 @@ export default function SearchScreen(){
   setRecent(next);
   void SecureStore.setItemAsync(historyKey,JSON.stringify(next)).catch(()=>{});
  };
- useEffect(()=>{if(!session)return;
+ useEffect(()=>{
+  if(!session)return;
+  let active=true;
   const source=collectionId?getCollectionItems(session,collectionId):scope==='home'?getLatest(session):scope==='collections'?getCollections(session):getLibraryItems(session,scope);
-  source.then(r=>setPopular(r.Items.slice(0,18))).catch(()=>setPopular([]));
+  source.then(r=>{if(active)setPopular(r.Items.slice(0,18))})
+    .catch(()=>{if(active)setPopular([])});
+  return()=>{active=false};
  },[session,scope,collectionId]);
  useEffect(()=>{
   if(!session||term.trim().length<2){setItems([]);return}
