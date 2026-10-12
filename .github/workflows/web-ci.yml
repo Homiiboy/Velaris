@@ -1,0 +1,26 @@
+name: Velaris Web CI
+on:
+  push:
+    paths:
+      - 'apps/web/**'
+      - '.github/workflows/web-ci.yml'
+  pull_request:
+    paths:
+      - 'apps/web/**'
+      - '.github/workflows/web-ci.yml'
+  workflow_dispatch:
+jobs:
+  check-web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check JavaScript syntax
+        run: |
+          node --check apps/web/main.js
+          node --check apps/web/sw.js
+          node --check apps/web/scripts/check.cjs
+      - name: Validate PWA assets and manifest
+        run: node apps/web/scripts/check.cjs
