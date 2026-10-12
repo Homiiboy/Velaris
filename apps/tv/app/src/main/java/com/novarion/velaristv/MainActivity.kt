@@ -2712,6 +2712,14 @@ class MainActivity : Activity() {
             }
             root.addView(row,LinearLayout.LayoutParams(-1,dp(82)).apply{topMargin=dp(10)})
         }
+        val rates=listOf(4_000_000,8_000_000,12_000_000,20_000_000)
+        val selected=prefs.getInt("max_video_bitrate",8_000_000)
+        root.addView(settingsCard("HD","Streamingqualität",
+            "Maximal ${selected/1_000_000} Mbit/s · Jellyfin bestimmt das Format") {
+            val index=rates.indexOf(selected).takeIf{it>=0}?:1
+            prefs.edit().putInt("max_video_bitrate",rates[(index+1)%rates.size]).apply()
+            showPlaybackSettings()
+        },LinearLayout.LayoutParams(-1,dp(82)).apply{topMargin=dp(10)})
         root.addView(actionButton("Zurück",false){showSettingsDialog()},params(180,56,22))
         showAppPage(ScrollView(this).apply{
             isVerticalScrollBarEnabled=false;isFillViewport=true
