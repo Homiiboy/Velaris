@@ -433,7 +433,7 @@ class MainActivity : Activity() {
             try {
                 fun async(path:String)=java.util.concurrent.CompletableFuture.supplyAsync({ items(path) },io)
                 val resumeF=async("/Users/$userId/Items/Resume?Limit=12&Fields=PrimaryImageAspectRatio,Overview,RunTimeTicks&MediaTypes=Video")
-                val latestF=async("/Users/$userId/Items/Latest?Limit=18&Fields=PrimaryImageAspectRatio,Overview&IncludeItemTypes=Movie,Series")
+                val latestF=async("/Users/$userId/Items/Latest?Limit=18&Fields=PrimaryImageAspectRatio,Overview,PremiereDate&IncludeItemTypes=Movie,Series")
                 val favoritesF=async("/Users/$userId/Items?Recursive=true&Limit=18&Filters=IsFavorite&IncludeItemTypes=Movie,Series&Fields=PrimaryImageAspectRatio")
                 val recommendedF=async("/Users/$userId/Items?Recursive=true&Limit=18&SortBy=CommunityRating,DatePlayed&SortOrder=Descending&IncludeItemTypes=Movie,Series&Filters=IsNotFolder&Fields=PrimaryImageAspectRatio,CommunityRating")
                 val topTenF=async("/Users/$userId/Items?Recursive=true&Limit=10&SortBy=CommunityRating&SortOrder=Descending&IncludeItemTypes=Movie,Series&Filters=IsNotFolder&Fields=PrimaryImageAspectRatio,CommunityRating")
@@ -468,6 +468,10 @@ class MainActivity : Activity() {
                     addRow(VelarisDesign.homeRow("recommended","Für dich"),recommended)
                     addRow("Für deinen Filmabend",recommended.filter{it.optString("Type")=="Movie"})
                     addRow("Noch nicht angesehen",latest.filter{it.optJSONObject("UserData")?.optBoolean("Played",false)!=true})
+                    addRow("Demnächst",latest.filter { item ->
+                        val date=item.optString("PremiereDate").take(10)
+                        date.length==10 && date>java.time.LocalDate.now().toString()
+                    })
                     addRow("Action",action); addRow("Komödien",comedy); addRow("Science-Fiction",sciFi)
                     addRow("Noch einmal ansehen",replay)
                     requestRoot.animate().alpha(1f).setDuration(280).start()
@@ -938,8 +942,12 @@ class MainActivity : Activity() {
                     caption.animate().cancel()
                     if(focused && showPreview) {
                         caption.alpha=0f
-                        caption.visibility=View.VISIBLE
-                        caption.animate().alpha(1f).setDuration(150).start()
+                        caption.postDelayed({
+                            if(v.hasFocus() && prefs.getBoolean("ui_preview",true)) {
+                                caption.visibility=View.VISIBLE
+                                caption.animate().alpha(1f).setDuration(150).start()
+                            }
+                        },450L)
                     } else {
                         caption.animate().alpha(0f).setDuration(115)
                             .withEndAction { if(!v.hasFocus())caption.visibility=View.GONE }
