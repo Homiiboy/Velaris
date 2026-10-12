@@ -5,6 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { getBackdropUrl, getEpisodes, getItem, getPrimaryImageUrl, getSeasons, setFavorite } from '@/services/jellyfin';
 import type { JellyfinItem } from '@/types/jellyfin';
 import { colors } from '@/theme';
+import { useVelarisTheme } from '@/context/ThemeContext';
 import { VelarisHeader } from '@/components/VelarisHeader';
 import { PlayGlyph } from '@/components/PlayGlyph';
 import { CinematicShade } from '@/components/CinematicShade';
@@ -17,12 +18,13 @@ import { episodeCode,hasResumeProgress,minutesRemaining,playbackPercent,statusBa
 
 export default function DetailsScreen(){
  const {id}=useLocalSearchParams<{id:string}>(); const {session}=useAuth();
+ const {accentColor,display}=useVelarisTheme();
  const goBack=()=>{if(router.canGoBack())router.back();else router.replace('/(tabs)/home')};
  const fade=useRef(new Animated.Value(0)).current;
  const [loadFailed,setLoadFailed]=useState(false);
  const [loadRevision,setLoadRevision]=useState(0);
  const [downloading,setDownloading]=useState(false),[downloaded,setDownloaded]=useState(false),[downloadProgress,setDownloadProgress]=useState(0),[downloadError,setDownloadError]=useState(''); const [item,setItem]=useState<JellyfinItem|null>(null),[favorite,setFavoriteState]=useState(false),[seasons,setSeasons]=useState<JellyfinItem[]>([]),[episodesBySeason,setEpisodesBySeason]=useState<Record<string,JellyfinItem[]>>({}),[seriesComplete,setSeriesComplete]=useState(false),[season,setSeason]=useState(''),[seasonMenu,setSeasonMenu]=useState(false);
- useEffect(()=>{Animated.timing(fade,{toValue:1,duration:350,useNativeDriver:true}).start()},[]);
+ useEffect(()=>{Animated.timing(fade,{toValue:1,duration:display.animations?350:0,useNativeDriver:true}).start()},[fade,display.animations]);
  useEffect(()=>{if(session&&id)isDownloaded(session,id).then(setDownloaded)},[session,id]);
  // Refresh after returning from the player. A series is complete ONLY if
  // each known season has episodes and every episode is marked played by Jellyfin.
@@ -74,10 +76,21 @@ export default function DetailsScreen(){
  const mins=item.RunTimeTicks?Math.round(item.RunTimeTicks/600000000):undefined, tag=item.PrimaryImageTag??item.ImageTags?.Primary;
  const remaining=minutesRemaining(item);
  const isResumable=hasResumeProgress(item);
+ const source=item.MediaSources?.[0];
+ const video=source?.MediaStreams?.find(stream=>stream.Type==='Video');
+ const sound=source?.MediaStreams?.find(stream=>stream.Type==='Audio');
+ const quality=[
+   video?.Width && video.Width>=3800?'4K':video?.Height && video.Height>=1080?'Full HD':video?.Height && video.Height>=720?'HD':null,
+   video?.VideoRangeType?.toLowerCase().includes('dolbyvision')?'Dolby Vision':
+      video?.VideoRange && video.VideoRange.toUpperCase()!=='SDR'?'HDR':null,
+   sound?.Channels && sound.Channels>=6?'5.1 Audio':null,
+   source?.MediaStreams?.some(stream=>stream.Type==='Subtitle')?'Untertitel':null
+ ].filter((badge):badge is string=>!!badge);
+ const people=item.People?.filter(person=>person.Name).slice(0,12)??[];
  return <Animated.View style={{flex:1,opacity:fade}}><ScrollView style={styles.page}><ImageBackground source={{uri:item.BackdropImageTags?.length?getBackdropUrl(session,item):getPrimaryImageUrl(session,item.Id,tag)}} style={styles.hero} imageStyle={{opacity:.90}}>
  <CinematicShade variant="details"/></ImageBackground>
  <View style={styles.body}>
- <Text style={styles.eyebrow}>{item.Type==='Series'?'SERIE AUF VELARIS':item.Type==='Episode'?'EPISODE AUF VELARIS':'FILM AUF VELARIS'}</Text>
+ <Text style={[styles.eyebrow,{color:accentColor}]}>{item.Type==='Series'?'SERIE AUF VELARIS':item.Type==='Episode'?'EPISODE AUF VELARIS':'FILM AUF VELARIS'}</Text>
  <Text style={styles.title}>{item.Name}</Text>{(item.Type==='Series'?seriesComplete:isWatched(item))&&<Text style={styles.watchedBanner}>✓ {item.Type==='Series'?'Serie vollständig gesehen':'Bereits gesehen'}</Text>}<Text style={styles.meta}>{[
   item.ProductionYear,
   item.Type==='Series'?'Serie':item.Type==='Episode'?'Episode':'Film',
@@ -85,10 +98,21 @@ export default function DetailsScreen(){
   item.OfficialRating,
   item.CommunityRating?`★ ${item.CommunityRating.toFixed(1)}`:null
  ].filter(Boolean).join('   ·   ')}</Text>
+ {!!quality.length&&<View style={styles.qualityRow}>{quality.map(label=><Text key={label} style={[styles.qualityBadge,{borderColor:accentColor}]}>{label}</Text>)}</View>}
  <View style={styles.mainActions}><Pressable accessibilityRole="button" accessibilityLabel={item.UserData?.PlaybackPositionTicks?'Fortsetzen':'Abspielen'} style={({pressed})=>[styles.play,pressed&&styles.pressed]} onPress={()=>router.push({pathname:'/player/[id]',params:{id:item.Id}})}><PlayGlyph size={19} color="#08090B"/><Text style={styles.playText}>{item.UserData?.PlaybackPositionTicks?'Fortsetzen':'Abspielen'}</Text></Pressable><Pressable style={styles.favorite} onPress={async()=>{const next=!favorite;setFavoriteState(next);try{await setFavorite(session,item.Id,next);item.UserData={...item.UserData,IsFavorite:next}}catch{setFavoriteState(!next)}}}><Text style={[styles.favoriteIcon,favorite&&styles.favoriteActive]}>{favorite?'♥':'♡'}</Text><Text style={styles.favoriteLabel}>Meine Liste</Text></Pressable></View>{isResumable&&remaining!=null&&<Text style={styles.resumeHint}>
   ▶ Fortsetzen · Noch {remaining} Min.
  </Text>}{item.Type!=='Series'&&<Pressable disabled={downloading} style={styles.download} onPress={async()=>{if(downloaded){await removeDownload(session,item.Id);setDownloaded(false);return}setDownloading(true);setDownloadProgress(0);setDownloadError('');try{await downloadItem(session,item,setDownloadProgress);setDownloaded(true)}catch(e){setDownloadError(e instanceof Error?e.message:'Download fehlgeschlagen.')}finally{setDownloading(false)}}}><Text style={styles.downloadText}>{downloaded?'✓ Heruntergeladen':downloading?`⇩ ${Math.round(downloadProgress*100)} %`:'⇩ Herunterladen'}</Text></Pressable>}{!!downloadError&&<Text style={styles.downloadError}>{downloadError}</Text>}
  {!!item.Genres?.length&&<Text numberOfLines={2} style={styles.genres}>{item.Genres.slice(0,5).join('   ·   ')}</Text>}
+ {!!people.length&&<View style={styles.castSection}><Text style={[styles.storyLabel,{color:accentColor}]}>CAST & CREW</Text>
+  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.castRow}>
+   {people.map((person,index)=><Pressable key={person.Id??`${person.Name}-${index}`} style={styles.castCard}
+    accessibilityRole="button" accessibilityLabel={`Nach ${person.Name} suchen`}
+    onPress={()=>router.push({pathname:'/(tabs)/search',params:{scope:'home',term:person.Name}})}>
+    <Text numberOfLines={2} style={styles.castName}>{person.Name}</Text>
+    <Text numberOfLines={2} style={styles.castRole}>{person.Role??person.Type??'Mitwirkende'}</Text>
+   </Pressable>)}
+  </ScrollView>
+ </View>}
  {!!item.Overview&&<View style={styles.storySection}>
   <Text style={styles.storyLabel}>HANDLUNG</Text>
   <Text style={styles.overview}>{item.Overview}</Text>
@@ -117,7 +141,7 @@ const styles=StyleSheet.create({page:{flex:1,backgroundColor:colors.background},
 eyebrow:{color:colors.accent,fontSize:11,fontWeight:'900',letterSpacing:1.4,marginBottom:9},
 title:{color:colors.text,fontSize:33,lineHeight:39,fontWeight:'900',letterSpacing:-0.7},watchedBanner:{color:colors.success,fontWeight:'900',fontSize:13,marginTop:9},meta:{color:'#EBE9F3',fontSize:13,marginTop:11,lineHeight:20,fontWeight:'700'},mainActions:{flexDirection:'row',gap:12,marginTop:23},play:{flex:1,height:50,borderRadius:9,backgroundColor:'#fff',alignItems:'center',justifyContent:'center',flexDirection:'row',gap:10},pressed:{opacity:0.83,transform:[{scale:0.985}]},favorite:{width:92,height:50,borderRadius:9,backgroundColor:'#242424',alignItems:'center',justifyContent:'center'},favoriteIcon:{color:'#fff',fontSize:20,lineHeight:20},favoriteActive:{color:'#fff'},favoriteLabel:{color:'#fff',fontSize:9,fontWeight:'700',marginTop:2},playText:{color:'#08090B',fontSize:16,fontWeight:'900'},
 resumeHint:{color:'#DCCFFF',fontSize:12,fontWeight:'800',marginTop:10},download:{height:46,borderRadius:9,backgroundColor:colors.surfaceAlt,borderWidth:1,borderColor:colors.border,alignItems:'center',justifyContent:'center',marginTop:10},downloadText:{color:'#fff',fontSize:13,fontWeight:'800'},downloadError:{color:colors.danger,fontSize:11,marginTop:8},storySection:{marginTop:27,paddingTop:19,borderTopWidth:1,borderTopColor:colors.border},
-storyLabel:{fontSize:11,fontWeight:'900',letterSpacing:1.5,color:colors.accent,marginBottom:11},
+qualityRow:{flexDirection:'row',flexWrap:'wrap',gap:7,marginTop:15},qualityBadge:{color:colors.text,fontSize:10,fontWeight:'900',borderRadius:6,borderWidth:1,paddingHorizontal:8,paddingVertical:5,backgroundColor:colors.surface},castSection:{marginTop:27},castRow:{gap:10,paddingVertical:8},castCard:{width:136,padding:13,backgroundColor:colors.surface,borderRadius:12,borderWidth:1,borderColor:colors.border},castName:{color:colors.text,fontWeight:'900',fontSize:13},castRole:{color:colors.muted,fontSize:11,marginTop:6},storyLabel:{fontSize:11,fontWeight:'900',letterSpacing:1.5,color:colors.accent,marginBottom:11},
 overview:{color:'#E6E3ED',fontSize:14,lineHeight:22},
 genres:{color:'#C5BFDB',fontSize:12,fontWeight:'700',marginTop:13,lineHeight:19},
 series:{marginTop:34},
