@@ -904,7 +904,7 @@ class MainActivity : Activity() {
             },LinearLayout.LayoutParams(dp(310),dp(26)))
             if(remaining!=null)card.addView(TextView(this).apply{
                 text="Noch $remaining Min.";textSize=13f
-                typeface=Typeface.DEFAULT_BOLD;setTextColor(0xFFDCCFFF.toInt())
+                typeface=Typeface.DEFAULT_BOLD;setTextColor(VelarisDesign.color("focus",0xFFDCCFFF.toInt()))
                 setPadding(dp(4),0,0,0)
             },LinearLayout.LayoutParams(dp(310),dp(25)))
             row.addView(card,LinearLayout.LayoutParams(dp(326),dp(280)).apply{
@@ -950,7 +950,7 @@ class MainActivity : Activity() {
                 poster.foreground=if(focused)GradientDrawable().apply{
                     setColor(Color.TRANSPARENT)
                     cornerRadius=dp(10).toFloat()
-                    setStroke(dp(2),0xFFDCCFFF.toInt())
+                    setStroke(dp(2),VelarisDesign.color("focus",0xFFDCCFFF.toInt()))
                 } else null
                 val caption=poster.findViewWithTag<TextView>("velaris_poster_focus_caption")
                 if(caption!=null) {
@@ -973,16 +973,16 @@ class MainActivity : Activity() {
                 val bubble=poster.findViewWithTag<View>("velaris_continue_play")
                 if(bubble!=null) {
                     bubble.background=GradientDrawable().apply{
-                        setColor(if(focused)0xD95B3EC4.toInt() else 0xAA101016.toInt())
+                        setColor(if(focused)VelarisDesign.color("accent",0xFFD95B3E.toInt()) else 0xAA101016.toInt())
                         cornerRadius=dp(23).toFloat()
-                        setStroke(dp(2),if(focused)0xFFDCCFFF.toInt() else Color.WHITE)
+                        setStroke(dp(2),if(focused)VelarisDesign.color("focus",0xFFDCCFFF.toInt()) else Color.WHITE)
                     }
                 }
             } else {
                 v.background=GradientDrawable().apply {
                     setColor(if(focused)0x302E2E38 else Color.TRANSPARENT)
                     cornerRadius=dp(12).toFloat()
-                    if(focused)setStroke(dp(2),0xFFDCCFFF.toInt())
+                    if(focused)setStroke(dp(2),VelarisDesign.color("focus",0xFFDCCFFF.toInt()))
                 }
             }
             // A restrained 2% cinematic focus lift. Existing poster rows
@@ -1812,7 +1812,7 @@ class MainActivity : Activity() {
         frame.background=GradientDrawable().apply {
             setColor(Color.TRANSPARENT)
             cornerRadius=dp(20).toFloat()
-            if(focused)setStroke(dp(2),0xFFDCCFFF.toInt())
+            if(focused)setStroke(dp(2),VelarisDesign.color("focus",0xFFDCCFFF.toInt()))
             else if(selected)setStroke(dp(2),VelarisDesign.color("accent",0xFF7C5CFC.toInt()))
         }
         frame.animate().scaleX(if(focused)1.025f else 1f).scaleY(if(focused)1.025f else 1f)
@@ -2517,7 +2517,7 @@ class MainActivity : Activity() {
                 else -> Color.TRANSPARENT
             })
             cornerRadius=dp(24).toFloat()
-            if(focused)setStroke(dp(2),0xFFDCCFFF.toInt())
+            if(focused)setStroke(dp(2),VelarisDesign.color("focus",0xFFDCCFFF.toInt()))
         }
         button.setTextColor(if(selected||focused)Color.WHITE else 0xCCDCDCE4.toInt())
         button.typeface=if(selected)Typeface.DEFAULT_BOLD else Typeface.DEFAULT
@@ -2571,7 +2571,7 @@ class MainActivity : Activity() {
                     else -> 0xD034343B.toInt()
                 })
                 cornerRadius=dp(10).toFloat()
-                if(focused)setStroke(dp(2),0xFFDCCFFF.toInt())
+                if(focused)setStroke(dp(2),VelarisDesign.color("focus",0xFFDCCFFF.toInt()))
             }
             setTextColor(if(focused||!primary)Color.WHITE else 0xFF101016.toInt())
         }
@@ -2596,7 +2596,7 @@ class MainActivity : Activity() {
                 setColor(if(focused)VelarisDesign.color("focus",0xFF7E57FF.toInt())
                     else VelarisDesign.color("accent",0xFF7C5CFC.toInt()))
                 cornerRadius=dp(10).toFloat()
-                if(focused)setStroke(dp(2),0xFFDCCFFF.toInt())
+                if(focused)setStroke(dp(2),VelarisDesign.color("focus",0xFFDCCFFF.toInt()))
             }
             setTextColor(Color.WHITE)
         }
