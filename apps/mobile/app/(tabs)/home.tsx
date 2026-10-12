@@ -71,6 +71,13 @@ export default function HomeScreen() {
     return (withBackdrop.length ? withBackdrop : latest).slice(0, 5);
   }, [latest]);
   const hero = heroItems[heroIndex % Math.max(1, heroItems.length)];
+  const unwatched=useMemo(()=>latest.filter(item=>!item.UserData?.Played),[latest]);
+  const movies=useMemo(()=>(recommended.length?recommended:latest).filter(item=>item.Type==='Movie'),[recommended,latest]);
+  const randomMovie=()=>{
+    if(!movies.length)return;
+    const movie=movies[Math.floor(Math.random()*movies.length)];
+    router.push({pathname:'/details/[id]',params:{id:movie.Id}});
+  };
   useEffect(() => {
     setHeroIndex(0);
   }, [heroItems]);
@@ -150,11 +157,19 @@ export default function HomeScreen() {
           />
         </View>}
         {!initialLoading&&<Animated.View style={[styles.rows, { opacity: entrance }]}>
+          {!!movies.length&&<View style={styles.randomBar}>
+            <Pressable accessibilityRole="button" accessibilityLabel="Zufälligen Film entdecken"
+              onPress={randomMovie} style={({pressed})=>[styles.randomButton,{borderColor:accentColor},pressed&&styles.pressed]}>
+              <Text style={styles.randomLabel}>✦  Zufälliger Film</Text>
+            </Pressable>
+          </View>}
           <MediaRow title={design.homeRows.topTen} items={recommended.length ? recommended : latest} session={session} topTen />
           <MediaRow title={design.homeRows.resume} items={resume} session={session} continueWatching />
           <MediaRow title={design.homeRows.favorites} items={favorites} session={session} />
           {!!becauseTitle && <MediaRow title={`${design.homeRows.becausePrefix} „${becauseTitle}“ gesehen hast`} items={recommended} session={session} />}
           <MediaRow title={design.homeRows.latest} items={latest} session={session} />
+          <MediaRow title="Für deinen Filmabend" items={movies} session={session} />
+          <MediaRow title="Noch nicht angesehen" items={unwatched} session={session} />
         </Animated.View>}
       </ScrollView>
       <VelarisHeader home overlay />
@@ -205,5 +220,6 @@ const styles = StyleSheet.create({
   pressed: { opacity: 0.83, transform:[{scale:0.985}] },
   playText: { color: '#111115', fontSize: 14, fontWeight: '900' },
   infoText: { color: colors.text, fontSize: 14, fontWeight: '800' },
+  randomBar:{paddingHorizontal:22,marginTop:8,marginBottom:14},randomButton:{height:45,borderRadius:12,borderWidth:1,backgroundColor:colors.surface,alignItems:'center',justifyContent:'center'},randomLabel:{color:colors.text,fontSize:14,fontWeight:'900'},
   rows: { paddingTop: 0, paddingBottom: 30, marginTop: -6 }
 });
