@@ -1,14 +1,16 @@
 import { Tabs } from 'expo-router';
 import { Text, type ColorValue } from 'react-native';
 import { colors, design } from '@/theme';
+import { useVelarisTheme } from '@/context/ThemeContext';
 
 const Icon=({symbol,color,size=20}:{symbol:string;color:ColorValue;size?:number})=><Text style={{color,fontSize:size,fontWeight:'800'}}>{symbol}</Text>;
 
 export default function TabLayout(){
+ const {accentColor}=useVelarisTheme();
  return <Tabs screenOptions={{
   headerShown:false,
   tabBarStyle:{backgroundColor:'rgba(8,8,13,0.98)',borderTopColor:'rgba(255,255,255,.12)',height:76,paddingTop:9,paddingBottom:8},
-  tabBarActiveTintColor:colors.text,tabBarInactiveTintColor:colors.muted,
+  tabBarActiveTintColor:accentColor,tabBarInactiveTintColor:colors.muted,
   tabBarLabelStyle:{fontSize:10,fontWeight:'800',marginBottom:3}
  }}>
   <Tabs.Screen name="movies" options={{title:design.navigation.movies,tabBarIcon:({color})=><Icon symbol="▶" color={color}/>}}/>
