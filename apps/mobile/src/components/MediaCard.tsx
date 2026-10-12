@@ -11,6 +11,7 @@ export function MediaCard({ item, session, width = 128, showMeta = false, showFa
   const [favorite,setFavoriteState]=useState(!!item.UserData?.IsFavorite);
   const [saving,setSaving]=useState(false);
   const [highlighted,setHighlighted]=useState(false);
+  const [pressedState,setPressedState]=useState(false);
   const scale=useRef(new Animated.Value(1)).current;
   const detailOpacity=useRef(new Animated.Value(0)).current;
   const artworkOpacity=useRef(new Animated.Value(0)).current;
@@ -42,11 +43,11 @@ export function MediaCard({ item, session, width = 128, showMeta = false, showFa
     <Pressable
       onFocus={()=>setFocus(true)} onBlur={()=>setFocus(false)}
       onHoverIn={()=>setFocus(true)} onHoverOut={()=>setFocus(false)}
-      onPressIn={()=>animateScale(.98)} onPressOut={()=>animateScale(highlighted?1.02:1)}
+      onPressIn={()=>{setPressedState(true);animateScale(.98)}} onPressOut={()=>{setPressedState(false);animateScale(highlighted?1.02:1)}}
       onPress={() => item.Type === 'BoxSet' ? router.push({ pathname: '/collection/[id]', params: { id: item.Id } }) : router.push({ pathname: '/details/[id]', params: { id: item.Id } })}
       accessibilityRole="button"
       accessibilityLabel={item.Name}
-      style={{width}}
+      style={{width, opacity:pressedState?0.93:1}}
     >
       <Animated.View style={[styles.cardLift,{
         transform:[{scale}],width,
