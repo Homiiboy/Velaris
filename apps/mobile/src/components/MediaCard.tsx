@@ -4,9 +4,11 @@ import { router } from 'expo-router';
 import { getPrimaryImageUrl, setFavorite } from '@/services/jellyfin';
 import type { JellyfinItem, Session } from '@/types/jellyfin';
 import { colors } from '@/theme';
+import { useVelarisTheme } from '@/context/ThemeContext';
 import { playbackPercent,hasResumeProgress,statusBadge } from '@/services/playbackPresentation';
 
 export function MediaCard({ item, session, width = 128, showMeta = false, showFavorite = true, onFavoriteChange }: { item: JellyfinItem; session: Session; width?: number; showMeta?: boolean; showFavorite?: boolean; onFavoriteChange?: (favorite:boolean)=>void }) {
+  const {accentColor,display}=useVelarisTheme();
   const [imageFailed,setImageFailed]=useState(false);
   const [favorite,setFavoriteState]=useState(!!item.UserData?.IsFavorite);
   const [saving,setSaving]=useState(false);
@@ -20,8 +22,8 @@ export function MediaCard({ item, session, width = 128, showMeta = false, showFa
   }).start();
   const setFocus=(value:boolean)=>{
     setHighlighted(value);
-    animateScale(value?1.02:1);
-    Animated.timing(detailOpacity,{toValue:value?1:0,duration:150,useNativeDriver:true}).start();
+    animateScale(value&&display.animations?1.02:1);
+    Animated.timing(detailOpacity,{toValue:value&&display.previews?1:0,duration:display.animations?150:0,useNativeDriver:true}).start();
   };
   const imageTag=item.PrimaryImageTag ?? item.ImageTags?.Primary;
   useEffect(()=>{
@@ -51,7 +53,7 @@ export function MediaCard({ item, session, width = 128, showMeta = false, showFa
     >
       <Animated.View style={[styles.cardLift,{
         transform:[{scale}],width,
-        shadowOpacity:highlighted?0.32:0.08,
+        shadowOpacity:highlighted?0.32:0.08,shadowColor:accentColor,
         elevation:highlighted?8:1
       }]}><View style={[styles.posterShell,highlighted&&styles.posterFocused,
         {width,height:Math.round(width*1.5)}]}>
