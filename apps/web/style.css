@@ -243,3 +243,7 @@ button:disabled{cursor:wait;opacity:.65}
 .p9-next[hidden],#p9-skip-zone[hidden],#p9-retry[hidden]{display:none!important}
 @media(max-width:480px){.p9-header{padding-left:10px;padding-right:10px;gap:7px}.p9-header strong{font-size:11px}.p9-header button{font-size:11px;padding:6px 9px}.p9-bottom{padding-left:8px;padding-right:8px}.p9-transport{gap:7px}.p9-transport button{min-width:45px;min-height:40px}.p9-next{padding:9px 10px}.p9-next-info strong{font-size:12px}.p9-next .primary{font-size:11px}}
 @media(orientation:landscape) and (max-height:500px){.p9-header{padding-top:calc(env(safe-area-inset-top) + 5px)}.p9-bottom{padding-bottom:calc(env(safe-area-inset-bottom) + 6px);gap:4px}.p9-transport button{min-height:32px}.p9-next{max-width:460px}}
+
+/* Pass 10: touch targets and status readability */
+@media(max-width:849px){.p9-transport button{touch-action:manipulation}.p8-option button{min-width:39px}.p9-player .p9-header .secondary{min-height:44px}}
+@media(prefers-reduced-motion:reduce){.p8-dialog,.p9-next{scroll-behavior:auto}}
