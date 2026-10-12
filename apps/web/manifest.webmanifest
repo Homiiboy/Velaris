@@ -1,0 +1,19 @@
+{
+  "id": "./",
+  "name": "Velaris",
+  "short_name": "Velaris",
+  "description": "Deine Jellyfin-Mediathek als Streaming-App",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#08080D",
+  "theme_color": "#08080D",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
