@@ -6,7 +6,7 @@
   <img src="assets/banners/VelarisBannerTV.png" alt="Velaris TV Banner" width="320" />
 </p>
 
-Gemeinsames Repository für Velaris auf iOS, Android und Android TV / Google TV.
+Gemeinsames Repository für Velaris auf iOS, Android, Android TV / Google TV und als installierbare iPhone-Web-App.
 
 ## Stand der Zusammenführung
 
@@ -15,7 +15,7 @@ Die vollständigen Quellstände beider Apps wurden übernommen. Aktuell sind es 
 | Bereich | Pfad | Technik |
 | --- | --- | --- |
 | Smartphone (iOS / Android) | [apps/mobile](apps/mobile) | React Native / Expo / TypeScript |
-| TV (Android TV / Google TV) | [apps/tv](apps/tv) | Kotlin / Media3 |
+| Web (iPhone / Desktop PWA) | [apps/web](apps/web) | HTML / CSS / JavaScript / Jellyfin API |\n| TV (Android TV / Google TV) | [apps/tv](apps/tv) | Kotlin / Media3 |
 | Importnachweis und nächste Schritte | [docs/MIGRATION.md](docs/MIGRATION.md) | Quellstände, Umfang und Einschränkungen |
 
 ## Smartphone starten
@@ -32,7 +32,7 @@ Typprüfung: `npm run typecheck`.
 Android-Test-APK über EAS: `npx eas-cli build --platform android --profile preview`.
 Die vorhandene Expo-Projektzuordnung bleibt bestehen; dafür ist Zugriff auf das bestehende Expo-Projekt erforderlich.
 
-## TV bauen
+## iPhone-Web-App (PWA)\n\nDie neue [Velaris Web-App](apps/web/README.md) kann auf ZimaOS per Docker und im privaten Tailnet via Tailscale Serve (HTTPS) betrieben werden. Danach über Safari zum iPhone-Home-Bildschirm hinzufügen. Ein Apple-Developer-Account oder eine kostenpflichtige Domain ist nicht nötig. Für die Jellyfin-Verbindung sind HTTPS und korrektes CORS bzw. ein Reverse Proxy erforderlich. Web-App MVP, noch nicht auf iPhone und ZimaOS validiert.\n\n## TV bauen
 
 In Android Studio den Ordner `apps/tv` öffnen oder mit JDK 17 und Gradle 9.6.0:
 
@@ -67,7 +67,7 @@ Die README-Dateien in den App-Ordnern dokumentieren den übernommenen Stand; ihr
 ```text
 Velaris/
 ├── apps/mobile/               # iOS + Android (Expo / React Native)
-├── apps/tv/                   # Android TV / Google TV (Kotlin / Media3)
+├── apps/web/                  # installierbare iPhone-PWA und Web-Player\n├── apps/tv/                   # Android TV / Google TV (Kotlin / Media3)
 ├── packages/velaris-design/   # einheitliche Farben, Navigation, Profile und Reihen
 ├── assets/                    # zentrale App-Icons, Banner, Avatare
 └── scripts/                   # Asset-Synchronisation und Konsistenztests
