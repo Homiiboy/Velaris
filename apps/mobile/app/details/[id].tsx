@@ -107,7 +107,7 @@ export default function DetailsScreen(){
   <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.castRow}>
    {people.map((person,index)=><Pressable key={person.Id??`${person.Name}-${index}`} style={styles.castCard}
     accessibilityRole="button" accessibilityLabel={`Nach ${person.Name} suchen`}
-    onPress={()=>router.push({pathname:'/(tabs)/search',params:{scope:'home',term:person.Name}})}>
+    onPress={()=>router.push({pathname:'/(tabs)/search',params:{scope:'home',term:person.Name,person:person.Name}})}>
     <Text numberOfLines={2} style={styles.castName}>{person.Name}</Text>
     <Text numberOfLines={2} style={styles.castRole}>{person.Role??person.Type??'Mitwirkende'}</Text>
    </Pressable>)}
