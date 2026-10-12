@@ -219,10 +219,11 @@ class PlayerActivity : Activity() {
                     nextOverlay?.visibility=View.GONE
                     reportStoppedOnce()
                     if(nextItemId.isNotBlank() && autoNextEnabled) {
-                        itemId=nextItemId;nextItemId=""
+                        val upcoming=nextItemId
+                        itemId=upcoming
                         stoppedReported=false;sessionStarted=false
                         triedCompatibleFallback=false
-                        loadFollowingEpisodeAndPlay(exo,itemId)
+                        loadFollowingEpisodeAndPlay(exo,upcoming)
                     } else finish()
                 }
             }
@@ -259,34 +260,25 @@ class PlayerActivity : Activity() {
     }
 
     private fun loadFollowingEpisodeAndPlay(exo: ExoPlayer, id:String) {
-        io.execute {
-            var following=""
-            try {
-                val c=URL("$server/Shows/NextUp?UserId=$userId&StartItemId=$id&Limit=1").openConnection() as HttpURLConnection
-                try {
-                    c.connectTimeout=6000; c.readTimeout=8000
-                    c.setRequestProperty("Authorization", """MediaBrowser Client="Velaris TV", Device="Android TV", DeviceId="velaris-tv", Version="1.0.0", Token="$token"""")
-                    if(c.responseCode in 200..299) {
-                        val json=JSONObject(c.inputStream.bufferedReader().use { it.readText() })
-                        val arr=json.optJSONArray("Items")
-                        if(arr!=null && arr.length()>0) following=arr.getJSONObject(0).optString("Id")
-                    }
-                } finally { c.disconnect() }
-            } catch(_:Exception) {}
-            nextItemId=following
-            runOnUiThread { if(!isFinishing && !isDestroyed) preparePlayback(exo,id,0L); loadPlayerTitle(id) }
-        }
+        // Do not delay playback while waiting for the NextUp endpoint.
+        // The next episode is resolved asynchronously from the item's series later.
+        if(isFinishing||isDestroyed||player!==exo||itemId!=id)return
+        nextItemId=""
+        nextEpisodeLabel=""
+        nextResolvedFor=""
+        preparePlayback(exo,id,0L)
+        loadPlayerTitle(id)
     }
 
     private fun preparePlayback(exo:ExoPlayer,id:String,resumeTicks:Long,forceCompatible:Boolean=false) {
         synchronized(mediaSegments){mediaSegments.clear()}
+        nextOverlay?.visibility=View.GONE
         activeSegment=null
         nextOverlay?.visibility=View.GONE
         nextEpisodeImage?.visibility=View.GONE
         skipIntroButton?.visibility=View.GONE
         loadMediaSegments(id)
         val request=++playbackRequestSerial
-        nextOverlay?.visibility=View.GONE
         io.execute {
             val result=runCatching{resolvePlaybackUrl(id,forceCompatible)}
             runOnUiThread {
@@ -395,7 +387,7 @@ class PlayerActivity : Activity() {
                 } finally { connection.disconnect() }
             } catch(_:Exception) {}
             runOnUiThread {
-                if(itemId==id && nextResolvedFor==id && !isFinishing) {
+                if(itemId==id && nextResolvedFor==id && !isFinishing && !isDestroyed) {
                     nextItemId=following
                     nextEpisodeLabel=label
                     nextOverlay?.visibility=View.GONE
@@ -670,7 +662,14 @@ class PlayerActivity : Activity() {
         }
     }
 
-    override fun onDestroy() { introUiHandler.removeCallbacks(introUiTick); io.shutdownNow(); super.onDestroy() }
+    override fun onDestroy() {
+        introUiHandler.removeCallbacks(introUiTick)
+        playerViewRef?.player=null
+        player?.release()
+        player=null
+        io.shutdownNow()
+        super.onDestroy()
+    }
 
     private fun reportStoppedOnce() {
         if (stoppedReported) return
