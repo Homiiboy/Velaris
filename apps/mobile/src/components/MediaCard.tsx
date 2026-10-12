@@ -52,7 +52,11 @@ export function MediaCard({ item, session, width = 128, showMeta = false, showFa
           [item.ProductionYear, item.Genres?.slice(0,2).join(' · '),item.RunTimeTicks?`${Math.round(item.RunTimeTicks/600_000_000)} Min.`:null]
             .filter(Boolean).join('   ·   ')||'Mehr Informationen zu diesem Titel',
           [{text:'Abbrechen',style:'cancel'},
-           {text:'Details',onPress:()=>router.push({pathname:'/details/[id]',params:{id:item.Id}})}]);
+           {text:'Details',onPress:()=>router.push({pathname:item.Type==='BoxSet'?'/collection/[id]':'/details/[id]',params:{id:item.Id}})},
+           ...(item.Type==='BoxSet'?[]:[
+             {text:'Abspielen',onPress:()=>router.push({pathname:'/player/[id]',params:{id:item.Id}})},
+             {text:favorite?'Aus Liste':'Meine Liste',onPress:()=>{void toggleFavorite()}}
+           ])]);
       }}
       accessibilityRole="button"
       accessibilityLabel={item.Name}
