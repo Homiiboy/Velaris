@@ -1321,12 +1321,34 @@ class MainActivity : Activity() {
             filters.addView(chip,LinearLayout.LayoutParams(0,dp(50),1f).apply{marginEnd=dp(8)})
         }
         left.addView(filters,LinearLayout.LayoutParams(-1,dp(50)).apply{topMargin=dp(14)})
+        val history=prefs.getString("search_history_$userId","").orEmpty().split("|").filter(String::isNotBlank).take(5)
+        if(history.isNotEmpty()){
+            left.addView(TextView(this).apply {
+                text="ZULETZT GESUCHT"
+                textSize=14f
+                typeface=Typeface.DEFAULT_BOLD
+                setTextColor(VelarisDesign.color("accent",0xFF7C5CFC.toInt()))
+            },params(-1,-2,18))
+            history.forEach { previous ->
+                left.addView(actionButton("⌕  $previous",false) {
+                    input.setText(previous)
+                    search(previous)
+                },LinearLayout.LayoutParams(dp(435),dp(51)).apply{bottomMargin=dp(7)})
+            }
+        }
         root.addView(left,LinearLayout.LayoutParams(dp(500),-1))
         root.addView(TextView(this).apply{text="Gib einen Film, eine Serie oder einen Anime ein.\nDie Ergebnisse erscheinen als Poster.";textSize=20f;setTextColor(Color.LTGRAY);gravity=Gravity.CENTER},LinearLayout.LayoutParams(0,-1,1f))
         showAppPage(root);input.requestFocus()
     }
 
     private fun search(query:String, person:Boolean=false) {
+        if(!person) {
+            val current=prefs.getString("search_history_$userId","").orEmpty()
+                .split("|").filter(String::isNotBlank)
+            val trimmed=query.trim().replace("|"," ").replace("\n"," ")
+            prefs.edit().putString("search_history_$userId",
+                (listOf(trimmed)+current.filter{!it.equals(trimmed,true)}).take(5).joinToString("|")).apply()
+        }
         rememberBack { showSearch() }
         val encoded=java.net.URLEncoder.encode(query,"UTF-8")
         val scope=activeSection
