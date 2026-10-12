@@ -163,3 +163,49 @@ button:disabled{cursor:wait;opacity:.65}
 .profile-actions .secondary{max-width:100%;white-space:normal}
 @media(max-width:849px){.shell{padding-bottom:calc(97px + env(safe-area-inset-bottom))}.tabs{padding-bottom:calc(10px + env(safe-area-inset-bottom));min-height:66px}.tabs button{min-width:0}.hero-copy{padding-bottom:22px}.hero-dots{bottom:9px}.details-screen{padding-bottom:45px}.video-wrap{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}}
 @media(max-width:360px){.tabs button span{font-size:8px}.tabs button b{font-size:18px}.tabs{gap:0;padding-left:0;padding-right:0}}
+
+
+/* UI Pass 8: Cinematic Streaming Experience */
+.p8-logo{max-width:min(440px,78vw);max-height:150px;width:auto;height:auto;object-fit:contain;object-position:left center;filter:drop-shadow(0 3px 18px #000a);margin:8px 0 16px}
+.p8-settings-trigger{font-size:21px;min-width:42px;border:1px solid var(--accent);color:var(--accent)}
+.hero-dot.active,.tabs button.selected:before{background:var(--accent)}
+.eyebrow,.row-arrow,.section-kicker{color:var(--accent)}
+.p8-ranked{display:flex;align-items:flex-end;position:relative;flex:0 0 172px;min-width:172px;isolation:isolate;padding-left:35px}
+.p8-ranked .poster{position:relative;z-index:1;flex:0 0 126px;width:126px}
+.p8-rank{position:absolute;z-index:0;bottom:15px;left:-3px;font-size:clamp(100px,11vw,154px);line-height:.87;font-weight:900;letter-spacing:-.14em;color:var(--accent);opacity:.93;text-shadow:0 9px 20px #000c;pointer-events:none}
+.p8-option{display:flex;justify-content:space-between;gap:16px;align-items:center;border:1px solid #383343;background:#191720;border-radius:13px;padding:12px 14px;margin:10px 0;max-width:750px}
+.p8-option label{display:flex;align-items:center;gap:12px;font-weight:700;min-width:0}
+.p8-option input{accent-color:var(--accent);width:20px;height:20px;flex-shrink:0}
+.p8-option button{width:39px;min-height:40px;border-radius:8px;border:1px solid #4f4860;background:#2b2835;color:white;font-size:20px;margin-left:5px}
+.p8-option button:disabled{opacity:.32}
+.p8-customize .hint{max-width:660px}
+.p8-customize h2{font-size:20px;margin:28px 0 16px}
+.p8-theme-options{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:24px}
+.p8-theme-options button{border:2px solid transparent;border-radius:12px;padding:12px 15px;color:white;background:#1d1c25;min-width:100px;font-weight:800}
+.p8-theme-options button:before{content:"";display:inline-block;width:13px;height:13px;border-radius:50%;background:var(--swatch);vertical-align:middle;margin-right:8px}
+.p8-theme-options button.selected{border-color:var(--accent);box-shadow:0 0 0 2px #ffffff12}
+.p8-collection-hero{min-height:390px;position:relative;background-image:linear-gradient(0deg,#08080d,transparent 85%),linear-gradient(90deg,#08080dda,transparent 95%),var(--art);background-size:cover;background-position:center;display:flex;flex-direction:column;justify-content:space-between;padding:24px 22px 36px}
+.p8-collection-hero .pill{align-self:flex-start}
+.p8-collection-copy{max-width:760px;position:relative}
+.p8-collection-copy h1{font-size:clamp(32px,5vw,55px);font-weight:900;line-height:1.08;margin:9px 0}
+.p8-collection-copy p{max-width:610px;line-height:1.5;color:#e8e3ee;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.p8-collection-copy b{font-size:13px;color:#e6deff}
+.p8-overlay{position:fixed;z-index:80;inset:0;background:#000c;backdrop-filter:blur(10px);display:grid;place-items:center;padding:calc(15px + env(safe-area-inset-top)) 16px calc(15px + env(safe-area-inset-bottom))}
+.p8-dialog{width:min(100%,550px);max-height:90svh;overflow-y:auto;background:#17141f;border:1px solid #4b3d66;border-radius:20px;box-shadow:0 24px 80px #000c;position:relative}
+.p8-dialog>img{width:100%;aspect-ratio:16/9;object-fit:cover;background:#292335;display:block}
+.p8-x{position:absolute;top:12px;right:12px;z-index:2;border:0;color:white;background:#000c;border-radius:100%;width:42px;height:42px;font-size:20px}
+.p8-dialog-copy{padding:22px}
+.p8-dialog-copy h2{font-size:clamp(24px,5vw,32px);line-height:1.1;margin:8px 0}
+.p8-dialog-copy p{color:#cfcad9;line-height:1.5}
+.p8-dialog-copy .actions{display:flex;flex-wrap:wrap}
+.p8-dialog-copy .actions button{flex:1 1 140px}
+.p8-dialog .primary{background:var(--accent)}
+@media(min-width:850px){.p8-ranked{flex-basis:220px;min-width:220px;padding-left:55px}.p8-ranked .poster{width:156px;flex-basis:156px}.p8-rank{font-size:172px}.p8-collection-hero{padding:34px 6vw 60px;min-height:500px}}
+@media(max-width:420px){.p8-ranked{flex-basis:160px;min-width:160px;padding-left:34px}.p8-ranked .poster{width:118px;flex-basis:118px}.p8-rank{font-size:102px}.p8-collection-hero{min-height:330px;padding:16px 18px 30px}.p8-option{padding:11px 9px;gap:4px}.p8-option label{font-size:13px}.p8-option button{width:32px;min-height:36px;margin-left:2px}.p8-theme-options button{min-width:auto}}
+
+/* Pass 8 theme-linked accents */
+.hero .eyebrow,.row-arrow,.watched-banner,.series-section .section-kicker{color:var(--accent)}
+.hero-dot.active,.tabs button.selected:before,.poster .progress i,.episode-progress i{background:var(--accent)}
+.top .avatar{border-color:var(--accent)}
+.p8-settings-trigger{color:var(--accent)}
+.p8-dialog button:focus-visible,.p8-option button:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
