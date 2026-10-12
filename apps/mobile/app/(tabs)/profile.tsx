@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Redirect, router } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
 import * as ImagePicker from 'expo-image-picker';
@@ -7,6 +7,7 @@ import { getActiveProfile, updateProfileAvatar, updateProfilePhoto } from '@/ser
 import { VelarisHeader } from '@/components/VelarisHeader';
 import { colors, profileLimit } from '@/theme';
 import { accentOptions, useVelarisTheme } from '@/context/ThemeContext';
+import { clearHiddenResume } from '@/services/continueVisibility';
 
 const AVATARS=[{image:require('../../assets/AvatarRot.png'),label:'Rot'},{image:require('../../assets/AvatarBlau.png'),label:'Blau'},
  {image:require('../../assets/AvatarRobbeWeiss.png'),label:'Weiße Robbe'},
@@ -43,7 +44,15 @@ export default function ProfileScreen(){
    style={styles.displayRow}><Text style={styles.settingsTitle}>{label}</Text>
    <Text style={[styles.displayState,{color:display[key]?accentColor:colors.muted}]}>{display[key]?'AN':'AUS'}</Text>
  </Pressable>)}
- <Text style={styles.section}>Einstellungen</Text><Pressable style={styles.settingsRow} onPress={()=>router.push('/downloads')}><View><Text style={styles.settingsTitle}>Downloads</Text><Text style={styles.settingsSub}>Offline gespeicherte Filme und Episoden</Text></View><Text style={styles.chevron}>›</Text></Pressable><Pressable style={styles.settingsRow} onPress={()=>router.push('/plugins')}><View><Text style={styles.settingsTitle}>Plugins</Text><Text style={styles.settingsSub}>Intro Skipper, Credits, Autoplay und Cast</Text></View><Text style={styles.chevron}>›</Text></Pressable><Text style={styles.section}>Profile auf diesem Gerät</Text>{profiles.map(p=><Pressable key={p.id} onPress={async()=>{await switchProfile(p.id);router.replace('/(tabs)/home')}} style={[styles.profile,p.id===activeId&&styles.profileActive]}><View style={styles.smallAvatar}>{p.photoUri?<Image source={{uri:p.photoUri}} style={styles.smallPhoto}/>:<Image source={AVATARS[p.avatar%AVATARS.length].image} style={styles.smallPhoto}/>}</View><View style={{flex:1}}><Text style={styles.profileName}>{p.name}</Text><Text numberOfLines={1} style={styles.profileServer}>{p.session.serverUrl}</Text></View>{p.id===activeId&&<Text style={styles.activeText}>Aktiv</Text>}</Pressable>)}
+ <Text style={styles.section}>Einstellungen</Text>
+ <Pressable style={[styles.settingsRow,{marginBottom:9}]} onPress={()=>{
+   Alert.alert('Weiterschauen', 'Ausgeblendete Titel auf diesem Gerät wieder anzeigen?', [
+     {text:'Abbrechen',style:'cancel'},
+     {text:'Wiederherstellen',onPress:()=>void clearHiddenResume(session)}
+   ]);
+ }}><View><Text style={styles.settingsTitle}>Weiterschauen zurücksetzen</Text>
+   <Text style={styles.settingsSub}>Ausgeblendete Titel wieder anzeigen</Text></View><Text style={styles.chevron}>›</Text>
+ </Pressable><Pressable style={styles.settingsRow} onPress={()=>router.push('/downloads')}><View><Text style={styles.settingsTitle}>Downloads</Text><Text style={styles.settingsSub}>Offline gespeicherte Filme und Episoden</Text></View><Text style={styles.chevron}>›</Text></Pressable><Pressable style={styles.settingsRow} onPress={()=>router.push('/plugins')}><View><Text style={styles.settingsTitle}>Plugins</Text><Text style={styles.settingsSub}>Intro Skipper, Credits, Autoplay und Cast</Text></View><Text style={styles.chevron}>›</Text></Pressable><Text style={styles.section}>Profile auf diesem Gerät</Text>{profiles.map(p=><Pressable key={p.id} onPress={async()=>{await switchProfile(p.id);router.replace('/(tabs)/home')}} style={[styles.profile,p.id===activeId&&styles.profileActive]}><View style={styles.smallAvatar}>{p.photoUri?<Image source={{uri:p.photoUri}} style={styles.smallPhoto}/>:<Image source={AVATARS[p.avatar%AVATARS.length].image} style={styles.smallPhoto}/>}</View><View style={{flex:1}}><Text style={styles.profileName}>{p.name}</Text><Text numberOfLines={1} style={styles.profileServer}>{p.session.serverUrl}</Text></View>{p.id===activeId&&<Text style={styles.activeText}>Aktiv</Text>}</Pressable>)}
  {profiles.length<profileLimit&&<Pressable style={styles.add} onPress={()=>router.push({pathname:'/login',params:{serverUrl:session.serverUrl,serverName:'Jellyfin',addingProfile:'1'}})}><Text style={styles.addPlus}>＋</Text><Text style={styles.addText}>Neues Profil hinzufügen</Text></Pressable>}
  <Text style={styles.limit}>{profiles.length}/{profileLimit} Profile</Text></ScrollView></View>
 }
