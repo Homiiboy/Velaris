@@ -114,7 +114,7 @@ export default function DetailsScreen(){
   </ScrollView>
  </View>}
  {!!item.Overview&&<View style={styles.storySection}>
-  <Text style={styles.storyLabel}>HANDLUNG</Text>
+  <Text style={[styles.storyLabel,{color:accentColor}]}>HANDLUNG</Text>
   <Text style={styles.overview}>{item.Overview}</Text>
  </View>}
  {item.Type==='Series'&&<View style={styles.series}><View style={styles.seriesHeading}>
