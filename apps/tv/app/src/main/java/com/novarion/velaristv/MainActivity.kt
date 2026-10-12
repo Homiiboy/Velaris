@@ -340,6 +340,10 @@ class MainActivity : Activity() {
         frame.addView(page,FrameLayout.LayoutParams(-1,-1).apply{topMargin=dp(82)})
         frame.addView(appHeader(false),FrameLayout.LayoutParams(-1,dp(82),Gravity.TOP))
         setContentView(frame)
+        // Small, non-blocking reveal for navigating between media sections.
+        // The header remains fixed and responds immediately to the remote.
+        page.alpha=0.88f
+        page.animate().alpha(1f).setDuration(170).start()
     }
 
     /** A single pulsing placeholder scene with automatically cancelled animation. */
@@ -1135,7 +1139,14 @@ class MainActivity : Activity() {
                 runOnUiThread {
                     root.removeViewAt(1)
                     homeRoot=root
-                    addLibraryGrid(data)
+                    if(data.isEmpty()) {
+                        root.addView(TextView(this).apply {
+                            text="Hier sind noch keine Titel vorhanden."
+                            textSize=19f
+                            setTextColor(0xFFB9B9C3.toInt())
+                            setPadding(0,dp(28),0,dp(24))
+                        })
+                    } else addLibraryGrid(data)
                 }
             } catch(e:Exception){ runOnUiThread{toast("$title konnten nicht geladen werden")} }
         }
