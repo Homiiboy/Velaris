@@ -2,6 +2,7 @@
   "id": "./",
   "name": "Velaris",
   "short_name": "Velaris",
+  "version": "1.0.0",
   "description": "Deine Jellyfin-Mediathek als Streaming-App",
   "start_url": "./",
   "scope": "./",
