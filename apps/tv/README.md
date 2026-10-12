@@ -110,6 +110,20 @@ Velaris TV stays API-driven and does not require plugin-specific client SDKs.
 
 Phase 7 / 0.7.0 RC is the feature-complete milestone. Remaining release work is operational: real-device regression testing, signing credentials, final store screenshots/listing and production publishing.
 
+## Version 1.0.0 – UI-Polish-Pass 10
+
+Die Android-TV-App trägt jetzt `versionName = "1.0.0"` mit `versionCode = 8` (höher als beim bisherigen 0.7.0-Build). Die Anwendungs-ID `com.novarion.velaristv` bleibt unverändert.
+
+- Player: nicht-blockierender Wechsel zur nächsten Episode; Media3-Ressourcen werden beim Schließen freigegeben.
+- Bedienung: begrenzte Navigation-History und sichere Wiederherstellung des Zurück-Zustands.
+- Darstellung: Versionsanzeige in den TV-Einstellungen; vorhandene Themes, Profilfunktionen und cineastische Reihen bleiben erhalten.
+- Streaming: Client-Kennung in den Jellyfin-Anfragen auf 1.0.0 aktualisiert.
+- Das Smartphone bleibt unabhängig versioniert. Die Web-App ist nicht betroffen.
+
+**Wichtig:** Die Versionsänderung im Quellcode ist noch kein signiertes, auf Geräten geprüftes Release. Erst nach grüner CI, Installation auf dem Peaq Google TV und Funktionstests kann ein offizieller GitHub-Release / Tag `tv-v1.0.0` erstellt werden. Eine bestehende Installation lässt sich nur mit einer APK derselben Signaturlinie aktualisieren.
+
+Siehe [UI-Pass 10 und Release-Checkliste](../../docs/UI_POLISH_PASS_10.md).
+
 ## Build
 
 Open the project in a current Android Studio version, or build with Gradle 9.6+ and JDK 17:
@@ -129,7 +143,7 @@ GitHub Actions builds, lints and uploads a debug APK on every push to `main`.
 ## App identity
 
 - Application ID: `com.novarion.velaristv`
-- Version: `0.7.0`
+- Version: `1.0.0` (versionCode 8)
 - Minimum Android: API 26
 - Target API: 34
 - Compile API: 36
