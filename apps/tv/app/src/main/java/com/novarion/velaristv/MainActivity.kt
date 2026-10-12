@@ -2463,7 +2463,7 @@ class MainActivity : Activity() {
                 text=if(active)"✓ $label" else label
                 contentDescription="$label ${if(active)"ausgewählt" else "auswählen"}"
                 isAllCaps=false
-                setTextColor(Color.WHITE)
+                setTextColor(if(key=="green"||key=="yellow"||key=="orange")0xFF101016.toInt() else Color.WHITE)
                 textSize=16f
                 isFocusable=true
                 background=GradientDrawable().apply {
