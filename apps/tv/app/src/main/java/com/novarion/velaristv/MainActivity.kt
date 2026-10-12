@@ -467,7 +467,7 @@ class MainActivity : Activity() {
                     addRow(VelarisDesign.homeRow("latest","Kürzlich hinzugefügt"),latest)
                     addRow(VelarisDesign.homeRow("recommended","Für dich"),recommended)
                     addRow("Für deinen Filmabend",recommended.filter{it.optString("Type")=="Movie"})
-                    addRow("Noch nicht angesehen",latest.filter{!it.optJSONObject("UserData")?.optBoolean("Played",false)!!})
+                    addRow("Noch nicht angesehen",latest.filter{it.optJSONObject("UserData")?.optBoolean("Played",false)!=true})
                     addRow("Action",action); addRow("Komödien",comedy); addRow("Science-Fiction",sciFi)
                     addRow("Noch einmal ansehen",replay)
                     requestRoot.animate().alpha(1f).setDuration(280).start()
