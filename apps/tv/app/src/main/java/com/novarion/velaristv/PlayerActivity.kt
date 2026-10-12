@@ -258,9 +258,11 @@ class PlayerActivity : Activity() {
                         if(url.substringBefore('?').contains(".m3u8",ignoreCase=true))
                             setMimeType(MimeTypes.APPLICATION_M3U8)
                     }.build()
+                    // Apply the resume position before preparing the media source so
+                    // ExoPlayer can initially buffer from the target position.
                     exo.setMediaItem(media)
+                    if (resumeTicks > 0L) exo.seekTo(resumeTicks / 10_000L)
                     exo.prepare()
-                    if(resumeTicks>0)exo.seekTo(resumeTicks/10_000L)
                     exo.playWhenReady=true
                 }.onFailure { err ->
                     Log.w("VelarisPlayback","Unable to resolve playback stream",err)
