@@ -215,7 +215,7 @@ class MainActivity : Activity() {
             post {
                 val width=paint.measureText(text.toString())
                 paint.shader=android.graphics.LinearGradient(0f,0f,width,0f,
-                    intArrayOf(0xFFBCA6FF.toInt(),0xFF7C5CFC.toInt(),Color.WHITE),null,
+                    intArrayOf(Color.WHITE,VelarisDesign.color("accent",0xFF7C5CFC.toInt()),Color.WHITE),null,
                     android.graphics.Shader.TileMode.CLAMP)
                 invalidate()
             }
@@ -515,7 +515,7 @@ class MainActivity : Activity() {
             // Remove stale layers if a previous transition was interrupted.
             while(holder.childCount>1) holder.removeViewAt(0)
             val oldHero=if(holder.childCount>0)holder.getChildAt(0) else null
-            val shouldAnimate=oldHero!=null &&
+            val shouldAnimate=oldHero!=null && prefs.getBoolean("ui_animations",true) &&
                 android.animation.ValueAnimator.areAnimatorsEnabled()
             hero.alpha=if(shouldAnimate)0f else 1f
             holder.addView(hero,FrameLayout.LayoutParams(-1,-1))
@@ -527,7 +527,7 @@ class MainActivity : Activity() {
             } else if(oldHero?.parent===holder) holder.removeView(oldHero)
         }
         render(0)
-        if(items.size>1) holder.postDelayed(object:Runnable {
+        if(items.size>1 && prefs.getBoolean("auto_hero",true)) holder.postDelayed(object:Runnable {
             var index=1
             override fun run() {
                 if(holder.isAttachedToWindow && !holder.hasFocus()) {
@@ -905,6 +905,7 @@ class MainActivity : Activity() {
     private fun applyCardFocus(v:View, poster:View?=null) {
         v.setOnFocusChangeListener { _,focused ->
             val target=poster ?: v
+            val showPreview=prefs.getBoolean("ui_preview",true)
             if(poster is FrameLayout) {
                 poster.foreground=if(focused)GradientDrawable().apply{
                     setColor(Color.TRANSPARENT)
@@ -914,7 +915,7 @@ class MainActivity : Activity() {
                 val caption=poster.findViewWithTag<TextView>("velaris_poster_focus_caption")
                 if(caption!=null) {
                     caption.animate().cancel()
-                    if(focused) {
+                    if(focused && showPreview) {
                         caption.alpha=0f
                         caption.visibility=View.VISIBLE
                         caption.animate().alpha(1f).setDuration(150).start()
@@ -947,7 +948,7 @@ class MainActivity : Activity() {
                 .scaleX(if(focused)1.02f else 1f)
                 .scaleY(if(focused)1.02f else 1f)
                 .translationZ(if(focused)dp(10).toFloat() else 0f)
-                .setDuration(if(focused)170 else 130).start()
+                .setDuration(if(prefs.getBoolean("ui_animations",true)) { if(focused)170 else 130 } else 0).start()
         }
     }
 
@@ -2209,10 +2210,11 @@ class MainActivity : Activity() {
         root.addView(TextView(this).apply{text="Einstellungen";textSize=38f;setTextColor(Color.WHITE);typeface=Typeface.DEFAULT_BOLD})
         root.addView(TextView(this).apply{text="Velaris TV";textSize=16f;setTextColor(Color.GRAY);setPadding(0,dp(4),0,dp(24))})
         val playback=settingsCard("▶","Wiedergabe","Autoplay, Intro, Rückblick und Abspann"){showPlaybackSettings()}
+        val appearance=settingsCard("◉","Darstellung","Farben, Highlights und Animationen"){showAppearanceSettings()}
         val profiles=settingsCard("●","Profile","Profile verwalten und wechseln"){showProfiles()}
         val serverCard=settingsCard("◉","Server",server.ifBlank{"Nicht verbunden"}){clearConnection();showServer()}
         val logout=settingsCard("↪","Abmelden","Jellyfin-Sitzung auf diesem TV beenden"){token="";userId="";prefs.edit().remove("access_token").remove("user_id").apply();showLogin()}
-        listOf(playback,profiles,serverCard,logout).forEach{root.addView(it,LinearLayout.LayoutParams(-1,dp(86)).apply{bottomMargin=dp(12)})}
+        listOf(playback,appearance,profiles,serverCard,logout).forEach{root.addView(it,LinearLayout.LayoutParams(-1,dp(86)).apply{bottomMargin=dp(12)})}
         val page=ScrollView(this).apply {
             isVerticalScrollBarEnabled=false
             isFillViewport=true
@@ -2241,6 +2243,75 @@ class MainActivity : Activity() {
             // Borders provide focus feedback without scaling/cropping the full-width row.
             animate().scaleX(1f).scaleY(1f).setDuration(100).start()
         }
+    }
+
+    private fun showAppearanceSettings() {
+        val root=LinearLayout(this).apply {
+            orientation=LinearLayout.VERTICAL
+            setPadding(dp(52),dp(28),dp(52),dp(60))
+            setBackgroundColor(VelarisDesign.color("background",0xFF08080D.toInt()))
+            clipChildren=false;clipToPadding=false
+        }
+        root.addView(TextView(this).apply {
+            text="Darstellung"
+            textSize=34f
+            typeface=Typeface.DEFAULT_BOLD
+            setTextColor(Color.WHITE)
+        },params(-1,-2,8))
+        root.addView(TextView(this).apply {
+            text="Akzentfarbe wählen – dunkler Hintergrund und Farbverlauf bleiben erhalten."
+            textSize=17f
+            setTextColor(0xFFB9B9C3.toInt())
+        },params(-1,-2,16))
+        val selected=VelarisDesign.selectedAccent(this)
+        val choices=LinearLayout(this).apply {
+            orientation=LinearLayout.HORIZONTAL
+            clipChildren=false
+            clipToPadding=false
+        }
+        VelarisDesign.accents.forEach { (key,option) ->
+            val (label,hex)=option
+            val active=key==selected
+            val chip=Button(this).apply {
+                text=if(active)"✓ $label" else label
+                contentDescription="$label ${if(active)"ausgewählt" else "auswählen"}"
+                isAllCaps=false
+                setTextColor(Color.WHITE)
+                textSize=16f
+                isFocusable=true
+                background=GradientDrawable().apply {
+                    setColor(Color.parseColor(hex))
+                    cornerRadius=dp(14).toFloat()
+                    if(active)setStroke(dp(3),Color.WHITE)
+                }
+                setOnClickListener {
+                    VelarisDesign.setAccent(this@MainActivity,key)
+                    showAppearanceSettings()
+                }
+            }
+            choices.addView(chip,LinearLayout.LayoutParams(0,dp(62),1f).apply { marginEnd=dp(9) })
+        }
+        root.addView(choices,LinearLayout.LayoutParams(-1,dp(62)).apply { bottomMargin=dp(14) })
+        val switches=listOf(
+            Triple("Highlights automatisch wechseln","auto_hero",true),
+            Triple("Sanfte Animationen","ui_animations",true),
+            Triple("Poster-Vorschau bei Fokus","ui_preview",true)
+        )
+        switches.forEach { (label,key,default) ->
+            val checked=prefs.getBoolean(key,default)
+            root.addView(settingsCard(if(checked)"●" else "○",label,if(checked)"Ein" else "Aus") {
+                prefs.edit().putBoolean(key,!checked).apply()
+                showAppearanceSettings()
+            },LinearLayout.LayoutParams(-1,dp(73)).apply { bottomMargin=dp(9) })
+        }
+        root.addView(actionButton("Zurück",false){showSettingsDialog()},params(190,54,13))
+        showAppPage(ScrollView(this).apply {
+            isVerticalScrollBarEnabled=false
+            clipChildren=false
+            clipToPadding=false
+            addView(root)
+        })
+        root.post { choices.getChildAt(0)?.requestFocus() }
     }
 
     private fun showPlaybackSettings() {
