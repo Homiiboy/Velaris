@@ -13,6 +13,7 @@ import android.view.WindowInsetsController
 import android.widget.FrameLayout
 import android.widget.TextView
 import android.widget.Button
+import android.widget.ImageView
 import android.app.AlertDialog
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MimeTypes
@@ -56,6 +57,7 @@ class PlayerActivity : Activity() {
     private var playbackTimeText: TextView? = null
     private var nextOverlay: Button? = null
     private var nextEpisodeLabel = ""
+    private var nextEpisodeImage: ImageView? = null
     private var nextResolvedFor = ""
     private var autoNextEnabled = true
     private var lastPlaybackLabel = "Auto"
@@ -163,6 +165,19 @@ class PlayerActivity : Activity() {
             setOnClickListener { playNextEpisodeNow() }
         }
         root.addView(nextOverlay,FrameLayout.LayoutParams(420,90,android.view.Gravity.END or android.view.Gravity.BOTTOM).apply{marginEnd=42;bottomMargin=140})
+        nextEpisodeImage=ImageView(this).apply{
+            scaleType=ImageView.ScaleType.CENTER_CROP
+            visibility=View.GONE
+            background=GradientDrawable().apply {
+                setColor(0xFF202027.toInt())
+                cornerRadius=12f
+            }
+            clipToOutline=true
+            isFocusable=false
+        }
+        root.addView(nextEpisodeImage,FrameLayout.LayoutParams(105,90,android.view.Gravity.END or android.view.Gravity.BOTTOM).apply{
+            marginEnd=357;bottomMargin=140
+        })
         VelarisDesign.load(this)
         loadPlayerTitle(itemId)
         setContentView(root)
@@ -267,6 +282,7 @@ class PlayerActivity : Activity() {
         synchronized(mediaSegments){mediaSegments.clear()}
         activeSegment=null
         nextOverlay?.visibility=View.GONE
+        nextEpisodeImage?.visibility=View.GONE
         skipIntroButton?.visibility=View.GONE
         loadMediaSegments(id)
         val request=++playbackRequestSerial
@@ -296,6 +312,29 @@ class PlayerActivity : Activity() {
         }
     }
 
+    private fun loadNextEpisodeThumbnail(id:String) {
+        io.execute {
+            val bitmap=runCatching {
+                val connection=URL("$server/Items/$id/Images/Primary?maxWidth=220").openConnection() as HttpURLConnection
+                try {
+                    connection.connectTimeout=5000
+                    connection.readTimeout=7000
+                    connection.setRequestProperty("X-Emby-Token",token)
+                    if(connection.responseCode in 200..299)
+                        android.graphics.BitmapFactory.decodeStream(connection.inputStream)
+                    else null
+                } finally {connection.disconnect()}
+            }.getOrNull()
+            runOnUiThread {
+                if(itemId.isNotBlank() && nextItemId==id && !isFinishing){
+                    nextEpisodeImage?.setImageBitmap(bitmap)
+                    if(bitmap!=null && nextOverlay?.visibility==View.VISIBLE)
+                        nextEpisodeImage?.visibility=View.VISIBLE
+                }
+            }
+        }
+    }
+
     private fun playNextEpisodeNow() {
         val target=nextItemId
         val exo=player
@@ -317,11 +356,13 @@ class PlayerActivity : Activity() {
         val remaining=if(total>0L && total!=C.TIME_UNSET)total-exo.currentPosition else Long.MAX_VALUE
         if(nextItemId.isBlank()||remaining !in 1..90_000L) {
             if(button.visibility==View.VISIBLE)button.visibility=View.GONE
+            nextEpisodeImage?.visibility=View.GONE
             return
         }
         val seconds=((remaining+999L)/1000L).coerceAtLeast(1L)
         button.text="▶  Nächste Folge\n${nextEpisodeLabel.ifBlank{"Jetzt weiterschauen"}} · ${seconds}s"
         if(button.visibility!=View.VISIBLE)button.visibility=View.VISIBLE
+        if(nextEpisodeImage?.drawable!=null)nextEpisodeImage?.visibility=View.VISIBLE
     }
 
     // Resolve the actual next episode from this series, rather than guessing an ID.
@@ -358,6 +399,9 @@ class PlayerActivity : Activity() {
                     nextItemId=following
                     nextEpisodeLabel=label
                     nextOverlay?.visibility=View.GONE
+                    nextEpisodeImage?.visibility=View.GONE
+                    nextEpisodeImage?.setImageDrawable(null)
+                    if(following.isNotBlank())loadNextEpisodeThumbnail(following)
                 }
             }
         }
