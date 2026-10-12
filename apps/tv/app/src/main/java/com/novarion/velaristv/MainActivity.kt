@@ -463,6 +463,8 @@ class MainActivity : Activity() {
             } catch(e:Exception) { runOnUiThread {
                 if(destroyed || homeRoot!==requestRoot || !requestRoot.isAttachedToWindow)
                     return@runOnUiThread
+                requestRoot.animate().cancel()
+                requestRoot.alpha=1f
                 requestRoot.removeAllViews()
                 requestRoot.addView(TextView(this).apply {
                     text="Velaris konnte den Server gerade nicht erreichen."
