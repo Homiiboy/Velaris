@@ -18,6 +18,16 @@ Die vollständigen Quellstände beider Apps wurden übernommen. Aktuell sind es 
 | Web (iPhone / Desktop PWA) | [apps/web](apps/web) | HTML / CSS / JavaScript / Jellyfin API |\n| TV (Android TV / Google TV) | [apps/tv](apps/tv) | Kotlin / Media3 |
 | Importnachweis und nächste Schritte | [docs/MIGRATION.md](docs/MIGRATION.md) | Quellstände, Umfang und Einschränkungen |
 
+## Plattformversionen
+
+| Plattform | Versionsstand im Quellcode |
+| --- | --- |
+| Velaris TV | **1.0.0** (`versionCode` 8) |
+| Velaris Smartphone | **1.0.0** (Expo, Android `versionCode` 8) |
+| Velaris Web | **1.0.0** (PWA-Version und Cachekennung) |
+
+Die Versionsnummern sind unabhängig von einem signierten oder ausgerollten Release. Mobile benötigt einen neuen EAS-Build, Web ein neues Deployment und TV eine signierte APK für produktive Updates.
+
 ## Smartphone starten
 
 Node.js 22.13+ verwenden. Alle Expo- und EAS-Befehle aus `apps/mobile` ausführen:
