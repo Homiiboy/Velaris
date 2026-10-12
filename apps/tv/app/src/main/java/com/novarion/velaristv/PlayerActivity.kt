@@ -479,6 +479,8 @@ class PlayerActivity : Activity() {
     }
 
     private fun resolvePlaybackUrl(id:String,forceCompatible:Boolean=false):String {
+        val preferred=getSharedPreferences("velaris_tv",MODE_PRIVATE).getInt("max_video_bitrate",8_000_000)
+        val bitrate=preferred.coerceIn(2_000_000,20_000_000)
         val body=JSONObject()
             .put("UserId",userId)
             .put("StartTimeTicks",0L)
@@ -489,7 +491,7 @@ class PlayerActivity : Activity() {
             .put("EnableTranscoding",true)
             .put("AllowVideoStreamCopy",!forceCompatible)
             .put("AllowAudioStreamCopy",!forceCompatible)
-            .put("MaxStreamingBitrate",8_000_000)
+            .put("MaxStreamingBitrate",bitrate)
             .put("DeviceProfile",emulatorSafeDeviceProfile())
             .toString()
         val c=URL("$server/Items/$id/PlaybackInfo").openConnection() as HttpURLConnection
@@ -546,6 +548,7 @@ class PlayerActivity : Activity() {
                 KeyEvent.KEYCODE_MEDIA_REWIND -> { player?.seekBack(); return true }
                 KeyEvent.KEYCODE_MENU, KeyEvent.KEYCODE_SETTINGS -> { showTrackMenu(); return true }
                 KeyEvent.KEYCODE_INFO -> { toggleStats(); return true }
+                KeyEvent.KEYCODE_PROG_BLUE -> { showQualityMenu(); return true }
             }
         }
         return super.dispatchKeyEvent(event)
@@ -554,6 +557,25 @@ class PlayerActivity : Activity() {
     private fun toggleStats() {
         val v=statsText ?: return
         if(v.visibility==View.VISIBLE) v.visibility=View.GONE else { v.text="Velaris Wiedergabe\n$lastPlaybackLabel${if(lastMediaInfo.isNotBlank()) "\n$lastMediaInfo" else ""}"; v.visibility=View.VISIBLE }
+    }
+
+    private fun showQualityMenu() {
+        val values=intArrayOf(4_000_000,8_000_000,12_000_000,20_000_000)
+        val labels=arrayOf("Datensparend · 4 Mbit/s","Standard · 8 Mbit/s",
+            "Hoch · 12 Mbit/s","Maximum · 20 Mbit/s")
+        val current=getSharedPreferences("velaris_tv",MODE_PRIVATE).getInt("max_video_bitrate",8_000_000)
+        val selected=values.indexOf(current).coerceAtLeast(0)
+        AlertDialog.Builder(this).setTitle("Streamingqualität")
+            .setSingleChoiceItems(labels,selected) { dialog,index ->
+                getSharedPreferences("velaris_tv",MODE_PRIVATE).edit()
+                    .putInt("max_video_bitrate",values[index]).apply()
+                dialog.dismiss()
+                val exo=player
+                if(exo!=null) {
+                    val position=exo.currentPosition.coerceAtLeast(0L)*10_000L
+                    preparePlayback(exo,itemId,position)
+                }
+            }.setNegativeButton("Abbrechen",null).show()
     }
 
     private fun showTrackMenu() {
