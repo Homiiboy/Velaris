@@ -32,7 +32,13 @@ Typprüfung: `npm run typecheck`.
 Android-Test-APK über EAS: `npx eas-cli build --platform android --profile preview`.
 Die vorhandene Expo-Projektzuordnung bleibt bestehen; dafür ist Zugriff auf das bestehende Expo-Projekt erforderlich.
 
-## iPhone-Web-App (PWA)\n\nDie neue [Velaris Web-App](apps/web/README.md) kann auf ZimaOS per Docker und im privaten Tailnet via Tailscale Serve (HTTPS) betrieben werden. Danach über Safari zum iPhone-Home-Bildschirm hinzufügen. Ein Apple-Developer-Account oder eine kostenpflichtige Domain ist nicht nötig. Für die Jellyfin-Verbindung sind HTTPS und korrektes CORS bzw. ein Reverse Proxy erforderlich. Web-App MVP, noch nicht auf iPhone und ZimaOS validiert.\n\n## TV bauen
+## iPhone-Web-App (PWA)\n\nDie neue [Velaris Web-App](apps/web/README.md) kann auf ZimaOS per Docker und im privaten Tailnet via Tailscale Serve (HTTPS) betrieben werden. Danach über Safari zum iPhone-Home-Bildschirm hinzufügen. Ein Apple-Developer-Account oder eine kostenpflichtige Domain ist nicht nötig. Für die Jellyfin-Verbindung sind HTTPS und korrektes CORS bzw. ein Reverse Proxy erforderlich. Web-App MVP, noch nicht auf iPhone und ZimaOS validiert.\n\n## Velaris TV 1.0.0 (UI-Polish-Pass 10)
+
+Die native Android-TV-App in `apps/tv` ist auf **Version 1.0.0** (`versionCode 8`) gesetzt. Sie besitzt weiter dieselbe Android-Anwendungs-ID `com.novarion.velaristv`; die Smartphone-App bleibt unabhängig versioniert.
+
+Release-Härtung und Abnahmetests: [UI-Pass 10](docs/UI_POLISH_PASS_10.md). Eine offizielle Veröffentlichung setzt grüne CI-Läufe, eine auf dem Google TV getestete APK und die Signierung mit dem passenden Schlüssel voraus.
+
+## TV bauen
 
 In Android Studio den Ordner `apps/tv` öffnen oder mit JDK 17 und Gradle 9.6.0:
 
