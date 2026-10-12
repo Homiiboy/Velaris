@@ -129,7 +129,7 @@ export default function ProfilesScreen(){
     <Text style={styles.editorHeading}>Avatar ändern</Text>
     <Text style={styles.editorSubtitle}>{selected.name}</Text>
     <View style={styles.avatarChoices}>
-     {AVATARS.map((src,i)=><Pressable key={i} style={styles.choice} disabled={saving}
+     {AVATARS.map((src,i)=><Pressable key={i} style={({pressed})=>[styles.choice,pressed&&styles.choicePressed]} disabled={saving}
        onPress={()=>selectAvatar(i)}>
        <Image source={src} style={styles.choiceImage}/>
        <Text style={styles.choiceName}>{LABELS[i]}</Text>
@@ -164,7 +164,7 @@ const styles=StyleSheet.create({
  profilesScroll:{flex:1},
  profileList:{paddingBottom:12,gap:8},
  profile:{height:70,flexDirection:'row',alignItems:'center',borderRadius:12,paddingHorizontal:6,backgroundColor:'rgba(30,29,40,.76)'},
- profilePressed:{backgroundColor:'rgba(83,70,132,.7)'},
+ profilePressed:{backgroundColor:'rgba(83,70,132,.7)',transform:[{scale:0.985}]},
  avatar:{width:54,height:54,overflow:'hidden',borderRadius:10,borderWidth:1,borderColor:'rgba(255,255,255,.3)',backgroundColor:colors.surface,alignItems:'center',justifyContent:'center'},
  photo:{width:'100%',height:'100%'},
  name:{flex:1,color:colors.text,fontSize:13,fontWeight:'700',paddingLeft:10},
@@ -178,7 +178,8 @@ const styles=StyleSheet.create({
  editorHeading:{fontSize:25,fontWeight:'900',color:colors.text,textAlign:'center'},
  editorSubtitle:{fontSize:14,color:colors.muted,marginTop:4,textAlign:'center'},
  avatarChoices:{flexDirection:'row',flexWrap:'wrap',justifyContent:'center',columnGap:12,rowGap:16,marginTop:22},
- choice:{width:113,alignItems:'center'},
+ choice:{width:113,alignItems:'center',paddingVertical:5,borderRadius:12},
+ choicePressed:{backgroundColor:'rgba(124,92,252,.22)',transform:[{scale:0.97}]},
  choiceImage:{width:84,height:84,borderRadius:12},
  choiceName:{color:colors.muted,marginTop:7,fontSize:12,fontWeight:'700',textAlign:'center'},
  uploadButton:{marginTop:22,backgroundColor:colors.accent,borderRadius:9,paddingVertical:13,alignItems:'center'},
