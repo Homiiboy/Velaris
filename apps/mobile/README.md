@@ -6,6 +6,8 @@
 
 Native Velaris client for iOS and Android, powered by Jellyfin.
 
+**Aktuelle Quellcode-Version: 1.0.0** (`package.json` und Expo `app.json`; Android `versionCode` 8). Da EAS die Buildnummern remote verwaltet, beim nächsten Cloud-Build die effektive Versions-/Buildnummer prüfen. Die Veröffentlichung bzw. Gerätetests sind davon unabhängig.
+
 ## Status
 
 ### Phase 1 — Jellyfin foundation ✅
