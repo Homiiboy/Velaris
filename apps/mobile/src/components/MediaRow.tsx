@@ -5,11 +5,13 @@ import { MediaCard } from '@/components/MediaCard';
 import { getPrimaryImageUrl, getBackdropUrl } from '@/services/jellyfin';
 import type { JellyfinItem, Session } from '@/types/jellyfin';
 import { colors } from '@/theme';
+import { useVelarisTheme } from '@/context/ThemeContext';
 import { episodeTitle } from '@/services/episodeTitles';
 import { PlayGlyph } from '@/components/PlayGlyph';
 import { playbackPercent,minutesRemaining,episodeCode } from '@/services/playbackPresentation';
 
 function ContinueCard({item,session,onHide}:{item:JellyfinItem;session:Session;onHide?: (id:string)=>void}){
+ const {accentColor}=useVelarisTheme();
  const [focused,setFocused]=useState(false);
  const scale=useRef(new Animated.Value(1)).current;
  const animate=(toValue:number)=>Animated.spring(scale,{
@@ -35,7 +37,7 @@ function ContinueCard({item,session,onHide}:{item:JellyfinItem;session:Session;o
   onPress={()=>router.push({pathname:'/player/[id]',params:{id:item.Id}})}>
   <Animated.View style={[styles.continueLift,{transform:[{scale}],
     shadowOpacity:focused?0.3:0.06,elevation:focused?7:1}]}>
-  <View style={[styles.thumbWrap,focused&&styles.thumbFocused]}>
+  <View style={[styles.thumbWrap,focused&&styles.thumbFocused,focused&&{borderColor:accentColor}]}>
    <Image source={{uri:thumbnailUri}} style={styles.thumb} resizeMode={hasBackdrop?'cover':'contain'}/>
    <View style={styles.resumeBadge}><Text style={styles.resumeBadgeText}>FORTSETZEN</Text></View>
    <View style={styles.playBubble}><PlayGlyph size={17}/></View>
