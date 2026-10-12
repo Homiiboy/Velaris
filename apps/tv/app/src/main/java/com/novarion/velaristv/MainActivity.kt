@@ -1303,18 +1303,38 @@ class MainActivity : Activity() {
                 val children=items("/Users/$userId/Items?ParentId=$collectionId&Recursive=true&IncludeItemTypes=Movie,Series&SortBy=PremiereDate,SortName&SortOrder=Ascending&Limit=500&EnableUserData=true&Fields=Overview,PremiereDate,ProductionYear,PrimaryImageAspectRatio")
                 runOnUiThread {
                     root.removeAllViews()
-                    root.addView(TextView(this).apply {
+                    val collectionHero=FrameLayout(this).apply{
+                        setBackgroundColor(VelarisDesign.color("surface",0xFF15151B.toInt()))
+                    }
+                    val backdrop=ImageView(this).apply{
+                        scaleType=ImageView.ScaleType.CENTER_CROP
+                    }
+                    collectionHero.addView(backdrop,FrameLayout.LayoutParams(-1,-1))
+                    loadImage(backdrop,collectionId,"Backdrop",1600)
+                    addCinematicHeroShades(collectionHero)
+                    val copy=LinearLayout(this).apply{
+                        orientation=LinearLayout.VERTICAL
+                        gravity=Gravity.BOTTOM
+                        setPadding(dp(28),0,dp(34),dp(34))
+                    }
+                    copy.addView(heroEyebrow("VELARIS KOLLEKTION"))
+                    copy.addView(TextView(this).apply{
                         text=collection.optString("Name","Sammlung")
-                        textSize=37f;typeface=Typeface.DEFAULT_BOLD;setTextColor(Color.WHITE)
-                    },params(-1,-2,0))
+                        textSize=40f;maxLines=2
+                        typeface=Typeface.DEFAULT_BOLD;setTextColor(Color.WHITE)
+                    })
                     val overview=collection.optString("Overview")
-                    if(overview.isNotBlank())root.addView(TextView(this).apply {
-                        text=overview;setTextColor(Color.LTGRAY);textSize=17f;maxLines=5
-                    },params(-1,-2,12))
-                    root.addView(TextView(this).apply {
-                        text="${children.size} Titel"
-                        setTextColor(Color.LTGRAY);textSize=16f
-                    },params(-1,-2,15))
+                    if(overview.isNotBlank())copy.addView(TextView(this).apply{
+                        text=overview;setTextColor(0xFFE6E3ED.toInt());textSize=16f
+                        maxLines=3;setPadding(0,dp(10),0,0)
+                    })
+                    copy.addView(TextView(this).apply{
+                        text="${children.size} Titel · Nach Erscheinungsjahr"
+                        textSize=15f;setTextColor(Color.LTGRAY)
+                        setPadding(0,dp(10),0,0)
+                    })
+                    collectionHero.addView(copy,FrameLayout.LayoutParams(-1,-1))
+                    root.addView(collectionHero,LinearLayout.LayoutParams(-1,dp(365)).apply{bottomMargin=dp(18)})
                     homeRoot=root
                     if(children.isEmpty())root.addView(TextView(this).apply {
                         text="Diese Sammlung enthält keine verfügbaren Filme oder Serien."
