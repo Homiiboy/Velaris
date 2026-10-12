@@ -194,7 +194,7 @@ class PlayerActivity : Activity() {
     }
 
     private fun authorizationHeader():String =
-        """MediaBrowser Client="Velaris TV", Device="Android TV", DeviceId="velaris-tv", Version="0.7.0", Token="$token" """
+        """MediaBrowser Client="Velaris TV", Device="Android TV", DeviceId="velaris-tv", Version="1.0.0", Token="$token" """
 
     private fun createPlayer():ExoPlayer {
         // Authenticate HLS playlists and their segments, not just the metadata call.
@@ -265,7 +265,7 @@ class PlayerActivity : Activity() {
                 val c=URL("$server/Shows/NextUp?UserId=$userId&StartItemId=$id&Limit=1").openConnection() as HttpURLConnection
                 try {
                     c.connectTimeout=6000; c.readTimeout=8000
-                    c.setRequestProperty("Authorization", """MediaBrowser Client="Velaris TV", Device="Android TV", DeviceId="velaris-tv", Version="0.7.0", Token="$token"""")
+                    c.setRequestProperty("Authorization", """MediaBrowser Client="Velaris TV", Device="Android TV", DeviceId="velaris-tv", Version="1.0.0", Token="$token"""")
                     if(c.responseCode in 200..299) {
                         val json=JSONObject(c.inputStream.bufferedReader().use { it.readText() })
                         val arr=json.optJSONArray("Items")
@@ -412,7 +412,7 @@ class PlayerActivity : Activity() {
             try {
                 val c=URL("$server/Users/$userId/Items/$id").openConnection() as HttpURLConnection
                 try {
-                    c.setRequestProperty("Authorization", """MediaBrowser Client="Velaris TV", Device="Android TV", DeviceId="velaris-tv", Version="0.7.0", Token="$token"""")
+                    c.setRequestProperty("Authorization", """MediaBrowser Client="Velaris TV", Device="Android TV", DeviceId="velaris-tv", Version="1.0.0", Token="$token"""")
                     if(c.responseCode in 200..299) {
                         val x=JSONObject(c.inputStream.bufferedReader().use{it.readText()})
                         val name=x.optString("Name");val series=x.optString("SeriesName");val season=x.optInt("ParentIndexNumber",0);val ep=x.optInt("IndexNumber",0)
@@ -437,7 +437,7 @@ class PlayerActivity : Activity() {
                 try {
                     c.connectTimeout=6000; c.readTimeout=8000
                     c.setRequestProperty("Accept","application/json")
-                    c.setRequestProperty("Authorization", """MediaBrowser Client="Velaris TV", Device="Android TV", DeviceId="velaris-tv", Version="0.7.0", Token="$token"""")
+                    c.setRequestProperty("Authorization", """MediaBrowser Client="Velaris TV", Device="Android TV", DeviceId="velaris-tv", Version="1.0.0", Token="$token"""")
                     if(c.responseCode in 200..299) {
                         val json=JSONObject(c.inputStream.bufferedReader().use { it.readText() })
                         val arr=json.optJSONArray("Items")
@@ -697,7 +697,7 @@ class PlayerActivity : Activity() {
                 try {
                 c.requestMethod = "POST"; c.doOutput = true; c.connectTimeout = 6000; c.readTimeout = 6000
                 c.setRequestProperty("Content-Type","application/json")
-                c.setRequestProperty("Authorization", """MediaBrowser Client="Velaris TV", Device="Android TV", DeviceId="velaris-tv", Version="0.7.0", Token="$token"""")
+                c.setRequestProperty("Authorization", """MediaBrowser Client="Velaris TV", Device="Android TV", DeviceId="velaris-tv", Version="1.0.0", Token="$token"""")
                 c.outputStream.use { it.write(body.toByteArray()) }
                 c.responseCode
                 } finally { c.disconnect() }
