@@ -100,8 +100,8 @@ export default function HomeScreen() {
       >
         {hero ? (
           <View style={[styles.hero, { height: Math.max(565, height * 0.76) }]}>
-            <Animated.View style={[StyleSheet.absoluteFillObject, { opacity: heroOpacity }]}>
-              <ImageBackground source={{ uri: getBackdropUrl(session, hero) }} style={StyleSheet.absoluteFillObject} resizeMode="cover" />
+            <Animated.View style={[StyleSheet.absoluteFill, { opacity: heroOpacity }]}>
+              <ImageBackground source={{ uri: getBackdropUrl(session, hero) }} style={StyleSheet.absoluteFill} resizeMode="cover" />
             </Animated.View>
             <CinematicShade/>
             <View style={styles.heroContent}>
