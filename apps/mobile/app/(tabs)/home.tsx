@@ -28,6 +28,8 @@ export default function HomeScreen() {
   const [recommended, setRecommended] = useState<JellyfinItem[]>([]);
   const [becauseTitle, setBecauseTitle] = useState('');
   const [refreshing, setRefreshing] = useState(false);
+  const [heroIndex, setHeroIndex] = useState(0);
+  const heroOpacity = useRef(new Animated.Value(1)).current;
   const [initialLoading, setInitialLoading] = useState(true);
   const [hasLoadError, setHasLoadError] = useState(false);
   const entrance = useRef(new Animated.Value(0)).current;
@@ -61,7 +63,30 @@ export default function HomeScreen() {
     Animated.timing(entrance, { toValue: 1, duration: 500, useNativeDriver: true }).start();
   }, [entrance]);
 
-  const hero = useMemo(() => latest.find(i => i.BackdropImageTags?.length) ?? latest[0], [latest]);
+  // Rotate only real backdrop artwork; never replace the hero with an empty image.
+  const heroItems = useMemo(() => {
+    const withBackdrop = latest.filter(item => !!item.BackdropImageTags?.length);
+    return (withBackdrop.length ? withBackdrop : latest).slice(0, 5);
+  }, [latest]);
+  const hero = heroItems[heroIndex % Math.max(1, heroItems.length)];
+  useEffect(() => {
+    setHeroIndex(0);
+  }, [heroItems]);
+  useEffect(() => {
+    if (heroItems.length < 2) return;
+    const timer = setInterval(() => {
+      setHeroIndex(index => (index + 1) % heroItems.length);
+    }, 9000);
+    return () => clearInterval(timer);
+  }, [heroItems.length]);
+  useEffect(() => {
+    heroOpacity.setValue(0);
+    const animation = Animated.timing(heroOpacity, {
+      toValue: 1, duration: 550, useNativeDriver: true
+    });
+    animation.start();
+    return () => animation.stop();
+  }, [hero?.Id, heroOpacity]);
   if (!session) return <Redirect href="/connect" />;
 
   return (
@@ -74,7 +99,10 @@ export default function HomeScreen() {
         }} />}
       >
         {hero ? (
-          <ImageBackground source={{ uri: getBackdropUrl(session, hero) }} style={[styles.hero, { height: Math.max(565, height * 0.76) }]} resizeMode="cover">
+          <View style={[styles.hero, { height: Math.max(565, height * 0.76) }]}>
+            <Animated.View style={[StyleSheet.absoluteFillObject, { opacity: heroOpacity }]}>
+              <ImageBackground source={{ uri: getBackdropUrl(session, hero) }} style={StyleSheet.absoluteFillObject} resizeMode="cover" />
+            </Animated.View>
             <CinematicShade/>
             <View style={styles.heroContent}>
               <Text style={styles.eyebrow}><Text style={styles.eyebrowDot}>●  </Text>{colors.heroLabel}</Text>
@@ -95,8 +123,21 @@ export default function HomeScreen() {
                   <View style={styles.infoIcon}><Text style={styles.infoIconText}>i</Text></View><Text style={styles.infoText}>Mehr Infos</Text>
                 </Pressable>
               </View>
+              {heroItems.length > 1 && <View style={styles.heroIndicators} accessibilityRole="radiogroup">
+                {heroItems.map((item, index) => (
+                  <Pressable
+                    key={item.Id}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected: index === heroIndex }}
+                    accessibilityLabel={`Highlight ${index + 1}: ${item.Name}`}
+                    onPress={() => setHeroIndex(index)}
+                    hitSlop={10}
+                    style={[styles.heroDot, index === heroIndex && styles.heroDotActive]}
+                  />
+                ))}
+              </View>}
             </View>
-          </ImageBackground>
+          </View>
         ) : initialLoading ? <LoadingSkeleton variant="home"/> : <View style={styles.heroEmpty}>
           <EmptyState
             title={hasLoadError?'Verbindung zu Jellyfin fehlgeschlagen':'Bereit für deinen Filmabend?'}
@@ -142,6 +183,9 @@ const styles = StyleSheet.create({
   categoryText: { color: colors.text, fontSize: 13 },
   categoryArrow: { color: colors.muted, fontSize: 20 },
   hero: { justifyContent: 'flex-end', backgroundColor: colors.surface },
+  heroIndicators: { flexDirection: 'row', justifyContent: 'center', gap: 9, marginBottom: 30 },
+  heroDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: 'rgba(255,255,255,0.48)' },
+  heroDotActive: { width: 23, backgroundColor: colors.text },
   heroEmpty: { minHeight: 315, backgroundColor: colors.background,paddingTop:86 },
 
   heroContent: { paddingHorizontal: 22, paddingBottom: 56, alignItems: 'center', width:'100%' },
