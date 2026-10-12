@@ -40,6 +40,7 @@ class MainActivity : Activity() {
     private var homeRoot: LinearLayout? = null
     private var activeSection = "Start"
     private var activeCollectionId = ""
+    private var searchMode = "Alle"
     private var editProfilesMode = false
     private var restoreMediaFocusId = ""
     @Volatile private var destroyed = false
@@ -1217,6 +1218,7 @@ class MainActivity : Activity() {
     }
 
     private fun showSearch() {
+        searchMode="Alle"
         val fromSection=activeSection
         val fromCollection=activeCollectionId
         rememberBack {
@@ -1248,6 +1250,21 @@ class MainActivity : Activity() {
         }
         left.addView(input,LinearLayout.LayoutParams(dp(440),dp(64)).apply{topMargin=dp(24)})
         left.addView(actionButton("Suchen",true){val q=input.text.toString().trim();if(q.isNotBlank())search(q)},LinearLayout.LayoutParams(dp(180),dp(58)).apply{topMargin=dp(16)})
+        val filters=LinearLayout(this).apply {
+            orientation=LinearLayout.HORIZONTAL
+            clipChildren=false
+            clipToPadding=false
+        }
+        listOf("Alle","Filme","Serien","Ungesehen").forEach { label ->
+            val chip=navButton(label) {
+                searchMode=label
+                val q=input.text.toString().trim()
+                if(q.isNotBlank())search(q)
+                else toast("Zuerst einen Suchbegriff eingeben")
+            }
+            filters.addView(chip,LinearLayout.LayoutParams(0,dp(50),1f).apply{marginEnd=dp(8)})
+        }
+        left.addView(filters,LinearLayout.LayoutParams(-1,dp(50)).apply{topMargin=dp(14)})
         root.addView(left,LinearLayout.LayoutParams(dp(500),-1))
         root.addView(TextView(this).apply{text="Gib einen Film, eine Serie oder einen Anime ein.\nDie Ergebnisse erscheinen als Poster.";textSize=20f;setTextColor(Color.LTGRAY);gravity=Gravity.CENTER},LinearLayout.LayoutParams(0,-1,1f))
         showAppPage(root);input.requestFocus()
@@ -1272,7 +1289,12 @@ class MainActivity : Activity() {
                     queryParts.add("Filters=IsFavorite")
                     queryParts.add("IncludeItemTypes=Movie,Series")
                 } else if(scope=="Start") {
-                    queryParts.add("IncludeItemTypes=Movie,Series")
+                    queryParts.add("IncludeItemTypes="+when(searchMode) {
+                        "Filme" -> "Movie"
+                        "Serien" -> "Series"
+                        else -> "Movie,Series"
+                    })
+                    if(searchMode=="Ungesehen")queryParts.add("Filters=IsUnplayed")
                 } else {
                     val aliases=when(scope) {
                         "Anime" -> listOf("anime","animes","animeserien","animeseries")
