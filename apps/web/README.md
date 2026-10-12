@@ -39,3 +39,11 @@ Jellyfin-Anmeldung, Profilauswahl der im Browser angemeldeten Konten, responsive
 
 ## Status
 MVP. Browser/iPhone-, Streaming-, Tailscale- und ZimaOS-Integrationstests stehen aus. Eine vollwertige, sichere öffentliche Multi-User-Plattform benötigt zusätzliche Server-/Proxy-Implementierung.
+
+## UI Pass 8 (Web)
+- Jellyfin-Titellogos mit Textfallback im Hero.
+- Long-Press (Touch) / Rechtsklick (Desktop) für Poster-Schnellvorschau mit Aktionen.
+- Top 10, Heute beliebt (Jellyfin-CommunityRating, keine Live-Trends), Verborgene Schätze (ungesehen, Bewertung >= 7,0) und Kurz und spannend (Filme bis 100 Minuten).
+- Sammlungen mit cineastischem Hintergrund, Beschreibung und chronologisch sortierten Filmen.
+- Zahnrad im Header: Startreihen anzeigen/ausblenden und sortieren, sechs Farben. Einstellungen werden pro Server und Jellyfin-Profil **lokal im Browser** gespeichert (nicht zwischen Geräten synchronisiert).
+- Trailer-Autoplay bleibt deaktiviert. Echte iPhone-/Safari-/Jellyfin-Tests stehen aus.
