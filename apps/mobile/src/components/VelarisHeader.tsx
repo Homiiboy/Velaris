@@ -3,6 +3,7 @@ import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 import { router } from 'expo-router';
 import { colors, design } from '@/theme';
 import { useAuth } from '@/context/AuthContext';
+import { useVelarisTheme } from '@/context/ThemeContext';
 import { getGenres, type MediaLibraryKind } from '@/services/jellyfin';
 import { getActiveProfile, type VelarisProfile } from '@/services/session';
 
@@ -39,6 +40,7 @@ export function VelarisHeader({scope='home',collectionId,home=false,overlay=fals
   const scroller=useRef<ScrollView>(null);
   const tabEnds=useRef<number[]>([]);
   const {session}=useAuth();
+  const {accentColor}=useVelarisTheme();
   const [profile,setProfile]=useState<VelarisProfile | null>(null);
   const [genres,setGenres]=useState<string[]>([]);
   const [genresOpen,setGenresOpen]=useState(false);
@@ -75,7 +77,7 @@ export function VelarisHeader({scope='home',collectionId,home=false,overlay=fals
           <Text style={styles.back}>‹</Text>
         </Pressable>}
         <Pressable onPress={()=>router.push('/(tabs)/home')} accessibilityLabel="Velaris Startseite">
-          <Text style={styles.brand}><Text style={styles.brandPurple}>VEL</Text>ARIS</Text>
+          <Text style={styles.brand}><Text style={[styles.brandPurple,{color:accentColor}]}>VEL</Text>ARIS</Text>
         </Pressable>
       </View>
       <View style={styles.actions}>
@@ -116,11 +118,11 @@ export function VelarisHeader({scope='home',collectionId,home=false,overlay=fals
           onLayout={e=>{const {x,width}=e.nativeEvent.layout;tabEnds.current[index]=x+width;}}
           accessibilityRole="button" accessibilityState={{selected:scope===item.key}}
           onPress={()=>router.push(item.href as any)}
-          style={({pressed})=>[styles.chip,scope===item.key&&styles.activeChip,pressed&&styles.chipPressed]}>
+          style={({pressed})=>[styles.chip,scope===item.key&&[styles.activeChip,{backgroundColor:accentColor,shadowColor:accentColor}],pressed&&styles.chipPressed]}>
           <Text style={[styles.chipText,scope===item.key&&styles.activeChipText]}>{item.label}</Text>
         </Pressable>)}
         {home&&<Pressable accessibilityRole="button" accessibilityLabel="Genres"
-          style={({pressed})=>[styles.chip,genresOpen&&styles.activeChip,pressed&&styles.chipPressed]}
+          style={({pressed})=>[styles.chip,genresOpen&&[styles.activeChip,{backgroundColor:accentColor}],pressed&&styles.chipPressed]}
           onLayout={e=>{const {x,width}=e.nativeEvent.layout;tabEnds.current[menu.length]=x+width;}}
           onPress={()=>setGenresOpen(v=>!v)}>
           <Text style={[styles.chipText,genresOpen&&styles.activeChipText]}>Genres</Text>
