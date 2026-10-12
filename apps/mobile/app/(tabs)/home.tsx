@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Image, ImageBackground, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { Redirect, router, useFocusEffect } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
+import { useVelarisTheme } from '@/context/ThemeContext';
 import { getBackdropUrl, getFavorites, getLatest, getPlayedItems, getRecommendations, getResumeItems } from '@/services/jellyfin';
 import { MediaRow } from '@/components/MediaRow';
 import type { JellyfinItem } from '@/types/jellyfin';
@@ -21,6 +22,7 @@ const AVATARS = [
 
 export default function HomeScreen() {
   const { session } = useAuth();
+  const {accentColor,display}=useVelarisTheme();
   const { height } = useWindowDimensions();
   const [latest, setLatest] = useState<JellyfinItem[]>([]);
   const [resume, setResume] = useState<JellyfinItem[]>([]);
@@ -73,27 +75,27 @@ export default function HomeScreen() {
     setHeroIndex(0);
   }, [heroItems]);
   useEffect(() => {
-    if (heroItems.length < 2) return;
+    if (heroItems.length < 2 || !display.autoHero) return;
     const timer = setInterval(() => {
       setHeroIndex(index => (index + 1) % heroItems.length);
     }, 9000);
     return () => clearInterval(timer);
-  }, [heroItems.length]);
+  }, [heroItems.length,display.autoHero]);
   useEffect(() => {
-    heroOpacity.setValue(0);
+    heroOpacity.setValue(display.animations ? 0 : 1);
     const animation = Animated.timing(heroOpacity, {
-      toValue: 1, duration: 550, useNativeDriver: true
+      toValue: 1, duration: display.animations ? 550 : 0, useNativeDriver: true
     });
     animation.start();
     return () => animation.stop();
-  }, [hero?.Id, heroOpacity]);
+  }, [hero?.Id, heroOpacity,display.animations]);
   if (!session) return <Redirect href="/connect" />;
 
   return (
     <View style={styles.page}>
       <ScrollView
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} tintColor={colors.accent} onRefresh={async () => {
+        refreshControl={<RefreshControl refreshing={refreshing} tintColor={accentColor} onRefresh={async () => {
           setRefreshing(true);
           try { await load(); } finally { setRefreshing(false); }
         }} />}
@@ -105,7 +107,7 @@ export default function HomeScreen() {
             </Animated.View>
             <CinematicShade/>
             <View style={styles.heroContent}>
-              <Text style={styles.eyebrow}><Text style={styles.eyebrowDot}>●  </Text>{colors.heroLabel}</Text>
+              <Text style={styles.eyebrow}><Text style={[styles.eyebrowDot,{color:accentColor}]}>●  </Text>{colors.heroLabel}</Text>
               <Text style={styles.heroTitle} numberOfLines={3}>{hero.Name}</Text>
               <Text style={styles.heroMeta}>{[
                 hero.ProductionYear,
@@ -132,7 +134,7 @@ export default function HomeScreen() {
                     accessibilityLabel={`Highlight ${index + 1}: ${item.Name}`}
                     onPress={() => setHeroIndex(index)}
                     hitSlop={10}
-                    style={[styles.heroDot, index === heroIndex && styles.heroDotActive]}
+                    style={[styles.heroDot, index === heroIndex && [styles.heroDotActive,{backgroundColor:accentColor}]]}
                   />
                 ))}
               </View>}
