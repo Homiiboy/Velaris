@@ -1,0 +1,15 @@
+services:
+  velaris-web:
+    build: .
+    image: velaris-web:local
+    container_name: velaris-web
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8088:80"
+    read_only: true
+    tmpfs:
+      - /var/cache/nginx
+      - /var/run
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
