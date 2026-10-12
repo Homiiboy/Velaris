@@ -51,7 +51,7 @@ export function MediaCard({ item, session, width = 128, showMeta = false, showFa
         Alert.alert(item.Name,
           [item.ProductionYear, item.Genres?.slice(0,2).join(' · '),item.RunTimeTicks?`${Math.round(item.RunTimeTicks/600_000_000)} Min.`:null]
             .filter(Boolean).join('   ·   ')||'Mehr Informationen zu diesem Titel',
-          [{text:'Abbrechen',style:'cancel'},
+          [{text:'Abbrechen',style:'cancel' as const},
            {text:'Details',onPress:()=>router.push({pathname:item.Type==='BoxSet'?'/collection/[id]':'/details/[id]',params:{id:item.Id}})},
            ...(item.Type==='BoxSet'?[]:[
              {text:'Abspielen',onPress:()=>router.push({pathname:'/player/[id]',params:{id:item.Id}})},
