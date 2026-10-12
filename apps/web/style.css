@@ -157,3 +157,9 @@ button:disabled{cursor:wait;opacity:.65}
 .player-title{font-weight:800;color:white;text-shadow:0 2px 12px black;max-width:70%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .player-note{position:absolute;bottom:calc(28px + env(safe-area-inset-bottom));left:20px;right:20px;text-align:center;font-size:12px;color:#d7caff;pointer-events:none}
 @media(max-width:420px){.search-page{padding:25px 16px}.search-box{min-height:52px}.player-title{font-size:12px}}
+
+/* Pre-deployment iPhone and profile layout corrections */
+.profile-actions{display:flex;justify-content:center;flex-wrap:wrap;gap:10px;margin-top:10px}
+.profile-actions .secondary{max-width:100%;white-space:normal}
+@media(max-width:849px){.shell{padding-bottom:calc(97px + env(safe-area-inset-bottom))}.tabs{padding-bottom:calc(10px + env(safe-area-inset-bottom));min-height:66px}.tabs button{min-width:0}.hero-copy{padding-bottom:22px}.hero-dots{bottom:9px}.details-screen{padding-bottom:45px}.video-wrap{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}}
+@media(max-width:360px){.tabs button span{font-size:8px}.tabs button b{font-size:18px}.tabs{gap:0;padding-left:0;padding-right:0}}
