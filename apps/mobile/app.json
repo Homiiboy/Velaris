@@ -3,7 +3,7 @@
     "name": "Velaris",
     "slug": "velaris-smartphone-app",
     "scheme": "velaris",
-    "version": "0.7.0",
+    "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
     "ios": {
@@ -19,7 +19,7 @@
     },
     "android": {
       "package": "at.velaris.app",
-      "versionCode": 7,
+      "versionCode": 8,
       "icon": "./assets/NewAppIcon.png",
       "adaptiveIcon": {
         "foregroundImage": "./assets/NewAppIcon.png",
