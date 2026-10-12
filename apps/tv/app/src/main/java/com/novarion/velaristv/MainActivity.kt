@@ -2575,7 +2575,11 @@ class MainActivity : Activity() {
             clipChildren=false;clipToPadding=false
         }
         root.addView(TextView(this).apply{text="Einstellungen";textSize=38f;setTextColor(Color.WHITE);typeface=Typeface.DEFAULT_BOLD})
-        root.addView(TextView(this).apply{text="Velaris TV";textSize=16f;setTextColor(Color.GRAY);setPadding(0,dp(4),0,dp(24))})
+        root.addView(TextView(this).apply{
+            text="Velaris TV · Version 1.0.0"
+            textSize=16f;setTextColor(Color.GRAY)
+            setPadding(0,dp(4),0,dp(24))
+        })
         val playback=settingsCard("▶","Wiedergabe","Autoplay, Intro, Rückblick und Abspann"){showPlaybackSettings()}
         val appearance=settingsCard("◉","Darstellung","Farben, Highlights und Animationen"){showAppearanceSettings()}
         val homeRows=settingsCard("▤","Startseite anpassen","Reihen einblenden, ausblenden und sortieren"){showHomeRowSettings()}
