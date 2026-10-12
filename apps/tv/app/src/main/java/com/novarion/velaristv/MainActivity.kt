@@ -960,6 +960,77 @@ class MainActivity : Activity() {
         },LinearLayout.LayoutParams(-1,dp(343)))
     }
 
+    private fun homeRowKeys():List<Pair<String,String>> = listOf(
+        "topTen" to "Top 10 für dich", "resume" to "Weiterschauen",
+        "favorites" to "Meine Liste", "because" to "Weil du … gesehen hast",
+        "latest" to "Kürzlich hinzugefügt", "recommended" to "Für dich",
+        "movieNight" to "Für deinen Filmabend", "unwatched" to "Noch nicht angesehen",
+        "upcoming" to "Demnächst", "popular" to "Heute beliebt",
+        "hiddenGems" to "Verborgene Schätze", "short" to "Kurz und spannend",
+        "action" to "Action", "comedy" to "Komödien",
+        "scifi" to "Science-Fiction", "replay" to "Noch einmal ansehen"
+    )
+
+    private fun savedHomeOrder():List<String> {
+        val available=homeRowKeys().map { it.first }
+        val saved=prefs.getString("home_row_order_$userId","").orEmpty()
+            .split(",").filter { it in available }.distinct()
+        return saved+available.filterNot { it in saved }
+    }
+
+    private fun showHomeRowSettings() {
+        rememberBack { showSettingsDialog() }
+        val root=LinearLayout(this).apply {
+            orientation=LinearLayout.VERTICAL
+            setPadding(dp(52),dp(30),dp(52),dp(65))
+            setBackgroundColor(VelarisDesign.color("background",0xFF08080D.toInt()))
+        }
+        root.addView(TextView(this).apply {
+            text="Startseite anpassen";textSize=34f
+            typeface=Typeface.DEFAULT_BOLD;setTextColor(Color.WHITE)
+        },params(-1,-2,10))
+        root.addView(TextView(this).apply {
+            text="OK blendet eine Reihe ein oder aus. Mit den Pfeilen änderst du die Reihenfolge."
+            textSize=16f;setTextColor(Color.LTGRAY)
+        },params(-1,-2,20))
+        val hidden=prefs.getStringSet("hidden_home_rows_$userId",emptySet<String>()).orEmpty()
+        savedHomeOrder().forEachIndexed { index,key ->
+            val title=homeRowKeys().firstOrNull{it.first==key}?.second ?:key
+            val row=LinearLayout(this).apply { orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL }
+            val enabled=key !in hidden
+            row.addView(settingsCard(if(enabled)"✓" else "○",title,if(enabled)"Sichtbar" else "Ausgeblendet") {
+                val latest=prefs.getStringSet("hidden_home_rows_$userId",emptySet<String>()).orEmpty()
+                prefs.edit().putStringSet("hidden_home_rows_$userId",
+                    if(key in latest)latest-key else latest+key).apply()
+                showHomeRowSettings()
+            },LinearLayout.LayoutParams(0,dp(76),1f))
+            fun reorder(direction:Int) {
+                val order=savedHomeOrder().toMutableList()
+                val old=order.indexOf(key);val new=old+direction
+                if(old>=0&&new in order.indices) {
+                    java.util.Collections.swap(order,old,new)
+                    prefs.edit().putString("home_row_order_$userId",order.joinToString(",")).apply()
+                }
+                showHomeRowSettings()
+            }
+            row.addView(actionButton("↑",false){reorder(-1)},
+                LinearLayout.LayoutParams(dp(65),dp(64)).apply { marginStart=dp(10) })
+            row.addView(actionButton("↓",false){reorder(1)},
+                LinearLayout.LayoutParams(dp(65),dp(64)).apply { marginStart=dp(8) })
+            root.addView(row,LinearLayout.LayoutParams(-1,dp(83)).apply{bottomMargin=dp(6)})
+        }
+        root.addView(actionButton("Standard wiederherstellen",false) {
+            prefs.edit().remove("home_row_order_$userId").remove("hidden_home_rows_$userId").apply()
+            showHomeRowSettings()
+        },params(320,56,16))
+        root.addView(actionButton("Zurück",false){showSettingsDialog()},params(160,55,12))
+        showAppPage(ScrollView(this).apply {
+            isVerticalScrollBarEnabled=false
+            addView(root)
+        })
+        root.post { (root.getChildAt(2) as? LinearLayout)?.getChildAt(0)?.requestFocus() }
+    }
+
     private fun addRankedRow(title:String,data:List<JSONObject>) {
         if(data.isEmpty()) return
         homeRoot?.addView(sectionTitle(title))
@@ -2398,10 +2469,11 @@ class MainActivity : Activity() {
         root.addView(TextView(this).apply{text="Velaris TV";textSize=16f;setTextColor(Color.GRAY);setPadding(0,dp(4),0,dp(24))})
         val playback=settingsCard("▶","Wiedergabe","Autoplay, Intro, Rückblick und Abspann"){showPlaybackSettings()}
         val appearance=settingsCard("◉","Darstellung","Farben, Highlights und Animationen"){showAppearanceSettings()}
+        val homeRows=settingsCard("▤","Startseite anpassen","Reihen einblenden, ausblenden und sortieren"){showHomeRowSettings()}
         val profiles=settingsCard("●","Profile","Profile verwalten und wechseln"){showProfiles()}
         val serverCard=settingsCard("◉","Server",server.ifBlank{"Nicht verbunden"}){clearConnection();showServer()}
         val logout=settingsCard("↪","Abmelden","Jellyfin-Sitzung auf diesem TV beenden"){token="";userId="";prefs.edit().remove("access_token").remove("user_id").apply();showLogin()}
-        listOf(playback,appearance,profiles,serverCard,logout).forEach{root.addView(it,LinearLayout.LayoutParams(-1,dp(86)).apply{bottomMargin=dp(12)})}
+        listOf(playback,appearance,homeRows,profiles,serverCard,logout).forEach{root.addView(it,LinearLayout.LayoutParams(-1,dp(86)).apply{bottomMargin=dp(12)})}
         val page=ScrollView(this).apply {
             isVerticalScrollBarEnabled=false
             isFillViewport=true
