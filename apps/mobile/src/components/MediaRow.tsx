@@ -39,18 +39,19 @@ function ContinueCard({item,session,onHide}:{item:JellyfinItem;session:Session;o
     shadowOpacity:focused?0.3:0.06,elevation:focused?7:1}]}>
   <View style={[styles.thumbWrap,focused&&styles.thumbFocused,focused&&{borderColor:accentColor}]}>
    <Image source={{uri:thumbnailUri}} style={styles.thumb} resizeMode={hasBackdrop?'cover':'contain'}/>
-   <View style={styles.resumeBadge}><Text style={styles.resumeBadgeText}>FORTSETZEN</Text></View>
+   <View style={[styles.resumeBadge,{borderColor:accentColor}]}><Text style={styles.resumeBadgeText}>FORTSETZEN</Text></View>
    <View style={styles.playBubble}><PlayGlyph size={17}/></View>
-   {progress>0&&progress<100&&<View style={styles.progressTrack}><View style={[styles.progressFill,{width:`${progress}%`}]} /></View>}
+   {progress>0&&progress<100&&<View style={styles.progressTrack}><View style={[styles.progressFill,{width:`${progress}%`,backgroundColor:accentColor}]} /></View>}
   </View>
   <Text numberOfLines={1} style={[styles.continueTitle,focused&&styles.continueTitleFocused]}>{item.Type==='Episode'?episodeTitle(item):item.Name}</Text>
   {!!subtitle&&<Text numberOfLines={1} style={styles.continueMeta}>{subtitle}</Text>}
-  {!!durationText&&<Text numberOfLines={1} style={styles.remainingText}>{durationText}</Text>}
+  {!!durationText&&<Text numberOfLines={1} style={[styles.remainingText,{color:accentColor}]}>{durationText}</Text>}
   </Animated.View>
  </Pressable>;
 }
 
 export function MediaRow({ title, items, session, continueWatching=false, topTen=false, onHide }: { title: string; items: JellyfinItem[]; session: Session; continueWatching?: boolean; topTen?: boolean; onHide?: (id:string)=>void }) {
+  const {accentColor}=useVelarisTheme();
   if (!items.length) return null;
   return (
     <View style={styles.section}>
@@ -58,7 +59,7 @@ export function MediaRow({ title, items, session, continueWatching=false, topTen
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
         {items.slice(0,topTen?10:items.length).map((item,index) => continueWatching
           ? <ContinueCard key={item.Id} item={item} session={session} onHide={onHide}/>
-          : topTen ? <View key={item.Id} style={styles.topTenCard}><Text style={styles.rank}>{index+1}</Text><MediaCard item={item} session={session} width={116} showFavorite={false}/></View>
+          : topTen ? <View key={item.Id} style={styles.topTenCard}><Text style={[styles.rank,{textShadowColor:accentColor}]}>{index+1}</Text><MediaCard item={item} session={session} width={116} showFavorite={false}/></View>
           : <MediaCard key={item.Id} item={item} session={session} />)}
       </ScrollView>
     </View>
