@@ -476,32 +476,49 @@ class MainActivity : Activity() {
 
     private fun addHeroCarousel(items:List<JSONObject>) {
         if(items.isEmpty()) return
-        val holder=FrameLayout(this)
+        val holder=FrameLayout(this).apply {
+            // Crossfade both layers instead of fading the whole hero to black.
+            clipChildren=false
+            clipToPadding=false
+        }
         homeRoot?.addView(holder,LinearLayout.LayoutParams(-1,dp(525)).apply{bottomMargin=dp(-12)})
+        var currentIndex=-1
         fun render(index:Int) {
-            if(destroyed || items.isEmpty()) return
-            holder.animate().alpha(0f).setDuration(150).withEndAction {
-                holder.removeAllViews()
-                val previous=homeRoot
-                val temp=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL}
-                homeRoot=temp; addHero(items[index % items.size]); homeRoot=previous
-                if(temp.childCount>0) {
-                    val hero=temp.getChildAt(0); temp.removeView(hero)
-                    holder.addView(hero,FrameLayout.LayoutParams(-1,-1))
-                }
-                holder.animate().alpha(1f).setDuration(220).start()
-            }.start()
+            if(destroyed || items.isEmpty() || index==currentIndex) return
+            val previous=homeRoot
+            val temp=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL}
+            homeRoot=temp
+            try { addHero(items[index % items.size]) } finally { homeRoot=previous }
+            if(temp.childCount==0) return
+            val hero=temp.getChildAt(0)
+            temp.removeView(hero)
+            holder.animate().cancel()
+            // Remove stale layers if a previous transition was interrupted.
+            while(holder.childCount>1) holder.removeViewAt(0)
+            val oldHero=if(holder.childCount>0)holder.getChildAt(0) else null
+            val shouldAnimate=oldHero!=null &&
+                android.animation.ValueAnimator.areAnimatorsEnabled()
+            hero.alpha=if(shouldAnimate)0f else 1f
+            holder.addView(hero,FrameLayout.LayoutParams(-1,-1))
+            currentIndex=index
+            if(shouldAnimate) {
+                hero.animate().alpha(1f).setDuration(550).withEndAction {
+                    if(oldHero?.parent===holder)holder.removeView(oldHero)
+                }.start()
+            } else if(oldHero?.parent===holder) holder.removeView(oldHero)
         }
         render(0)
         if(items.size>1) holder.postDelayed(object:Runnable {
             var index=1
             override fun run() {
-                if(holder.isAttachedToWindow && !holder.hasFocus()) { render(index); index=(index+1)%items.size }
+                if(holder.isAttachedToWindow && !holder.hasFocus()) {
+                    render(index)
+                    index=(index+1)%items.size
+                }
                 if(holder.isAttachedToWindow) holder.postDelayed(this,9000)
             }
         },9000)
     }
-
 
     /** Identical cinematic shading for home, movie and series backdrops. */
     private fun addCinematicHeroShades(hero:FrameLayout) {
