@@ -76,13 +76,21 @@ class MainActivity : Activity() {
         if(backStack.isNotEmpty()) {
             val action=backStack.removeLast()
             suppressHistory=true
-            action()
-            suppressHistory=false
-        } else showSettingsDialog()
+            try { action() } finally { suppressHistory=false }
+        } else if(activeSection!="Start") {
+            showHome()
+        } else {
+            // A new settings page must not accumulate recursive Back actions.
+            showSettingsDialog()
+        }
     }
 
     private fun rememberBack(action:()->Unit) {
-        if(!suppressHistory) backStack.addLast(action)
+        if(!suppressHistory) {
+            // Bound the history retained through extensive D-pad navigation.
+            if(backStack.size>=40)backStack.removeFirst()
+            backStack.addLast(action)
+        }
     }
 
     // TV keyboards vary: handle the IME Next/Done button AND D-pad down.
