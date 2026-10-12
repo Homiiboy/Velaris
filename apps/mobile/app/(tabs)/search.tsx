@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import { Redirect, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
-import { getCollectionItems, getLatest, getLibraryItems, getCollections, searchInArea, type SearchArea } from '@/services/jellyfin';
+import { getCollectionItems, getLatest, getLibraryItems, getCollections, searchInArea, getPersonItems, type SearchArea } from '@/services/jellyfin';
 import { VelarisHeader } from '@/components/VelarisHeader';
 import { MediaCard } from '@/components/MediaCard';
 import type { JellyfinItem } from '@/types/jellyfin';
@@ -12,7 +12,7 @@ import { useVelarisTheme } from '@/context/ThemeContext';
 export default function SearchScreen(){
  const {session}=useAuth(); const {accentColor}=useVelarisTheme();
  const {width:screenWidth}=useWindowDimensions(); const cardWidth=Math.floor((screenWidth-48)/3);
- const {scope:rawScope,collectionId,term:initialTerm}=useLocalSearchParams<{scope?:string;collectionId?:string;term?:string}>();
+ const {scope:rawScope,collectionId,term:initialTerm,person}=useLocalSearchParams<{scope?:string;collectionId?:string;term?:string;person?:string}>();
  const scopes:SearchArea[]=['home','movies','series','anime','animeMovies','animation','cartoons','collections'];
  const scope:SearchArea=scopes.includes(rawScope as SearchArea)?rawScope as SearchArea:'home';
  const [term,setTerm]=useState(initialTerm??''); const [items,setItems]=useState<JellyfinItem[]>([]); const [popular,setPopular]=useState<JellyfinItem[]>([]);
@@ -22,7 +22,17 @@ export default function SearchScreen(){
   const source=collectionId?getCollectionItems(session,collectionId):scope==='home'?getLatest(session):scope==='collections'?getCollections(session):getLibraryItems(session,scope);
   source.then(r=>setPopular(r.Items.slice(0,18))).catch(()=>setPopular([]));
  },[session,scope,collectionId]);
- useEffect(()=>{if(!session||term.trim().length<2){setItems([]);return} const timer=setTimeout(()=>searchInArea(session,term.trim(),scope,collectionId).then(r=>setItems(r.Items)).catch(()=>{}),250);return()=>clearTimeout(timer)},[term,session,scope,collectionId]);
+ useEffect(()=>{
+  if(!session||term.trim().length<2){setItems([]);return}
+  let active=true;
+  const timer=setTimeout(()=>{
+    const request=person && term.trim()===person
+      ?getPersonItems(session,person)
+      :searchInArea(session,term.trim(),scope,collectionId);
+    request.then(result=>{if(active)setItems(result.Items)}).catch(()=>{if(active)setItems([])});
+  },250);
+  return()=>{active=false;clearTimeout(timer)};
+ },[term,session,scope,collectionId,person]);
  if(!session)return <Redirect href="/connect"/>;
  const candidates=term.trim().length>=2?items:popular;
  const availableYears=[...new Set(candidates.map(item=>item.ProductionYear).filter((v):v is number=>typeof v==='number'))].sort((a,b)=>b-a).slice(0,15);
@@ -30,7 +40,7 @@ export default function SearchScreen(){
    (filter==='all'||filter==='movies'&&item.Type==='Movie'||filter==='series'&&item.Type==='Series'||filter==='unwatched'&&!item.UserData?.Played) &&
    (year===null||item.ProductionYear===year));
  return <View style={{flex:1,backgroundColor:colors.background}}><VelarisHeader scope={scope} collectionId={collectionId} back/><FlatList style={styles.page} contentContainerStyle={styles.content} data={shown} numColumns={3} columnWrapperStyle={styles.row}
- ListHeaderComponent={<View><Text style={styles.title}>{scope==='home'?'Suche':`Suche in ${design.navigation[scope]}`}</Text><TextInput value={term} onChangeText={setTerm} placeholder="Serien, Filme, Anime …" placeholderTextColor={colors.muted} style={[styles.input,{borderColor:accentColor}]}/>
+ ListHeaderComponent={<View><Text style={styles.title}>{person&&term.trim()===person?`Filme mit ${person}`:scope==='home'?'Suche':`Suche in ${design.navigation[scope]}`}</Text><TextInput value={term} onChangeText={setTerm} placeholder="Serien, Filme, Anime …" placeholderTextColor={colors.muted} style={[styles.input,{borderColor:accentColor}]}/>
  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filters}>
   {([['all','Alle'],['movies','Filme'],['series','Serien'],['unwatched','Ungesehen']] as const).map(([key,label])=>
    <Pressable key={key} accessibilityRole="button" accessibilityState={{selected:filter===key}}
