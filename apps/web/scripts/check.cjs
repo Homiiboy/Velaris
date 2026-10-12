@@ -15,3 +15,9 @@ for(const file of ['main.js','player9.js','style.css','manifest.webmanifest','ic
 const sw=fs.readFileSync(path.join(root,'sw.js'),'utf8');
 for(const file of ['index.html','main.js','style.css','manifest.webmanifest','icon.svg'])assert(sw.includes(file),'service worker missing '+file);
 console.log('Velaris Web: asset, manifest and service-worker checks passed.');
+
+// Release-polish regression guards for the web-only runtime.
+const runtime=fs.readFileSync(path.join(root,'main.js'),'utf8');
+const player=fs.readFileSync(path.join(root,'player9.js'),'utf8');
+for(const token of ['activeView(revision,account.userId)','viewRevision++','p8Collection','function logout'])assert(runtime.includes(token),'release guard missing: '+token);
+for(const token of ['const doClose=','p9Play(target)','video.removeAttribute(\'src\')','p9NextEpisode','p9Segments'])assert(player.includes(token),'player guard missing: '+token);
