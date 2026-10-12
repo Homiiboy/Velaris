@@ -12,6 +12,7 @@ import { PlayGlyph } from '@/components/PlayGlyph';
 import { CinematicShade } from '@/components/CinematicShade';
 import { LoadingSkeleton } from '@/components/LoadingSkeleton';
 import { EmptyState } from '@/components/EmptyState';
+import { getHiddenResume, hideResumeItem } from '@/services/continueVisibility';
 
 const AVATARS = [
   require('../../assets/AvatarRot.png'),
@@ -26,6 +27,7 @@ export default function HomeScreen() {
   const { height } = useWindowDimensions();
   const [latest, setLatest] = useState<JellyfinItem[]>([]);
   const [resume, setResume] = useState<JellyfinItem[]>([]);
+  const [hiddenResume,setHiddenResume]=useState<string[]>([]);
   const [favorites, setFavorites] = useState<JellyfinItem[]>([]);
   const [recommended, setRecommended] = useState<JellyfinItem[]>([]);
   const [becauseTitle, setBecauseTitle] = useState('');
@@ -60,6 +62,7 @@ export default function HomeScreen() {
   useFocusEffect(useCallback(() => {
     // Refresh Jellyfin played flags after returning from the media player.
     load();
+    if(session)getHiddenResume(session).then(setHiddenResume).catch(()=>setHiddenResume([]));
   }, [load, session]));
   useEffect(() => {
     Animated.timing(entrance, { toValue: 1, duration: 500, useNativeDriver: true }).start();
@@ -72,6 +75,7 @@ export default function HomeScreen() {
   }, [latest]);
   const hero = heroItems[heroIndex % Math.max(1, heroItems.length)];
   const unwatched=useMemo(()=>latest.filter(item=>!item.UserData?.Played),[latest]);
+  const visibleResume=useMemo(()=>resume.filter(item=>!hiddenResume.includes(item.Id)),[resume,hiddenResume]);
   const movies=useMemo(()=>(recommended.length?recommended:latest).filter(item=>item.Type==='Movie'),[recommended,latest]);
   const upcoming=useMemo(()=>latest.filter(item=>item.PremiereDate && Date.parse(item.PremiereDate)>Date.now()),[latest]);
   const randomMovie=()=>{
@@ -165,7 +169,8 @@ export default function HomeScreen() {
             </Pressable>
           </View>}
           <MediaRow title={design.homeRows.topTen} items={recommended.length ? recommended : latest} session={session} topTen />
-          <MediaRow title={design.homeRows.resume} items={resume} session={session} continueWatching />
+          <MediaRow title={design.homeRows.resume} items={visibleResume} session={session} continueWatching
+            onHide={id=>{void hideResumeItem(session,id).then(()=>setHiddenResume(previous=>[...new Set([...previous,id])])).catch(()=>{})}} />
           <MediaRow title={design.homeRows.favorites} items={favorites} session={session} />
           {!!becauseTitle && <MediaRow title={`${design.homeRows.becausePrefix} „${becauseTitle}“ gesehen hast`} items={recommended} session={session} />}
           <MediaRow title={design.homeRows.latest} items={latest} session={session} />
