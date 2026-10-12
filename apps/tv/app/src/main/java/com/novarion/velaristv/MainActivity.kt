@@ -412,6 +412,21 @@ class MainActivity : Activity() {
         loadHome()
     }
 
+    private fun playRandomMovie() {
+        io.execute {
+            try {
+                val movies=items("/Users/$userId/Items?Recursive=true&IncludeItemTypes=Movie&Filters=IsNotFolder&Limit=200&SortBy=Random&EnableUserData=true")
+                val selected=movies.randomOrNull()
+                runOnUiThread {
+                    if(selected!=null) playNative(selected.optString("Id"),0L)
+                    else toast("Keine Filme für die Zufallswiedergabe gefunden.")
+                }
+            } catch (_: Exception) {
+                runOnUiThread { toast("Zufälliger Film konnte nicht geladen werden.") }
+            }
+        }
+    }
+
     private fun loadHome() {
         val requestRoot=homeRoot?:return
         io.execute {
@@ -441,12 +456,18 @@ class MainActivity : Activity() {
                     requestRoot.alpha=0f
                     requestRoot.removeAllViews()
                     addHeroCarousel((latest+recommended).distinctBy{it.optString("Id")}.take(5))
+                    val randomButton=actionButton("🎲  Zufälliger Film",false){playRandomMovie()}
+                    requestRoot.addView(randomButton,LinearLayout.LayoutParams(dp(255),dp(54)).apply {
+                        leftMargin=dp(52);topMargin=dp(7);bottomMargin=dp(12)
+                    })
                     addRankedRow(VelarisDesign.homeRow("topTen","Top 10 für dich"),topTen)
                     addContinueRow(resume)
                     addRow(VelarisDesign.homeRow("favorites","Meine Liste"),favorites)
                     if(becauseTitle.isNotBlank()) addRow("${VelarisDesign.homeRow("becausePrefix","Weil du")} „$becauseTitle“ gesehen hast",because)
                     addRow(VelarisDesign.homeRow("latest","Kürzlich hinzugefügt"),latest)
                     addRow(VelarisDesign.homeRow("recommended","Für dich"),recommended)
+                    addRow("Für deinen Filmabend",recommended.filter{it.optString("Type")=="Movie"})
+                    addRow("Noch nicht angesehen",latest.filter{!it.optJSONObject("UserData")?.optBoolean("Played",false)!!})
                     addRow("Action",action); addRow("Komödien",comedy); addRow("Science-Fiction",sciFi)
                     addRow("Noch einmal ansehen",replay)
                     requestRoot.animate().alpha(1f).setDuration(280).start()
@@ -1565,6 +1586,41 @@ class MainActivity : Activity() {
                         text=meta;textSize=16f;setTextColor(0xFFE6E3ED.toInt())
                         setPadding(0,dp(10),0,0)
                     })
+                    val streams=x.optJSONArray("MediaSources")?.optJSONObject(0)?.optJSONArray("MediaStreams")
+                    var video:JSONObject?=null
+                    var audio:JSONObject?=null
+                    var subtitles=false
+                    if(streams!=null) for(index in 0 until streams.length()){
+                        val stream=streams.optJSONObject(index)?:continue
+                        when(stream.optString("Type")) {
+                            "Video" -> if(video==null)video=stream
+                            "Audio" -> if(audio==null)audio=stream
+                            "Subtitle" -> subtitles=true
+                        }
+                    }
+                    val picture=video
+                    val sound=audio
+                    val badges=listOfNotNull(
+                        when {
+                            (picture?.optInt("Width")?:0)>=3800 -> "4K"
+                            (picture?.optInt("Height")?:0)>=1080 -> "Full HD"
+                            (picture?.optInt("Height")?:0)>=720 -> "HD"
+                            else -> null
+                        },
+                        when {
+                            picture?.optString("VideoRangeType").orEmpty().contains("dolbyvision",true) -> "Dolby Vision"
+                            picture?.optString("VideoRange").orEmpty().let{it.isNotBlank()&&!it.equals("SDR",true)} -> "HDR"
+                            else -> null
+                        },
+                        if((sound?.optInt("Channels")?:0)>=6) "5.1 Audio" else null,
+                        if(subtitles)"Untertitel" else null
+                    )
+                    if(badges.isNotEmpty()) info.addView(TextView(this).apply {
+                        text=badges.joinToString("    ·    ")
+                        textSize=13f
+                        typeface=Typeface.DEFAULT_BOLD
+                        setTextColor(VelarisDesign.color("accent",0xFF7C5CFC.toInt()))
+                    },params(-1,-2,10))
                     val detailGenres=heroGenres(x)
                     if(detailGenres.isNotBlank())info.addView(TextView(this).apply{
                         text=detailGenres;textSize=14f;maxLines=1
@@ -1588,6 +1644,28 @@ class MainActivity : Activity() {
                     actions.addView(actionButton(if(fav)"✓  Meine Liste" else "+  Meine Liste",false){setFavorite(id,!fav){showDetails(id)}},LinearLayout.LayoutParams(dp(220),dp(58)).apply{marginEnd=dp(12)})
                     if(x.optString("Type")=="Series") actions.addView(actionButton("Zufällige Folge",false){playRandomEpisode(id)},LinearLayout.LayoutParams(dp(210),dp(58)))
                     info.addView(actions); hero.addView(info,FrameLayout.LayoutParams(-1,-1)); outer.addView(hero,LinearLayout.LayoutParams(-1,dp(500)))
+                    val people=x.optJSONArray("People")
+                    if(people!=null && people.length()>0) {
+                        outer.addView(sectionTitle("Cast & Crew"))
+                        val peopleRow=LinearLayout(this).apply {
+                            orientation=LinearLayout.HORIZONTAL
+                            setPadding(dp(52),dp(8),dp(52),dp(20))
+                        }
+                        for(index in 0 until minOf(12,people.length())){
+                            val person=people.optJSONObject(index)?:continue
+                            val name=person.optString("Name")
+                            if(name.isBlank())continue
+                            peopleRow.addView(actionButton(name,false) {
+                                activeSection="Start"
+                                activeCollectionId=""
+                                search(name)
+                            },LinearLayout.LayoutParams(dp(190),dp(57)).apply { marginEnd=dp(12) })
+                        }
+                        outer.addView(HorizontalScrollView(this).apply {
+                            isHorizontalScrollBarEnabled=false
+                            addView(peopleRow)
+                        })
+                    }
                     homeRoot=outer
                     addRow("Ähnliche Titel",similar)
                     showAppPage(ScrollView(this).apply{isVerticalScrollBarEnabled=false;addView(outer)})
