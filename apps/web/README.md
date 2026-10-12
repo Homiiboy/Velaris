@@ -8,8 +8,8 @@ python3 -m http.server 8080
 ```
 Für **PWA-Installation** auf einem iPhone ist HTTPS erforderlich (localhost ist nur für lokale Entwicklung eine Ausnahme). Docker auf ZimaOS:
 ```sh
-docker build -t velaris-web ./apps/web
-docker run -d --name velaris-web --restart unless-stopped -p 8088:80 velaris-web
+docker build -t velaris-web .
+docker run -d --name velaris-web --restart unless-stopped -p 127.0.0.1:8088:80 velaris-web
 ```
 Alternativ Docker Compose auf dem ZimaOS-Host im Ordner `apps/web`:
 ```sh
