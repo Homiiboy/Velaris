@@ -62,7 +62,7 @@ export function MediaCard({ item, session, width = 128, showMeta = false, showFa
         transform:[{scale}],width,
         shadowOpacity:highlighted?0.32:0.08,shadowColor:accentColor,
         elevation:highlighted?8:1
-      }]}><View style={[styles.posterShell,highlighted&&styles.posterFocused,
+      }]}><View style={[styles.posterShell,highlighted&&styles.posterFocused,highlighted&&{borderColor:accentColor},
         {width,height:Math.round(width*1.5)}]}>
        {!imageFailed ? <Animated.Image source={{ uri: getPrimaryImageUrl(session, item.Id, imageTag) }}
           onLoad={()=>Animated.timing(artworkOpacity,{
