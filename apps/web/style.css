@@ -209,3 +209,37 @@ button:disabled{cursor:wait;opacity:.65}
 .top .avatar{border-color:var(--accent)}
 .p8-settings-trigger{color:var(--accent)}
 .p8-dialog button:focus-visible,.p8-option button:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+
+
+/* UI Pass 9 – Smart player and playback settings */
+.p9-settings .eyebrow{color:var(--accent);font-size:11px;font-weight:900;letter-spacing:.13em;margin-top:28px}
+.p9-settings h1{font-size:clamp(28px,6vw,46px);margin:12px 0}
+.p9-settings .hint{max-width:720px}
+.p9-field{display:flex;flex-direction:column;gap:12px;max-width:440px;font-size:14px;font-weight:800;margin:30px 0 12px}
+.p9-field select,.p9-header select{padding:12px;background:#282330;color:#fff;border:1px solid #8872c5;border-radius:10px;font:inherit;min-height:46px}
+.p9-toggle{display:flex;justify-content:space-between;gap:15px;align-items:center;max-width:650px;background:#1a1723;border:1px solid #383040;border-radius:12px;padding:16px;margin:13px 0;font-weight:700}
+.p9-toggle input{height:22px;width:22px;accent-color:var(--accent);flex-shrink:0}
+.p9-settings-trigger{color:var(--accent);border:1px solid var(--accent);font-size:16px;min-width:40px}
+.p9-player{position:fixed;inset:0;z-index:90;background:#000;color:#fff;display:flex;justify-content:center;align-items:center}
+.p9-player video{width:100%;height:100%;max-height:100svh;background:black;object-fit:contain}
+.p9-header{position:absolute;z-index:4;left:0;right:0;top:0;display:flex;gap:12px;align-items:center;padding:calc(env(safe-area-inset-top) + 14px) 16px 14px;background:linear-gradient(#000c,transparent)}
+.p9-header strong{font-size:clamp(12px,2.7vw,17px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;text-shadow:0 2px 10px black}
+.p9-header .secondary{min-height:39px;padding:8px 11px;flex-shrink:0}
+.p9-header select{position:absolute;right:14px;top:calc(env(safe-area-inset-top) + 68px);z-index:10;max-width:calc(100vw - 28px)}
+.p9-bottom{position:absolute;z-index:3;bottom:0;left:0;right:0;padding:35px 18px calc(env(safe-area-inset-bottom) + 24px);background:linear-gradient(transparent,#000c);display:flex;flex-direction:column;align-items:center;gap:10px;pointer-events:none}
+.p9-bottom>*{pointer-events:auto}
+.p9-transport{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap}
+.p9-transport button{min-width:48px;min-height:43px;background:#272331dd;border:1px solid #ffffff45;border-radius:12px;color:#fff;font-size:15px;font-weight:900}
+.p9-transport button:focus-visible,.p9-next button:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+#p9-clock{font-size:12px;color:#eee;font-weight:700;font-variant-numeric:tabular-nums;min-width:128px;text-align:center}
+.p9-message{font-size:12px;color:#dcd5ee;text-align:center;text-shadow:0 2px 8px black}
+.p9-next{display:flex;align-items:center;gap:14px;justify-content:space-between;max-width:560px;width:100%;background:#1b1729f5;border:1px solid #7c60d6;border-radius:13px;padding:12px 14px;box-shadow:0 8px 26px #0009}
+.p9-next-info{display:flex;flex-direction:column;gap:3px;min-width:0}
+.p9-next-info strong{font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.p9-next-info small{color:#c8c4d4}
+.p9-next-info .eyebrow{color:var(--accent);font-size:10px;font-weight:900}
+.p9-next .primary{min-height:41px;padding:8px 10px;font-size:12px;flex-shrink:0}
+#p9-skip button{background:#33275ae8;border-color:var(--accent)}
+.p9-next[hidden],#p9-skip-zone[hidden],#p9-retry[hidden]{display:none!important}
+@media(max-width:480px){.p9-header{padding-left:10px;padding-right:10px;gap:7px}.p9-header strong{font-size:11px}.p9-header button{font-size:11px;padding:6px 9px}.p9-bottom{padding-left:8px;padding-right:8px}.p9-transport{gap:7px}.p9-transport button{min-width:45px;min-height:40px}.p9-next{padding:9px 10px}.p9-next-info strong{font-size:12px}.p9-next .primary{font-size:11px}}
+@media(orientation:landscape) and (max-height:500px){.p9-header{padding-top:calc(env(safe-area-inset-top) + 5px)}.p9-bottom{padding-bottom:calc(env(safe-area-inset-bottom) + 6px);gap:4px}.p9-transport button{min-height:32px}.p9-next{max-width:460px}}
