@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Animated, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Animated, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { MediaCard } from '@/components/MediaCard';
 import { getPrimaryImageUrl, getBackdropUrl } from '@/services/jellyfin';
@@ -9,7 +9,7 @@ import { episodeTitle } from '@/services/episodeTitles';
 import { PlayGlyph } from '@/components/PlayGlyph';
 import { playbackPercent,minutesRemaining,episodeCode } from '@/services/playbackPresentation';
 
-function ContinueCard({item,session}:{item:JellyfinItem;session:Session}){
+function ContinueCard({item,session,onHide}:{item:JellyfinItem;session:Session;onHide?: (id:string)=>void}){
  const [focused,setFocused]=useState(false);
  const scale=useRef(new Animated.Value(1)).current;
  const animate=(toValue:number)=>Animated.spring(scale,{
@@ -30,6 +30,8 @@ function ContinueCard({item,session}:{item:JellyfinItem;session:Session}){
   onHoverIn={()=>focus(true)} onHoverOut={()=>focus(false)}
   onPressIn={()=>animate(0.985)} onPressOut={()=>animate(focused?1.015:1)}
   style={styles.continueCard}
+  onLongPress={()=>onHide&&Alert.alert('Weiterschauen',`${item.Name} aus dieser Reihe ausblenden? Dein Jellyfin-Fortschritt bleibt gespeichert.`,[
+    {text:'Abbrechen',style:'cancel'},{text:'Ausblenden',onPress:()=>onHide(item.Id)}])}
   onPress={()=>router.push({pathname:'/player/[id]',params:{id:item.Id}})}>
   <Animated.View style={[styles.continueLift,{transform:[{scale}],
     shadowOpacity:focused?0.3:0.06,elevation:focused?7:1}]}>
@@ -46,14 +48,14 @@ function ContinueCard({item,session}:{item:JellyfinItem;session:Session}){
  </Pressable>;
 }
 
-export function MediaRow({ title, items, session, continueWatching=false, topTen=false }: { title: string; items: JellyfinItem[]; session: Session; continueWatching?: boolean; topTen?: boolean }) {
+export function MediaRow({ title, items, session, continueWatching=false, topTen=false, onHide }: { title: string; items: JellyfinItem[]; session: Session; continueWatching?: boolean; topTen?: boolean; onHide?: (id:string)=>void }) {
   if (!items.length) return null;
   return (
     <View style={styles.section}>
       <Text style={styles.title}>{title}</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
         {items.slice(0,topTen?10:items.length).map((item,index) => continueWatching
-          ? <ContinueCard key={item.Id} item={item} session={session}/>
+          ? <ContinueCard key={item.Id} item={item} session={session} onHide={onHide}/>
           : topTen ? <View key={item.Id} style={styles.topTenCard}><Text style={styles.rank}>{index+1}</Text><MediaCard item={item} session={session} width={116} showFavorite={false}/></View>
           : <MediaCard key={item.Id} item={item} session={session} />)}
       </ScrollView>
