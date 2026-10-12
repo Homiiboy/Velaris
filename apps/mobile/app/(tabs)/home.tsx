@@ -73,6 +73,7 @@ export default function HomeScreen() {
   const hero = heroItems[heroIndex % Math.max(1, heroItems.length)];
   const unwatched=useMemo(()=>latest.filter(item=>!item.UserData?.Played),[latest]);
   const movies=useMemo(()=>(recommended.length?recommended:latest).filter(item=>item.Type==='Movie'),[recommended,latest]);
+  const upcoming=useMemo(()=>latest.filter(item=>item.PremiereDate && Date.parse(item.PremiereDate)>Date.now()),[latest]);
   const randomMovie=()=>{
     if(!movies.length)return;
     const movie=movies[Math.floor(Math.random()*movies.length)];
@@ -170,6 +171,7 @@ export default function HomeScreen() {
           <MediaRow title={design.homeRows.latest} items={latest} session={session} />
           <MediaRow title="Für deinen Filmabend" items={movies} session={session} />
           <MediaRow title="Noch nicht angesehen" items={unwatched} session={session} />
+          <MediaRow title="Demnächst" items={upcoming} session={session} />
         </Animated.View>}
       </ScrollView>
       <VelarisHeader home overlay />
