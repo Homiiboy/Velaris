@@ -31,6 +31,7 @@ export default function PlayerScreen(){
  const [plugins,setPlugins]=useState<PluginSettings>(defaultPluginSettings); const [segments,setSegments]=useState<{Type:string;StartTicks:number;EndTicks:number}[]>([]); const [position,setPosition]=useState(0); const [audio,setAudio]=useState<number|undefined>(); const [subtitle,setSubtitle]=useState<number|undefined>(); const [error,setError]=useState(''); const [nextEpisode,setNextEpisode]=useState<JellyfinItem|null>(null); const [autoPlay,setAutoPlay]=useState(true);
  const lastReport=useRef(0); const stopped=useRef(false); const resumeAt=useRef(0); const didResume=useRef(false);
  const pendingSeek=useRef<number|null>(null);
+ const skippedSegment=useRef<string>('');
  const source: JellyfinMediaSource|undefined=info?.MediaSources?.[0];
  const player=useVideoPlayer(url||null,p=>{p.timeUpdateEventInterval=5;p.loop=false;});
 
@@ -60,6 +61,22 @@ export default function PlayerScreen(){
  useEffect(()=>{const sub=player.addListener('statusChange',({status})=>{if(status==='readyToPlay'&&!didResume.current){didResume.current=true;const target=pendingSeek.current??resumeAt.current;pendingSeek.current=null;if(target>0)player.currentTime=target;player.play()}});return()=>sub.remove()},[player]);
  useEffect(()=>{const sub=player.addListener('timeUpdate',({currentTime})=>setPosition(currentTime));return()=>sub.remove()},[player]);
  useEffect(()=>{const sub=player.addListener('playToEnd',()=>{if(autoPlay&&plugins.autoNext&&nextEpisode)router.replace({pathname:'/player/[id]',params:{id:nextEpisode.Id}})});return()=>sub.remove()},[player,autoPlay,nextEpisode]);
+ useEffect(()=>{
+   const segment=segments.find(candidate=>position>=candidate.StartTicks/10_000_000 &&
+     position<candidate.EndTicks/10_000_000);
+   if(!segment)return;
+   const type=segment.Type.toLowerCase();
+   const intro=type.includes('intro')||type.includes('recap');
+   const credits=type.includes('outro')||type.includes('credit');
+   const enabled=(intro&&plugins.introSkipper&&plugins.autoSkipIntro)||
+     (credits&&plugins.creditsSkip&&plugins.autoSkipCredits);
+   if(!enabled)return;
+   const end=segment.EndTicks/10_000_000;
+   const token=`${id}:${segment.StartTicks}:${segment.EndTicks}`;
+   if(end<=position||skippedSegment.current===token)return;
+   skippedSegment.current=token;
+   player.currentTime=end;
+ },[segments,position,plugins,id,player]);
  if(!session)return <Redirect href="/connect"/>;
  const showNextPrompt=!!nextEpisode && position>5 &&
    !!item?.RunTimeTicks && (item.RunTimeTicks/10_000_000-position)<=90 &&
