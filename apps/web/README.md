@@ -11,7 +11,7 @@ Für **PWA-Installation** auf einem iPhone ist HTTPS erforderlich (localhost ist
 docker build -t velaris-web ./apps/web
 docker run -d --name velaris-web --restart unless-stopped -p 8088:80 velaris-web
 ```
-Tailscale Serve kann den Port 8088 im privaten Tailnet per HTTPS bereitstellen. Danach in Safari die HTTPS-Adresse öffnen → Teilen → Zum Home-Bildschirm → Als Web-App öffnen.
+Alternativ Docker Compose auf dem ZimaOS-Host im Ordner `apps/web`:\n```sh\ndocker compose up -d --build\n```\nDie Compose-Datei bindet Port 8088 absichtlich **nur an 127.0.0.1**. Das bedeutet: direkter LAN-Zugriff funktioniert nicht; Tailscale Serve muss auf demselben Host laufen (oder der Port muss gezielt anders veröffentlicht werden).\n\nWenn Tailscale direkt auf dem ZimaOS-Host installiert und im Tailnet angemeldet ist, kann es die Web-App per HTTPS anbieten:\n```sh\ntailscale serve --bg 8088\ntailscale serve status\n```\nDanach die von Tailscale angezeigte HTTPS-Adresse auf dem iPhone in Safari öffnen → Teilen → Zum Home-Bildschirm → Als Web-App öffnen. Keine öffentliche Freigabe per Funnel erforderlich.\n\n**Wichtig:** Die Web-App ist damit erreichbar, aber Jellyfin braucht ebenfalls eine aus Safari erreichbare HTTPS-Adresse und korrekte CORS-Freigaben. Ohne diese funktioniert die Anmeldung nicht. Für echte iPhone-Wiedergabe ist ein Live-Test nötig.
 
 ## Jellyfin und Sicherheit
 - Über `Server-Adresse` eine **vom iPhone erreichbare HTTPS-URL** des Jellyfin-Servers eingeben; `http://` wird bei HTTPS-Web-Apps als Mixed Content blockiert. Tailscale Serve für Jellyfin kann eine eigene HTTPS-Route bereitstellen.
