@@ -1060,18 +1060,30 @@ class MainActivity : Activity() {
         homeRoot?.addView(sectionTitle(title))
         val row=LinearLayout(this).apply { orientation=LinearLayout.HORIZONTAL; setPadding(dp(52),dp(12),dp(56),dp(44)); clipChildren=false; clipToPadding=false }
         data.take(10).forEachIndexed { index,item ->
-            val cover=watchedPoster(item,154,218,"Primary",380)
-            val wrap=LinearLayout(this).apply {
-                orientation=LinearLayout.HORIZONTAL;gravity=Gravity.BOTTOM
+            val cover=watchedPoster(item,160,234,"Primary",450)
+            val wrap=FrameLayout(this).apply {
                 isFocusable=true;isClickable=true
+                clipChildren=false;clipToPadding=false
                 setOnClickListener { openMediaItem(item) }
                 applyCardFocus(this,cover)
+                tag="velaris_media_${item.optString("Id")}"
             }
-            wrap.addView(TextView(this).apply { text="${index+1}"; textSize=68f; typeface=Typeface.DEFAULT_BOLD; setTextColor(VelarisDesign.color("surfaceAlt",0xFF202027.toInt())); gravity=Gravity.BOTTOM },LinearLayout.LayoutParams(dp(58),dp(218)))
-            wrap.addView(cover,LinearLayout.LayoutParams(dp(154),dp(218)))
-            row.addView(wrap,LinearLayout.LayoutParams(dp(220),dp(228)).apply{marginEnd=dp(12)})
+            wrap.addView(TextView(this).apply {
+                text="${index+1}";textSize=104f
+                includeFontPadding=false
+                typeface=Typeface.create("sans-serif-black",Typeface.BOLD)
+                setTextColor(0xFF11111B.toInt())
+                setShadowLayer(dp(2).toFloat(),0f,0f,VelarisDesign.color("accent",0xFF7C5CFC.toInt()))
+                gravity=Gravity.BOTTOM or Gravity.LEFT
+            },FrameLayout.LayoutParams(dp(128),dp(246),Gravity.BOTTOM or Gravity.LEFT))
+            wrap.addView(cover,FrameLayout.LayoutParams(dp(160),dp(234),Gravity.TOP or Gravity.RIGHT))
+            row.addView(wrap,LinearLayout.LayoutParams(dp(230),dp(252)).apply{marginEnd=dp(12)})
         }
-        homeRoot?.addView(HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;clipChildren=false;addView(row)},LinearLayout.LayoutParams(-1,dp(300)))
+        homeRoot?.addView(HorizontalScrollView(this).apply{
+            isHorizontalScrollBarEnabled=false
+            clipChildren=false;clipToPadding=false
+            addView(row)
+        },LinearLayout.LayoutParams(-1,dp(320)))
     }
 
     private fun sectionTitle(label:String)=TextView(this).apply {
