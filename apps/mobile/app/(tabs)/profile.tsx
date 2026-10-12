@@ -45,6 +45,10 @@ export default function ProfileScreen(){
    <Text style={[styles.displayState,{color:display[key]?accentColor:colors.muted}]}>{display[key]?'AN':'AUS'}</Text>
  </Pressable>)}
  <Text style={styles.section}>Einstellungen</Text>
+ <Pressable style={[styles.settingsRow,{marginBottom:9}]} onPress={()=>router.push('/home-customize')}>
+  <View><Text style={styles.settingsTitle}>Startseite anpassen</Text><Text style={styles.settingsSub}>Reihen anzeigen, ausblenden und sortieren</Text></View>
+  <Text style={styles.chevron}>›</Text>
+ </Pressable>
  <Pressable style={[styles.settingsRow,{marginBottom:9}]} onPress={()=>{
    Alert.alert('Weiterschauen', 'Ausgeblendete Titel auf diesem Gerät wieder anzeigen?', [
      {text:'Abbrechen',style:'cancel'},
