@@ -3,7 +3,7 @@ import { Animated, Image, ImageBackground, Pressable, RefreshControl, ScrollView
 import { Redirect, router, useFocusEffect } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
 import { useVelarisTheme } from '@/context/ThemeContext';
-import { getBackdropUrl, getFavorites, getLatest, getPlayedItems, getRecommendations, getResumeItems } from '@/services/jellyfin';
+import { getBackdropUrl, getLogoUrl, getFavorites, getLatest, getPlayedItems, getRecommendations, getResumeItems } from '@/services/jellyfin';
 import { MediaRow } from '@/components/MediaRow';
 import type { JellyfinItem } from '@/types/jellyfin';
 import { colors, design } from '@/theme';
@@ -127,7 +127,12 @@ export default function HomeScreen() {
             <CinematicShade/>
             <View style={styles.heroContent}>
               <Text style={styles.eyebrow}><Text style={[styles.eyebrowDot,{color:accentColor}]}>●  </Text>{colors.heroLabel}</Text>
-              <Text style={styles.heroTitle} numberOfLines={3}>{hero.Name}</Text>
+              {getLogoUrl(session,hero)?<Image
+                source={{uri:getLogoUrl(session,hero)!}}
+                resizeMode="contain"
+                style={styles.heroLogo}
+                accessibilityLabel={hero.Name}
+              />:<Text style={styles.heroTitle} numberOfLines={3}>{hero.Name}</Text>}
               <Text style={styles.heroMeta}>{[
                 hero.ProductionYear,
                 hero.Type === 'Series' ? 'Serie' : 'Film',
@@ -228,6 +233,7 @@ const styles = StyleSheet.create({
   heroContent: { paddingHorizontal: 22, paddingBottom: 56, alignItems: 'center', width:'100%' },
   eyebrow: { color: colors.text, fontSize: 10, fontWeight: '900', letterSpacing: 2.5, marginBottom: 12 },
   eyebrowDot: { color: colors.accent },
+  heroLogo:{width:'88%',height:125,maxWidth:430,marginBottom:1},
   heroTitle: { color: colors.text, fontSize: 38, lineHeight: 43, fontWeight: '900', letterSpacing: -0.8, textAlign: 'center' },
   heroMeta: { color: '#EBE9F3', fontSize: 12, fontWeight: '800', marginTop: 13, textAlign:'center' },
   heroGenres: { color: '#C5BFDB', fontSize: 12, fontWeight: '700', marginTop: 8, textAlign:'center' },
