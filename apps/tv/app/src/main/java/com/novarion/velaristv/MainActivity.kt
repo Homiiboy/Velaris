@@ -1055,6 +1055,39 @@ class MainActivity : Activity() {
         root.post { (root.getChildAt(2) as? LinearLayout)?.getChildAt(0)?.requestFocus() }
     }
 
+    private fun showPosterQuickActions(item:JSONObject) {
+        val id=item.optString("Id")
+        if(id.isBlank())return
+        val title=item.optString("Name","Titel")
+        val year=item.optInt("ProductionYear",0)
+        val genres=item.optJSONArray("Genres")
+        val primaryGenre=genres?.optString(0).orEmpty()
+        val runtime=item.optLong("RunTimeTicks",0L)/600_000_000L
+        val details=listOfNotNull(
+            year.takeIf{it>0}?.toString(),
+            runtime.takeIf{it>0}?.let{"$it Min."},
+            primaryGenre.takeIf{it.isNotBlank()},
+            item.optDouble("CommunityRating",0.0).takeIf{it>0}?.let{"★ %.1f".format(it)}
+        ).joinToString(" · ")
+        val favorite=item.optJSONObject("UserData")?.optBoolean("IsFavorite",false)==true
+        val options=if(item.optString("Type")=="BoxSet") arrayOf("Details","Abbrechen")
+            else arrayOf("▶ Abspielen","ⓘ Mehr Infos",if(favorite)"Aus Meine Liste entfernen" else "Zu Meine Liste","Abbrechen")
+        android.app.AlertDialog.Builder(this)
+            .setTitle(title)
+            .setMessage(details.ifBlank{"Weitere Informationen anzeigen"})
+            .setItems(options){ _,which ->
+                if(item.optString("Type")=="BoxSet"){
+                    if(which==0)showCollection(id)
+                }else when(which){
+                    0->playNative(id,item.optJSONObject("UserData")?.optLong("PlaybackPositionTicks",0L)?:0L)
+                    1->showDetails(id)
+                    2->setFavorite(id,!favorite){showHome()}
+                }
+            }
+            .setNegativeButton("Schließen",null)
+            .show()
+    }
+
     private fun addRankedRow(title:String,data:List<JSONObject>) {
         if(data.isEmpty()) return
         homeRoot?.addView(sectionTitle(title))
@@ -1065,6 +1098,7 @@ class MainActivity : Activity() {
                 isFocusable=true;isClickable=true
                 clipChildren=false;clipToPadding=false
                 setOnClickListener { openMediaItem(item) }
+                setOnLongClickListener { showPosterQuickActions(item); true }
                 applyCardFocus(this,cover)
                 tag="velaris_media_${item.optString("Id")}"
             }
@@ -1167,7 +1201,7 @@ class MainActivity : Activity() {
                 applyCardFocus(this,cover)
             }
             card.addView(cover,LinearLayout.LayoutParams(dp(176),dp(248)))
-            card.setOnLongClickListener { openMediaItem(item); true }
+            card.setOnLongClickListener { showPosterQuickActions(item); true }
             val percent=playbackPercent(item)
             if(percent in 1..99)card.addView(ProgressBar(this,null,android.R.attr.progressBarStyleHorizontal).apply {
                 max=1000;progress=percent*10
