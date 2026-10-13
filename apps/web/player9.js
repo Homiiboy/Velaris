@@ -18,7 +18,28 @@ function p9Play(item){
  const isAlive=()=>root.isConnected&&!stopped&&session()?.userId===currentSession.userId&&session()?.url===currentSession.url;
  const playerMessage=message=>{if(isAlive())note.textContent=message};
  const report=async type=>{if(!isAlive()&&type!=='Stopped')return;const pos=Number.isFinite(video.currentTime)?video.currentTime:0;try{await api('/Sessions/Playing/'+type,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ItemId:item.Id,PositionTicks:Math.floor(pos*10000000),IsPaused:video.paused,PlayMethod:'Transcode'})},currentSession)}catch{}};
- const source=(position=0)=>{if(!isAlive())return;pendingPosition=Math.max(0,position);reloading=true;retry.hidden=true;fallback=false;video.src=p9Stream(item,quality);video.load();video.play().catch(()=>{});playerMessage('Stream wird geladen …')};
+ const tryPlay=()=>{
+  const request=video.play();
+  if(request&&typeof request.catch==='function')request.catch(err=>{
+   if(!isAlive())return;
+   retry.hidden=false;
+   playerMessage(err?.name==='NotAllowedError'?'Tippe auf ▶, um die Wiedergabe zu starten.':'Stream konnte nicht gestartet werden: '+(err?.message||'Playerfehler'));
+  });
+ };
+ // Native HLS works in Safari; Chromium/Firefox require an MP4 fallback unless
+ // a separate MediaSource-based HLS player is installed.
+ const supportsHls=!!video.canPlayType('application/vnd.apple.mpegurl')||!!video.canPlayType('application/x-mpegURL');
+ const source=(position=0)=>{
+  if(!isAlive())return;
+  pendingPosition=Math.max(0,position);
+  reloading=true;
+  retry.hidden=true;
+  fallback=!supportsHls;
+  video.src=p9Stream(item,quality,fallback);
+  video.load();
+  tryPlay();
+  playerMessage(fallback?'MP4-Stream wird geladen …':'Stream wird geladen …');
+ };
  const doClose=(reload=true)=>{if(stopped)return;report('Stopped');stopped=true;video.pause();video.removeAttribute('src');video.load();clearInterval(countdown);root.remove();if(reload&&session()?.userId===currentSession.userId&&session()?.url===currentSession.url)load()};
  const playNext=()=>{if(next&&isAlive()){const target=next;doClose(false);p9Play(target)}};
  const renderNext=()=>{if(!next||!isAlive())return;const remain=Number.isFinite(video.duration)?Math.max(0,video.duration-video.currentTime):Infinity;if(remain>90){nextBox.hidden=true;nextShown=false;return}nextShown=true;nextBox.hidden=false;nextBox.innerHTML='<div class="p9-next-info"><span class="eyebrow">ALS NÄCHSTES</span><strong>'+esc(next.Name)+'</strong><small>Staffel '+esc(next.ParentIndexNumber??'–')+' · Folge '+esc(next.IndexNumber??'–')+'</small></div><button class="primary" id="p9-next-start">Nächste Folge'+(prefs.autoNext?' · '+Math.ceil(remain)+'s':'')+'</button>';nextBox.querySelector('#p9-next-start').onclick=playNext};
@@ -27,12 +48,15 @@ function p9Play(item){
  video.addEventListener('playing',()=>{playerMessage('');report('')});
  video.addEventListener('timeupdate',update);video.addEventListener('pause',()=>{if(!stopped)report('Progress');update()});
  video.addEventListener('ended',()=>{if(!isAlive())return;report('Stopped');if(next&&prefs.autoNext)playNext();else if(next)renderNext()});
- video.addEventListener('error',()=>{if(!isAlive())return;const position=video.currentTime||pendingPosition;if(!fallback){fallback=true;pendingPosition=position;video.src=p9Stream(item,quality,true);video.load();video.play().catch(()=>{});playerMessage('Alternativen Stream versuchen …')}else{retry.hidden=false;playerMessage('Wiedergabe fehlgeschlagen. Bitte HTTPS, Codec und Jellyfin-Transcoding prüfen.')}});
+ video.addEventListener('error',()=>{if(!isAlive())return;const position=video.currentTime||pendingPosition;if(!fallback){fallback=true;pendingPosition=position;video.src=p9Stream(item,quality,true);video.load();tryPlay();playerMessage('Alternativen MP4-Stream versuchen …')}else{retry.hidden=false;playerMessage('Wiedergabe fehlgeschlagen. Bitte HTTPS, Codec und Jellyfin-Transcoding prüfen.')}});
  root.querySelector('#p9-close').onclick=()=>doClose();
  root.querySelector('#p9-rewind').onclick=()=>{video.currentTime=Math.max(0,video.currentTime-10)};
  root.querySelector('#p9-forward').onclick=()=>{video.currentTime=Math.min(Number.isFinite(video.duration)?video.duration:Infinity,video.currentTime+10)};
  root.querySelector('#p9-toggle').onclick=()=>video.paused?video.play().catch(()=>{}):video.pause();
- retry.onclick=()=>source(video.currentTime||pendingPosition);
+ retry.onclick=()=>{
+  if(video.readyState>=2 && video.paused){tryPlay();return}
+  source(video.currentTime||pendingPosition);
+ };
  root.querySelector('#p9-quality-button').onclick=()=>{const old=root.querySelector('#p9-quality-select');if(old){old.remove();return}const select=document.createElement('select');select.id='p9-quality-select';select.setAttribute('aria-label','Streamingqualität');P9_QUALITY.forEach(([value,label])=>{const opt=document.createElement('option');opt.value=value;opt.textContent=label;select.appendChild(opt)});select.value=quality;root.querySelector('.p9-header').appendChild(select);select.onchange=()=>{const pos=video.currentTime||pendingPosition;quality=select.value;p9Save({...p9Prefs(),quality});select.remove();source(pos)};select.focus()};
  source(pendingPosition);
  p9NextEpisode(item).then(x=>{if(isAlive()){next=x;update()}});
