@@ -104,8 +104,18 @@ async function detail(id){
   const played=!!item.UserData?.Played,remaining=remainingMinutes(item),quality=itemBadges(item),people=(item.People||[]).filter(p=>p.Name).slice(0,12);
   const meta=[item.ProductionYear,item.Type==='Series'?'Serie':item.Type==='Episode'?'Episode':'Film',item.Type!=='Series'&&runtimeMinutes(item)?runtimeMinutes(item)+' Min.':'',item.OfficialRating,item.CommunityRating?'★ '+Number(item.CommunityRating).toFixed(1):''].filter(Boolean);
   layout('<main class="details-screen"><div class="detail-hero">'+(backdrop?'<img class="detail-back" src="'+esc(backdrop)+'" alt="">':'')+'<button class="detail-return pill" id="back" type="button">‹ Zurück</button></div><div class="detail-content"><div class="eyebrow">'+esc(item.Type==='Series'?'SERIE AUF VELARIS':item.Type==='Episode'?'EPISODE AUF VELARIS':'FILM AUF VELARIS')+'</div><h1>'+esc(item.Name)+'</h1>'+(played?'<div class="watched-banner">✓ Bereits gesehen</div>':'')+'<div class="detail-meta">'+esc(meta.join(' · '))+'</div>'+(quality.length?'<div class="quality-row">'+quality.map(q=>'<span class="quality-badge">'+esc(q)+'</span>').join('')+'</div>':'')+'<div class="detail-actions">'+(canPlay?'<button class="primary detail-play" id="play" type="button">▶ '+(remaining!=null?'Fortsetzen':'Abspielen')+'</button>':'')+'<button class="secondary detail-favorite" id="fav" type="button" aria-pressed="'+fav+'"><span class="favorite-symbol">'+(fav?'♥':'♡')+'</span><span>Meine Liste</span></button></div>'+(remaining!=null?'<p class="resume-hint">▶ Fortsetzen · Noch '+remaining+' Min.</p>':'')+(item.Genres?.length?'<p class="genres">'+esc(item.Genres.slice(0,5).join(' · '))+'</p>':'')+(people.length?'<section class="cast-section"><h2 class="section-kicker">CAST & CREW</h2><div class="cast-scroll">'+people.map(p=>'<button class="cast-person" type="button" data-person="'+esc(p.Name)+'"><strong>'+esc(p.Name)+'</strong><span>'+esc(p.Role||p.Type||'Mitwirkende')+'</span></button>').join('')+'</div></section>':'')+(item.Overview?'<section class="story-section"><h2 class="section-kicker">HANDLUNG</h2><p>'+esc(item.Overview)+'</p></section>':'')+(item.Type==='Series'?'<section class="series-section"><div class="series-title"><h2>Episoden</h2><span id="season-count"></span></div><label class="season-label" for="season-select">Staffel auswählen</label><select id="season-select" class="season-select" aria-label="Staffel auswählen"></select><div id="episode-list" class="episode-list" aria-live="polite"><p class="hint">Staffeln werden geladen …</p></div></section>':'')+'</div></main>');
+  // layout() increments viewRevision; follow-up season requests belong to the new detail view.
+  const detailRevision=viewRevision;
+  const onDetailPage=()=>activeView(detailRevision,account.userId)&&!!app.querySelector('.details-screen');
   app.querySelector('#back').onclick=render;
-  if(canPlay)app.querySelector('#play').onclick=()=>play(item);
+  if(canPlay)app.querySelector('#play').onclick=event=>{
+    event.preventDefault();
+    try{play(item)}catch(err){
+      console.error('Velaris player start failed',err);
+      const button=app.querySelector('#play');
+      if(button?.isConnected)button.insertAdjacentHTML('afterend','<p class="error" role="alert">Player konnte nicht gestartet werden: '+esc(err.message||'Unbekannter Fehler')+'</p>');
+    }
+  };
   app.querySelector('#fav').onclick=async()=>{
    const button=app.querySelector('#fav');if(!button)return;button.disabled=true;
    try{await api('/Users/'+encodeURIComponent(session().userId)+'/FavoriteItems/'+encodeURIComponent(item.Id),{method:fav?'DELETE':'POST'});await load();await detail(id)}
@@ -116,7 +126,7 @@ async function detail(id){
    const select=app.querySelector('#season-select'),panel=app.querySelector('#episode-list');
    try{
     const data=await api('/Shows/'+encodeURIComponent(id)+'/Seasons?UserId='+encodeURIComponent(session().userId));
-    if(!activeView(revision,account.userId)||!select.isConnected)return;
+    if(!onDetailPage()||!select.isConnected)return;
     const seasons=data.Items||[];
     app.querySelector('#season-count').textContent=seasons.length+' '+(seasons.length===1?'Staffel':'Staffeln');
     if(!seasons.length){panel.innerHTML='<p class="empty">Keine Staffeln vorhanden.</p>';select.hidden=true;return}
@@ -129,15 +139,24 @@ async function detail(id){
      panel.innerHTML='<p class="hint">Episoden werden geladen …</p>';
      try{
       const result=await api('/Shows/'+encodeURIComponent(id)+'/Episodes?UserId='+encodeURIComponent(session().userId)+'&SeasonId='+encodeURIComponent(seasonId));
-      if(version!==revision||!panel.isConnected)return;
+      if(version!==revision||!onDetailPage()||!panel.isConnected)return;
       const episodes=result.Items||[];
       panel.innerHTML=episodes.length?episodes.map(episodeCard).join(''):'<p class="empty">Keine Episoden vorhanden.</p>';
-      panel.querySelectorAll('[data-episode]').forEach(b=>b.onclick=async()=>{b.disabled=true;try{const ep=await api('/Users/'+encodeURIComponent(session().userId)+'/Items/'+encodeURIComponent(b.dataset.episode));if(panel.isConnected)play(ep)}catch(err){b.disabled=false;panel.insertAdjacentHTML('beforeend','<p class="error" role="alert">'+esc(err.message)+'</p>')}});
-     }catch(err){if(version===revision&&panel.isConnected)panel.innerHTML='<p class="error" role="alert">Episoden konnten nicht geladen werden: '+esc(err.message)+'</p>'}
+      panel.querySelectorAll('[data-episode]').forEach(b=>b.onclick=async()=>{
+       b.disabled=true;
+       try{
+        const ep=await api('/Users/'+encodeURIComponent(account.userId)+'/Items/'+encodeURIComponent(b.dataset.episode),{},account);
+        if(onDetailPage()&&panel.isConnected)play(ep);
+       }catch(err){
+        b.disabled=false;
+        if(onDetailPage()&&panel.isConnected)panel.insertAdjacentHTML('beforeend','<p class="error" role="alert">'+esc(err.message)+'</p>');
+       }
+      });
+     }catch(err){if(version===revision&&onDetailPage()&&panel.isConnected)panel.innerHTML='<p class="error" role="alert">Episoden konnten nicht geladen werden: '+esc(err.message)+'</p>'}
     };
     select.onchange=showSeason;
     await showSeason();
-   }catch(err){if(panel.isConnected)panel.innerHTML='<p class="error" role="alert">Staffeln konnten nicht geladen werden: '+esc(err.message)+'</p>'}
+   }catch(err){if(onDetailPage()&&panel.isConnected)panel.innerHTML='<p class="error" role="alert">Staffeln konnten nicht geladen werden: '+esc(err.message)+'</p>'}
   }
  }catch(err){if(!activeView(revision,account.userId))return;layout('<main class="page"><h1>Details nicht erreichbar</h1><p>'+esc(err.message)+'</p><button id="detail-retry" class="primary">Erneut versuchen</button><button id="detail-back" class="secondary">Zurück</button></main>');app.querySelector('#detail-retry').onclick=()=>detail(id);app.querySelector('#detail-back').onclick=render}
 }
