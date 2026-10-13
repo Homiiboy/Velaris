@@ -247,3 +247,9 @@ button:disabled{cursor:wait;opacity:.65}
 /* Pass 10: touch targets and status readability */
 @media(max-width:849px){.p9-transport button{touch-action:manipulation}.p8-option button{min-width:39px}.p9-player .p9-header .secondary{min-height:44px}}
 @media(prefers-reduced-motion:reduce){.p8-dialog,.p9-next{scroll-behavior:auto}}
+
+/* Web 1.0.2: keep film playback actions above the overlapping cinematic backdrop. */
+.details-screen .detail-content{position:relative;z-index:3}
+.details-screen .detail-actions{position:relative;z-index:4;pointer-events:auto}
+.details-screen .detail-actions button{pointer-events:auto;touch-action:manipulation;cursor:pointer;min-height:48px}
+.details-screen .detail-actions button:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
