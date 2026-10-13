@@ -1,22 +1,51 @@
 const app=document.querySelector('#app');
 const storageKey='velaris-web-session-v1';
-const state={sessions:(()=>{try{const value=JSON.parse(sessionStorage.getItem(storageKey)||'[]');return Array.isArray(value)?value.filter(x=>x&&typeof x.url==='string'&&typeof x.token==='string'&&typeof x.userId==='string').slice(0,5):[]}catch{return []}})(),active:0,tab:'home',items:[],resume:[],favorites:[],series:[],filter:[],busy:false,detail:null,player:null,query:''};
+// Jellyfin access tokens survive browser/PWA restarts on the same origin.
+// Upgrade legacy sessionStorage logins once; never persist a password.
+function restoreSessions(){
+ try{
+  const persistent=localStorage.getItem(storageKey);
+  const legacy=sessionStorage.getItem(storageKey);
+  const value=JSON.parse(persistent??legacy??'[]');
+  const accounts=Array.isArray(value)?value.filter(x=>x&&typeof x.url==='string'&&typeof x.token==='string'&&typeof x.userId==='string').slice(0,5):[];
+  if(accounts.length && persistent===null)localStorage.setItem(storageKey,JSON.stringify(accounts));
+  sessionStorage.removeItem(storageKey);
+  return accounts;
+ }catch{return []}
+}
+const state={sessions:restoreSessions(),active:0,tab:'home',items:[],resume:[],favorites:[],series:[],filter:[],busy:false,detail:null,player:null,query:''};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const session=()=>state.sessions[state.active];
-const deviceId=(()=>{let id=sessionStorage.getItem('velaris-device-id');if(!id){id=globalThis.crypto?.randomUUID?.()||'velaris-'+Date.now().toString(36);sessionStorage.setItem('velaris-device-id',id)}return id})();
+const deviceId=(()=>{
+ try{
+  let id=localStorage.getItem('velaris-device-id')||sessionStorage.getItem('velaris-device-id');
+  if(!id)id=globalThis.crypto?.randomUUID?.()||'velaris-'+Date.now().toString(36);
+  localStorage.setItem('velaris-device-id',id);
+  sessionStorage.removeItem('velaris-device-id');
+  return id;
+ }catch{return globalThis.crypto?.randomUUID?.()||'velaris-'+Date.now().toString(36)}
+})();
 let heroTimer=null,heroIndex=0;
 let viewRevision=0;
 function activeView(revision,user){return revision===viewRevision&&session()?.userId===user&&!!app.querySelector('.shell')}
 function stopHero(){if(heroTimer)clearInterval(heroTimer);heroTimer=null}
 const glyphs={home:'⌂',movies:'▣',series:'▤',anime:'✦',animeMovies:'★',favorites:'♥',collections:'▦'};
 
-function header(s){return {'X-Emby-Authorization':'MediaBrowser Client="Velaris Web", Device="Web PWA", DeviceId="'+deviceId+'", Version="1.0.0"'+(s?.token?', Token="'+s.token+'"':'')}} 
+function header(s){return {'X-Emby-Authorization':'MediaBrowser Client="Velaris Web", Device="Web PWA", DeviceId="'+deviceId+'", Version="1.0.1"'+(s?.token?', Token="'+s.token+'"':'')}} 
 function base(s){return s.url.replace(/\/+$/,'')}
 async function api(path,options={},s=session()){const r=await fetch(base(s)+path,{...options,headers:{...header(s),...(options.headers||{})}});if(!r.ok)throw Error('Jellyfin HTTP '+r.status);if(r.status===204)return null;return r.json()}
 function image(item,type='Primary',w=500){const s=session();if(!s||!item?.Id)return '';const tag=type==='Backdrop'?item.BackdropImageTags?.[0]:item.ImageTags?.[type]||(type==='Primary'?item.PrimaryImageTag:null);if(!tag)return '';return base(s)+'/Items/'+encodeURIComponent(item.Id)+'/Images/'+type+'?maxWidth='+w+'&quality=85&tag='+encodeURIComponent(tag)+'&api_key='+encodeURIComponent(s.token)}
-function save(){sessionStorage.setItem(storageKey,JSON.stringify(state.sessions))}
+function save(){
+ try{
+  if(state.sessions.length)localStorage.setItem(storageKey,JSON.stringify(state.sessions));
+  else localStorage.removeItem(storageKey);
+  sessionStorage.removeItem(storageKey);
+ }catch{
+  // Browser privacy modes may block persistence; the current session still works.
+ }
+}
 function safeURL(v){let u;try{u=new URL(v)}catch{throw Error('Bitte eine vollständige Server-Adresse mit https:// eingeben.')};if(!['https:','http:'].includes(u.protocol)||u.username||u.password||u.search||u.hash)throw Error('Ungültige Server-Adresse.');if(location.protocol==='https:'&&u.protocol!=='https:')throw Error('Auf dem iPhone muss Jellyfin über HTTPS erreichbar sein.');return u.origin+u.pathname.replace(/\/$/,'')}
-function auth(){stopHero();app.innerHTML='<main class="auth-wrap"><form class="auth" id="login"><div class="auth-emblem" aria-hidden="true">V</div><div class="logo">VELARIS</div><div class="eyebrow">DEIN STREAMING. DEINE WELT.</div><h2>Willkommen zurück</h2><p class="hint">Verbinde deinen eigenen Jellyfin-Server. Auf dem iPhone benötigst du eine HTTPS-Adresse.</p><label>Server-Adresse<input name="server" required type="url" placeholder="https://jellyfin.example.ts.net" autocomplete="url"></label><label>Benutzername<input name="username" required autocomplete="username"></label><label>Passwort<input name="password" type="password" autocomplete="current-password"></label><div id="login-error" role="alert"></div><div class="auth-actions"><button class="secondary" type="button" id="login-back">Zurück</button><button class="primary" type="submit">Anmelden</button></div><p class="hint">Dein Passwort wird nicht gespeichert. Die Verbindung bleibt nur für diese Browser-Sitzung angemeldet.</p></form></main>';document.querySelector('#login-back').onclick=()=>{if(state.sessions.length){profilePicker()}else{const form=document.querySelector('#login');form.reset();document.querySelector('#login-error').textContent='';form.server.focus()}};document.querySelector('#login').onsubmit=async e=>{e.preventDefault();const f=e.target,b=f.querySelector('[type="submit"]');b.disabled=true;b.textContent='Verbinde …';try{const url=safeURL(f.server.value);const r=await fetch(url+'/Users/AuthenticateByName',{method:'POST',headers:{'Content-Type':'application/json',...header(null)},body:JSON.stringify({Username:f.username.value, Pw:f.password.value})});if(!r.ok)throw Error('Anmeldung fehlgeschlagen ('+r.status+').');const data=await r.json();if(!data.AccessToken||!data.User?.Id)throw Error('Ungültige Antwort des Servers.');const existing=state.sessions.findIndex(s=>s.url===url&&s.userId===data.User.Id);const s={url,token:data.AccessToken,userId:data.User.Id,name:data.User.Name};if(existing>=0){state.sessions[existing]=s;state.active=existing}else{if(state.sessions.length>=5)throw Error('Maximal fünf Profile pro Browser. Bitte zuerst ein Profil abmelden.');state.sessions.push(s);state.active=state.sessions.length-1}save();await load();}catch(err){const node=document.querySelector('#login-error');if(node)node.innerHTML='<div class="error">'+esc(err.message)+' – Prüfe Server, HTTPS und CORS.</div>'}finally{if(b.isConnected){b.disabled=false;b.textContent='Anmelden'}}}}
+function auth(){stopHero();app.innerHTML='<main class="auth-wrap"><form class="auth" id="login"><div class="auth-emblem" aria-hidden="true">V</div><div class="logo">VELARIS</div><div class="eyebrow">DEIN STREAMING. DEINE WELT.</div><h2>Willkommen zurück</h2><p class="hint">Verbinde deinen eigenen Jellyfin-Server. Auf dem iPhone benötigst du eine HTTPS-Adresse.</p><label>Server-Adresse<input name="server" required type="url" placeholder="https://jellyfin.example.ts.net" autocomplete="url"></label><label>Benutzername<input name="username" required autocomplete="username"></label><label>Passwort<input name="password" type="password" autocomplete="current-password"></label><div id="login-error" role="alert"></div><div class="auth-actions"><button class="secondary" type="button" id="login-back">Zurück</button><button class="primary" type="submit">Anmelden</button></div><p class="hint">Dein Passwort wird nicht dauerhaft gespeichert; deine Jellyfin-Anmeldung bleibt auf diesem Gerät gespeichert, bis du das Profil abmeldest oder die Websitedaten löschst.</p></form></main>';document.querySelector('#login-back').onclick=()=>{if(state.sessions.length){profilePicker()}else{const form=document.querySelector('#login');form.reset();document.querySelector('#login-error').textContent='';form.server.focus()}};document.querySelector('#login').onsubmit=async e=>{e.preventDefault();const f=e.target,b=f.querySelector('[type="submit"]');b.disabled=true;b.textContent='Verbinde …';try{const url=safeURL(f.server.value);const r=await fetch(url+'/Users/AuthenticateByName',{method:'POST',headers:{'Content-Type':'application/json',...header(null)},body:JSON.stringify({Username:f.username.value, Pw:f.password.value})});if(!r.ok)throw Error('Anmeldung fehlgeschlagen ('+r.status+').');const data=await r.json();if(!data.AccessToken||!data.User?.Id)throw Error('Ungültige Antwort des Servers.');const existing=state.sessions.findIndex(s=>s.url===url&&s.userId===data.User.Id);const s={url,token:data.AccessToken,userId:data.User.Id,name:data.User.Name};if(existing>=0){state.sessions[existing]=s;state.active=existing}else{if(state.sessions.length>=5)throw Error('Maximal fünf Profile pro Browser. Bitte zuerst ein Profil abmelden.');state.sessions.push(s);state.active=state.sessions.length-1}save();await load();}catch(err){const node=document.querySelector('#login-error');if(node)node.innerHTML='<div class="error">'+esc(err.message)+' – Prüfe Server, HTTPS und CORS.</div>'}finally{if(b.isConnected){b.disabled=false;b.textContent='Anmelden'}}}}
 function profilePicker(){stopHero();app.innerHTML='<main class="auth-wrap profiles-screen"><section class="profile-panel"><div class="logo">VELARIS</div><div class="eyebrow">GUTEN FILMABEND</div><h1>Wer schaut gerade?</h1><p class="hint">Wähle dein Jellyfin-Profil.</p><div class="profiles">'+state.sessions.map((p,i)=>'<button class="profile" data-profile="'+i+'"><div class="avatar profile-avatar">'+esc(p.name?.slice(0,1).toUpperCase())+'</div>'+esc(p.name)+'</button>').join('')+'</div><div class="profile-actions"><button id="add-profile" class="secondary add-profile" type="button">＋ Profil hinzufügen</button><button id="remove-profile" class="secondary add-profile" type="button">Aktuelles Profil abmelden</button></div></section></main>';app.querySelectorAll('[data-profile]').forEach(el=>el.onclick=async()=>{state.active=Number(el.dataset.profile);await load()});app.querySelector('#add-profile').onclick=auth;const exit=app.querySelector('#remove-profile');if(exit)exit.onclick=logout}
 
 const p8RowsData={resume:'Weiterschauen',top:'Top 10 für dich',popular:'Heute beliebt',hidden:'Verborgene Schätze',short:'Kurz und spannend',favorites:'Meine Liste',recent:'Kürzlich hinzugefügt',movies:'Filme',series:'Serien',collections:'Sammlungen'};
