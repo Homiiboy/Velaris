@@ -1,6 +1,6 @@
 # Velaris Web (iPhone PWA)
 
-**Aktuelle Quellcode-Version: 1.0.0.** Die Versionsangabe liegt im PWA-Manifest und HTML-Metadaten; der Service-Worker-Cache wird mit einer neuen Kennung aktualisiert. Die Web-Version wird beim nächsten Deployment sichtbar. Browser/iPhone-Tests bleiben erforderlich.
+**Aktuelle Quellcode-Version: 1.0.1.** Die Versionsangabe liegt im PWA-Manifest und HTML-Metadaten; der Service-Worker-Cache wird mit einer neuen Kennung aktualisiert. Die Web-Version wird beim nächsten Deployment sichtbar. Browser/iPhone-Tests bleiben erforderlich.
 Eigenständige installierbare Web-App im gemeinsamen Velaris-Monorepo. Keine Apple-Developer-Mitgliedschaft oder kostenpflichtige Domain nötig.
 
 ## Schnellstart
@@ -31,7 +31,9 @@ Danach die von Tailscale angezeigte HTTPS-Adresse auf dem iPhone in Safari öffn
 ## Jellyfin und Sicherheit
 - Über `Server-Adresse` eine **vom iPhone erreichbare HTTPS-URL** des Jellyfin-Servers eingeben; `http://` wird bei HTTPS-Web-Apps als Mixed Content blockiert. Tailscale Serve für Jellyfin kann eine eigene HTTPS-Route bereitstellen.
 - Der Jellyfin-Server muss Browser-CORS-Anfragen von der PWA-Origin erlauben (oder mittels sicheren Reverse Proxy unter derselben Origin erreichbar sein). Die PWA kann solche Serverbeschränkungen nicht umgehen.
-- Zugangsdaten werden nicht gespeichert. Die Jellyfin-Sitzung bleibt nur in `sessionStorage` der jeweiligen Browser-Session; nicht dauerhaft. Niemals Passwörter/Token im Repo hinterlegen.
+- **Angemeldet bleiben:** Die Web-App speichert das Jellyfin-Access-Token pro Browser/PWA dauerhaft in `localStorage` (statt `sessionStorage`). Dadurch bleibt der Login nach Browser-Neustart erhalten und alte aktive Sitzungen werden migriert. Das Passwort wird nicht gespeichert.
+- **Abmelden:** Über „Aktuelles Profil abmelden“ wird die lokal gespeicherte Sitzung dieses Profils gelöscht. Das Löschen von Website-Daten entfernt alle gespeicherten Konten. Jellyfin kann Tokens serverseitig unabhängig davon ungültig machen; dann ist eine erneute Anmeldung nötig.
+- **Sicherheit:** `localStorage` ist für JavaScript derselben Origin zugänglich. Dauerhafter Login sollte daher nur auf vertrauenswürdigen, geschützten Geräten und über HTTPS genutzt werden; XSS oder ein kompromittierter Browser können Tokens auslesen. Browser- und installierte iOS-PWA-Kontexte können getrennte Speicher besitzen. Niemals Passwörter/Token im Repo hinterlegen.
 - Die Web-App cached **nur die eigene statische Oberfläche**, keine Jellyfin-Videos, Tokens oder private Metadaten. Offline-Streaming ist nicht implementiert.
 - Video-Wiedergabe nutzt Jellyfin HLS mit `stream.mp4` als Fallback und hängt vom Mediencodec, dem Transcoding des Servers und Safari ab. HLS-Authentifizierung über ein Query-Token sollte nur über HTTPS genutzt werden; für Produktion ist ein serverseitiger Auth-Proxy sinnvoll.
 - Apple-Touch-Icon kann später als PNG hinzugefügt werden. Bis dahin wird das SVG-Favicon verwendet.
