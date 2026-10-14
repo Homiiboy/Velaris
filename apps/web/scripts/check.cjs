@@ -75,3 +75,42 @@ vm.runInContext(player,sandbox,{filename:'player9.js'});
  assert.equal(last,null,'Unavailable episodes must be skipped');
  console.log('Velaris Web: player and profile regression checks passed.');
 })().catch(error=>{console.error(error);process.exitCode=1});
+
+/* Playback contract from the native Expo app, adapted for HTML video elements. */
+for(const token of [
+ "async function p9PlaybackInfo(item,quality,account)",
+ "EnableDirectPlay:true,EnableDirectStream:true,EnableTranscoding:true",
+ "media?.MediaSources?.[0]",
+ "source?.TranscodingUrl",
+ "source?.DirectStreamUrl",
+ "MediaSourceId:playbackInfo?.MediaSources?.[0]?.Id",
+ "PlaySessionId:playbackInfo?.PlaySessionId",
+ "const hls=/\\.m3u8(?:\\?|$)/i.test(negotiated);"
+])assert(player.includes(token),'Mobile playback negotiation missing: '+token);
+const negotiatedSandbox={
+ api:async(path,options,account)=>{
+  assert.equal(account.userId,'test-user');
+  assert.match(path,/PlaybackInfo/);
+  assert.equal(options.method,'POST');
+  const body=JSON.parse(options.body);
+  assert.equal(body.EnableTranscoding,true);
+  return {PlaySessionId:'play-session',MediaSources:[{Id:'media-source',TranscodingUrl:'/Videos/movie-1/master.m3u8?MediaSourceId=media-source'}]};
+ },
+ base:account=>account.url,
+ session:()=>({userId:'test-user',url:'https://jellyfin.example',token:'test-token'}),
+ URL,URLSearchParams,encodeURIComponent
+};
+vm.createContext(negotiatedSandbox);
+vm.runInContext(player,negotiatedSandbox,{filename:'player9.js'});
+(async()=>{
+ const info=await vm.runInContext("p9PlaybackInfo({Id:'movie-1'},'auto',session())",negotiatedSandbox);
+ assert.equal(info.PlaySessionId,'play-session');
+ const url=vm.runInContext("p9Stream({Id:'movie-1'},'auto',session(),"+JSON.stringify(info)+")",negotiatedSandbox);
+ assert.match(url,/master\\.m3u8/);
+ assert.match(url,/api_key=test-token/);
+ const mp4=vm.runInContext("p9Stream({Id:'movie-1'},'auto',session(),"+JSON.stringify(info)+",true)",negotiatedSandbox);
+ assert.match(mp4,/stream\\.mp4/);
+ assert.match(mp4,/MediaSourceId=media-source/);
+ assert.match(mp4,/PlaySessionId=play-session/);
+ console.log('Velaris Web: negotiated playback URLs passed.');
+})().catch(error=>{console.error(error);process.exitCode=1});
