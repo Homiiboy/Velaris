@@ -263,3 +263,12 @@ button:disabled{cursor:wait;opacity:.65}
 .hero-stage .hero-dots button{pointer-events:auto;cursor:pointer;min-width:20px;min-height:20px;border-radius:12px}
 .hero-action-error{color:#ffd9e1;font-size:12px;min-height:0;margin:6px 0 0}
 .hero-action-error:empty{display:none}
+
+/* Velaris Web 1.2.0 — Cast sender controls */
+#p9-cast-button{border:1px solid #ffffff68;background:#201a2fdd;white-space:nowrap}
+#p9-cast-button:hover,#p9-cast-button:focus-visible{border-color:var(--accent);outline-offset:2px}
+.p9-cast-status{color:#ddd6f6;font-size:12px;text-align:center;max-width:min(90vw,650px);line-height:1.4}
+.p9-cast-status:empty{display:none}
+#p9-cast-stop{border-color:#a58aff;min-height:42px;background:#2b2040d9;color:white}
+#p9-cast-stop[hidden]{display:none!important}
+@media(max-width:480px){#p9-cast-button{font-size:11px;padding:7px 8px;min-width:58px}.p9-cast-status{font-size:11px}}
