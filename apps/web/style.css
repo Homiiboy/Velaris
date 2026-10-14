@@ -253,3 +253,13 @@ button:disabled{cursor:wait;opacity:.65}
 .details-screen .detail-actions{position:relative;z-index:4;pointer-events:auto}
 .details-screen .detail-actions button{pointer-events:auto;touch-action:manipulation;cursor:pointer;min-height:48px}
 .details-screen .detail-actions button:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+
+/* Web 1.0.4: clickable Hero actions must stay above artwork and carousel hit areas. */
+.hero-stage .hero-copy{position:relative;z-index:3;pointer-events:auto}
+.hero-stage .hero-copy .actions{position:relative;z-index:4;pointer-events:auto}
+.hero-stage .hero-copy .actions button{position:relative;z-index:4;pointer-events:auto;touch-action:manipulation;cursor:pointer;min-height:48px}
+.hero-stage .hero-copy .actions button:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+.hero-stage .hero-dots{pointer-events:none}
+.hero-stage .hero-dots button{pointer-events:auto;cursor:pointer;min-width:20px;min-height:20px;border-radius:12px}
+.hero-action-error{color:#ffd9e1;font-size:12px;min-height:0;margin:6px 0 0}
+.hero-action-error:empty{display:none}
