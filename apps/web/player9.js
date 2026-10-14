@@ -82,7 +82,7 @@ function p9Play(item){
   sourceUrl=url;
   hlsError='';
   resetEngine();
-  const isHls=/\\.m3u8(?:\\?|$)/i.test(url);
+  const isHls=/\.m3u8(?:\?|$)/i.test(url);
   if(isHls&&!nativeHls&&mseHls()){
    const Hls=window.Hls;
    hlsEngine=new Hls({
