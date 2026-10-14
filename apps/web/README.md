@@ -1,6 +1,6 @@
 # Velaris Web (iPhone PWA)
 
-**Aktuelle Quellcode-Version: 1.0.2.** Die Versionsangabe liegt im PWA-Manifest und HTML-Metadaten; der Service-Worker-Cache wird mit einer neuen Kennung aktualisiert. Die Web-Version wird beim nächsten Deployment sichtbar. Browser/iPhone-Tests bleiben erforderlich.
+**Aktuelle Quellcode-Version: 1.0.3.** Die Versionsangabe liegt im PWA-Manifest und HTML-Metadaten; der Service-Worker-Cache wird mit einer neuen Kennung aktualisiert. Die Web-Version wird beim nächsten Deployment sichtbar. Browser/iPhone-Tests bleiben erforderlich.
 Eigenständige installierbare Web-App im gemeinsamen Velaris-Monorepo. Keine Apple-Developer-Mitgliedschaft oder kostenpflichtige Domain nötig.
 
 ## Schnellstart
