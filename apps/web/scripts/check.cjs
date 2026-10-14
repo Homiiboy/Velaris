@@ -114,3 +114,19 @@ vm.runInContext(player,negotiatedSandbox,{filename:'player9.js'});
  assert.match(mp4,/PlaySessionId=play-session/);
  console.log('Velaris Web: negotiated playback URLs passed.');
 })().catch(error=>{console.error(error);process.exitCode=1});
+
+/* HLS integration safety guards: library must load before the player and
+ * every active engine must be cleaned up when the user closes playback. */
+const hlsScriptIndex=html.indexOf('hls.js@1.7.3/dist/hls.min.js');
+assert(hlsScriptIndex>=0&&hlsScriptIndex<playerScriptIndex,'hls.js must load before player9.js');
+for(const token of [
+ "const mseHls=()=>",
+ "new Hls({",
+ "xhrSetup:xhr=>xhr.setRequestHeader('X-Emby-Token',currentSession.token)",
+ "Hls.Events.MANIFEST_PARSED",
+ "Hls.Events.ERROR",
+ "hlsEngine.destroy()",
+ "streamGeneration++",
+ "if(!fallback){"
+])assert(player.includes(token),'HLS browser playback or cleanup guard missing: '+token);
+console.log('Velaris Web: HLS browser playback wiring passed.');
