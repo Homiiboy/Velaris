@@ -69,7 +69,48 @@ function post(item){const src=image(item);const progress=item.UserData?.PlayedPe
 function wireItems(){p8Wire()}
 function row(title,items,key=''){return items.length?'<section class="media-section"><h2 class="row-title">'+esc(title)+'<span class="row-arrow">›</span></h2><div class="rail">'+items.map((item,i)=>key==='top'?'<div class="p8-ranked"><span class="p8-rank">'+(i+1)+'</span>'+post(item)+'</div>':post(item)).join('')+'</div></section>':''}
 function section(items,title){layout('<main class="page"><h1>'+esc(title)+'</h1>'+(items.length?'<div class="grid">'+items.map(post).join('')+'</div>':'<div class="empty">Hier sind noch keine Medien vorhanden.</div>')+'</main>');wireItems()}
-function render(){stopHero();if(!session())return auth();const types={movies:['Movie'],series:['Series'],anime:['Series'],animeMovies:['Movie']};if(state.tab==='favorites')return section(state.favorites,'Meine Liste');if(state.tab==='collections')return section(state.collections||[],'Sammlungen');if(types[state.tab]){let items=state.items.filter(i=>types[state.tab].includes(i.Type));if(state.tab==='anime'||state.tab==='animeMovies')items=items.filter(i=>(i.Genres||[]).some(g=>/anime/i.test(g))||(i.Tags||[]).some(t=>/anime/i.test(t)));if(state.tab==='movies'||state.tab==='series')items=items.filter(i=>!(i.Genres||[]).some(g=>/anime/i.test(g)));return section(items,({movies:'Filme',series:'Serien',anime:'Anime',animeMovies:'Anime Filme'})[state.tab])}const featured=state.items.filter(i=>i.BackdropImageTags?.length).slice(0,6);if(!featured.length&&state.items[0])featured.push(state.items[0]);heroIndex=Math.min(heroIndex,Math.max(0,featured.length-1));const h=featured.length?'<section class="hero-stage" aria-label="Im Rampenlicht"><div id="hero-mount"></div><div class="hero-dots" id="hero-dots" role="group" aria-label="Highlights"></div></section>':'<main class="page"><h1>Willkommen bei Velaris</h1><p>Auf diesem Jellyfin-Konto wurden noch keine Medien gefunden.</p></main>';layout(h+'<div class="rows">'+p8HomeRows()+'</div><div class="install">Tipp: In Safari über Teilen → Zum Home-Bildschirm hinzufügen kannst du Velaris wie eine App starten.</div>');wireItems();if(!featured.length)return;const mount=app.querySelector('#hero-mount'),dots=app.querySelector('#hero-dots');const showHero=()=>{const item=featured[heroIndex],src=image(item,'Backdrop',1400);mount.innerHTML='<div class="hero" style="--hero:url(&quot;'+esc(src)+'&quot;)"><div class="hero-copy"><div class="eyebrow">✦ IM RAMPENLICHT</div>'+p8Logo(item)+'<p>'+esc((item.Overview||'Entdecke deine Mediathek.').slice(0,170))+'</p><div class="actions"><button class="primary" id="hero-play">▶ Abspielen</button><button class="secondary" id="hero-detail">ⓘ Mehr Infos</button></div></div></div>';dots.innerHTML=featured.map((x,i)=>'<button type="button" class="hero-dot '+(i===heroIndex?'active':'')+'" data-slide="'+i+'" aria-label="Highlight '+(i+1)+': '+esc(x.Name)+'" aria-pressed="'+(i===heroIndex)+'"></button>').join('');mount.querySelector('#hero-play').onclick=()=>{stopHero();play(item)};mount.querySelector('#hero-detail').onclick=()=>{stopHero();detail(item.Id)};dots.querySelectorAll('[data-slide]').forEach(el=>el.onclick=()=>{heroIndex=Number(el.dataset.slide);showHero();scheduleHero()})};const scheduleHero=()=>{stopHero();if(featured.length>1&&!window.matchMedia('(prefers-reduced-motion: reduce)').matches)heroTimer=setInterval(()=>{if(!document.hidden){heroIndex=(heroIndex+1)%featured.length;showHero()}},6500)};showHero();scheduleHero()}
+function render(){stopHero();if(!session())return auth();const types={movies:['Movie'],series:['Series'],anime:['Series'],animeMovies:['Movie']};if(state.tab==='favorites')return section(state.favorites,'Meine Liste');if(state.tab==='collections')return section(state.collections||[],'Sammlungen');if(types[state.tab]){let items=state.items.filter(i=>types[state.tab].includes(i.Type));if(state.tab==='anime'||state.tab==='animeMovies')items=items.filter(i=>(i.Genres||[]).some(g=>/anime/i.test(g))||(i.Tags||[]).some(t=>/anime/i.test(t)));if(state.tab==='movies'||state.tab==='series')items=items.filter(i=>!(i.Genres||[]).some(g=>/anime/i.test(g)));return section(items,({movies:'Filme',series:'Serien',anime:'Anime',animeMovies:'Anime Filme'})[state.tab])}const featured=state.items.filter(i=>i.BackdropImageTags?.length).slice(0,6);if(!featured.length&&state.items[0])featured.push(state.items[0]);heroIndex=Math.min(heroIndex,Math.max(0,featured.length-1));const h=featured.length?'<section class="hero-stage" aria-label="Im Rampenlicht"><div id="hero-mount"></div><div class="hero-dots" id="hero-dots" role="group" aria-label="Highlights"></div></section>':'<main class="page"><h1>Willkommen bei Velaris</h1><p>Auf diesem Jellyfin-Konto wurden noch keine Medien gefunden.</p></main>';layout(h+'<div class="rows">'+p8HomeRows()+'</div><div class="install">Tipp: In Safari über Teilen → Zum Home-Bildschirm hinzufügen kannst du Velaris wie eine App starten.</div>');wireItems();if(!featured.length)return;const mount=app.querySelector('#hero-mount'),dots=app.querySelector('#hero-dots');const heroAction=(action,item)=>{
+ if(action==='details')return detail(item.Id);
+ if(action==='play')return play(item);
+};
+const safeHeroAction=(action,item)=>{
+ stopHero();
+ try{
+  const result=heroAction(action,item);
+  if(result&&typeof result.catch==='function')result.catch(error=>showHeroError(error));
+ }catch(error){showHeroError(error)}
+};
+const showHeroError=error=>{
+ console.error('Velaris hero action failed',error);
+ const target=mount.querySelector('#hero-action-error');
+ if(target)target.textContent='Aktion fehlgeschlagen: '+(error?.message||'Unbekannter Fehler');
+};
+const showHero=()=>{
+ const item=featured[heroIndex],src=image(item,'Backdrop',1400);
+ mount.innerHTML='<div class="hero" style="--hero:url(&quot;'+esc(src)+'&quot;)"><div class="hero-copy"><div class="eyebrow">✦ IM RAMPENLICHT</div>'+p8Logo(item)+'<p>'+esc((item.Overview||'Entdecke deine Mediathek.').slice(0,170))+'</p><div class="actions"><button type="button" class="primary" data-hero-action="play">▶ Abspielen</button><button type="button" class="secondary" data-hero-action="details">ⓘ Mehr Infos</button></div><p id="hero-action-error" class="hero-action-error" role="alert"></p></div></div>';
+ dots.innerHTML=featured.map((x,i)=>'<button type="button" class="hero-dot '+(i===heroIndex?'active':'')+'" data-slide="'+i+'" aria-label="Highlight '+(i+1)+': '+esc(x.Name)+'" aria-pressed="'+(i===heroIndex)+'"></button>').join('');
+};
+mount.onclick=event=>{
+ const button=event.target.closest('button[data-hero-action]');
+ if(!button||!mount.contains(button))return;
+ event.preventDefault();
+ safeHeroAction(button.dataset.heroAction,featured[heroIndex]);
+};
+dots.onclick=event=>{
+ const button=event.target.closest('button[data-slide]');
+ if(!button||!dots.contains(button))return;
+ heroIndex=Number(button.dataset.slide);
+ showHero();scheduleHero();
+};
+const scheduleHero=()=>{
+ stopHero();
+ if(featured.length<=1||window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+ heroTimer=setInterval(()=>{
+  const interacting=mount.matches(':hover')||mount.contains(document.activeElement)||dots.matches(':hover')||dots.contains(document.activeElement);
+  if(!document.hidden&&!interacting){heroIndex=(heroIndex+1)%featured.length;showHero()}
+ },6500);
+};
+showHero();scheduleHero()}
 async function load(){stopHero();const account=session();if(!account)return auth();layout('<main class="page skeleton-page"><div class="skeleton skeleton-banner"></div><div class="skeleton skeleton-heading"></div><div class="skeleton-rail">'+Array(6).fill('<div class="skeleton skeleton-poster"></div>').join('')+'</div><p class="hint">Deine Mediathek wird geladen …</p></main>');const revision=viewRevision;try{const u=encodeURIComponent(account.userId);const [recent,resume,favs,collections]=await Promise.all([api('/Users/'+u+'/Items?Recursive=true&IncludeItemTypes=Movie,Series&SortBy=DateCreated&SortOrder=Descending&Limit=250&Fields=Overview,Genres,Tags'),api('/Users/'+u+'/Items/Resume?Limit=40&Fields=Overview'),api('/Users/'+u+'/Items?Recursive=true&Filters=IsFavorite&IncludeItemTypes=Movie,Series&Limit=100'),api('/Users/'+u+'/Items?Recursive=true&IncludeItemTypes=BoxSet&Limit=100')]);if(!activeView(revision,account.userId))return;state.items=recent.Items||[];state.resume=resume.Items||[];state.favorites=favs.Items||[];state.collections=collections.Items||[];render()}catch(e){if(!activeView(revision,account.userId))return;layout('<main class="page"><h1>Verbindung fehlgeschlagen</h1><p>'+esc(e.message)+'</p><button id="retry" class="primary">Erneut versuchen</button> <button class="secondary" id="logout">Abmelden</button></main>');app.querySelector('#retry').onclick=load;app.querySelector('#logout').onclick=logout}}
 function searchUI(){
  stopHero();
