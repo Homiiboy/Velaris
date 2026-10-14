@@ -24,7 +24,7 @@ Die vollständigen Quellstände beider Apps wurden übernommen. Aktuell sind es 
 | --- | --- |
 | Velaris TV | **1.0.0** (`versionCode` 8) |
 | Velaris Smartphone | **1.0.0** (Expo, Android `versionCode` 8) |
-| Velaris Web | **1.0.6** (PWA-Version und Cachekennung; dauerhafte Jellyfin-Anmeldung) |
+| Velaris Web | **1.0.7** (PWA-Version und Cachekennung; dauerhafte Jellyfin-Anmeldung) |
 
 Die Versionsnummern sind unabhängig von einem signierten oder ausgerollten Release. Mobile benötigt einen neuen EAS-Build, Web ein neues Deployment und TV eine signierte APK für produktive Updates.
 
