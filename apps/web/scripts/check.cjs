@@ -142,3 +142,20 @@ for(const token of [
 console.log('Velaris Web: HLS browser playback wiring passed.');
 
 assert(player.includes(String.raw`const isHls=/\.m3u8(?:\?|$)/i.test(url)`),'HLS stream detector must match .m3u8 with query parameters');
+
+/* Startup optimization must not change negotiated HLS or the MP4 fallback.
+ * PlaybackInfo is cached in memory only and invalidated after 20 seconds. */
+for(const token of [
+ 'const P9_INFO_CACHE=new Map()',
+ 'now-cached.at<20000',
+ 'return cached.promise',
+ 'startFragPrefetch:true',
+ 'try{media=await p9Warmup(item,currentSession,quality)}'
+])assert(player.includes(token),'Safe playback warmup guard missing: '+token);
+for(const token of [
+ 'if(canPlay)void p9Warmup(item,account).catch(()=>{})',
+ "b.addEventListener('pointerenter',warm,{once:true})",
+ "b.addEventListener('focus',warm,{once:true})",
+ 'try{play(ep)}'
+])assert(runtime.includes(token),'Detail/episode playback warmup guard missing: '+token);
+console.log('Velaris Web: quick-start warmup guards passed.');
