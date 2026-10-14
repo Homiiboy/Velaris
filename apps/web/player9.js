@@ -7,7 +7,16 @@ function p9Settings(){
  stopHero();const prefs=p9Prefs();layout('<main class="page p9-settings"><button id="p9-back" class="pill">‹ Zurück</button><div class="eyebrow">PLAYER & SMART FEATURES</div><h1>Wiedergabe</h1><p class="hint">Die Einstellungen gelten nur für dieses Jellyfin-Profil auf diesem Gerät.</p><label class="p9-field">Maximale Streaming-Bitrate<select id="p9-quality">'+P9_QUALITY.map(([v,n])=>'<option value="'+v+'" '+(v===prefs.quality?'selected':'')+'>'+n+'</option>').join('')+'</select></label><p class="hint">Ein Bitratenlimit wird bei Jellyfin angefordert; die tatsächliche Qualität hängt von Server, Transcoding und Codec ab.</p>'+[['autoNext','Nächste Folge automatisch starten'],['skipIntro','Erkannte Intros automatisch überspringen'],['skipCredits','Erkannten Abspann automatisch überspringen']].map(([k,label])=>'<label class="p9-toggle"><span>'+label+'</span><input type="checkbox" data-p9-setting="'+k+'" '+(prefs[k]?'checked':'')+'></label>').join('')+'<p class="hint">Intro-/Abspann-Skips funktionieren nur mit entsprechenden Jellyfin-MediaSegments-Daten. Ohne Segmente bleibt die Wiedergabe unverändert.</p></main>');app.querySelector('#p9-back').onclick=render;app.querySelector('#p9-quality').onchange=e=>p9Save({...p9Prefs(),quality:e.target.value});app.querySelectorAll('[data-p9-setting]').forEach(e=>e.onchange=()=>p9Save({...p9Prefs(),[e.dataset.p9Setting]:e.checked}))}
 function p9Format(seconds){if(!Number.isFinite(seconds))return '–:––';const total=Math.max(0,Math.floor(seconds)),h=Math.floor(total/3600),m=Math.floor(total%3600/60),s=String(total%60).padStart(2,'0');return h? h+':'+String(m).padStart(2,'0')+':'+s:m+':'+s}
 function p9Stream(item,quality,fallback=false){const s=session(),id=encodeURIComponent(item.Id),params=new URLSearchParams({api_key:s.token,VideoCodec:'h264',AudioCodec:'aac'});if(quality!=='auto')params.set('MaxStreamingBitrate',quality);if(fallback){params.set('static','false');return base(s)+'/Videos/'+id+'/stream.mp4?'+params}params.set('TranscodingContainer','ts');return base(s)+'/Videos/'+id+'/master.m3u8?'+params}
-async function p9NextEpisode(item){if(!item.SeriesId)return null;try{const data=await api('/Shows/'+encodeURIComponent(item.SeriesId)+'/Episodes?UserId='+encodeURIComponent(session().userId)+'&Fields=Overview,Genres');const episodes=(data.Items||[]).filter(x=>x.Type==='Episode');const at=episodes.findIndex(x=>x.Id===item.Id);return at>=0?episodes[at+1]||null:null}catch{return null}}
+async function p9NextEpisode(item,account=session()){
+ if(!item.SeriesId||!account)return null;
+ try{
+  const data=await api('/Shows/'+encodeURIComponent(item.SeriesId)+'/Episodes?UserId='+encodeURIComponent(account.userId)+'&Fields=Overview,Genres&EnableUserData=true',{},account);
+  const episodes=(data.Items||[]).filter(x=>x.Type==='Episode'&&!x.IsMissing)
+   .sort((a,b)=>(a.ParentIndexNumber??0)-(b.ParentIndexNumber??0)||(a.IndexNumber??0)-(b.IndexNumber??0));
+  const at=episodes.findIndex(x=>String(x.Id)===String(item.Id));
+  return at>=0?episodes[at+1]||null:null;
+ }catch{return null}
+}
 async function p9Segments(item){try{const data=await api('/MediaSegments/'+encodeURIComponent(item.Id));return(data.Items||[]).filter(x=>Number.isFinite(x.StartTicks)&&Number.isFinite(x.EndTicks)&&x.EndTicks>x.StartTicks).map(x=>({type:String(x.Type||'').toLowerCase(),start:x.StartTicks/10000000,end:x.EndTicks/10000000})).sort((a,b)=>a.start-b.start)}catch{return []}}
 function p9Play(item){
  stopHero();if(item.Type==='Series')return detail(item.Id);
@@ -59,6 +68,6 @@ function p9Play(item){
  };
  root.querySelector('#p9-quality-button').onclick=()=>{const old=root.querySelector('#p9-quality-select');if(old){old.remove();return}const select=document.createElement('select');select.id='p9-quality-select';select.setAttribute('aria-label','Streamingqualität');P9_QUALITY.forEach(([value,label])=>{const opt=document.createElement('option');opt.value=value;opt.textContent=label;select.appendChild(opt)});select.value=quality;root.querySelector('.p9-header').appendChild(select);select.onchange=()=>{const pos=video.currentTime||pendingPosition;quality=select.value;p9Save({...p9Prefs(),quality});select.remove();source(pos)};select.focus()};
  source(pendingPosition);
- p9NextEpisode(item).then(x=>{if(isAlive()){next=x;update()}});
+ p9NextEpisode(item,currentSession).then(x=>{if(isAlive()){next=x;update()}});
  p9Segments(item).then(x=>{if(isAlive())segments=x});
 }
