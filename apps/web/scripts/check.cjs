@@ -159,3 +159,16 @@ for(const token of [
  'try{play(ep)}'
 ])assert(runtime.includes(token),'Detail/episode playback warmup guard missing: '+token);
 console.log('Velaris Web: quick-start warmup guards passed.');
+
+/* Diagnose the slow-start stage without leaking any auth tokens or URLs. */
+for(const token of [
+ 'startupAt=performance.now()',
+ 'infoReadyAt=performance.now()',
+ 'mediaRequestedAt=performance.now()',
+ "hlsEngine.on(Hls.Events.MANIFEST_PARSED",
+ "video.addEventListener('loadeddata',reportStartup",
+ 'streamToFirstFrameSeconds',
+ 'playbackInfoSeconds',
+ "playerMessage(detail)"
+])assert(player.includes(token),'Player timing diagnostic missing: '+token);
+console.log('Velaris Web: player startup diagnostics wiring passed.');
