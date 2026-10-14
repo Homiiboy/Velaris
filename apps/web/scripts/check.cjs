@@ -3,7 +3,7 @@ const fs=require('node:fs');
 const path=require('node:path');
 const assert=require('node:assert/strict');
 const root=path.resolve(__dirname,'..');
-for(const f of ['index.html','main.js','player9.js','style.css','sw.js','manifest.webmanifest','icon.svg','Dockerfile','nginx.conf']){
+for(const f of ['index.html','main.js','player9.js','cast9.js','style.css','sw.js','manifest.webmanifest','icon.svg','Dockerfile','nginx.conf']){
  assert(fs.existsSync(path.join(root,f)), 'Missing '+f);
 }
 const manifest=JSON.parse(fs.readFileSync(path.join(root,'manifest.webmanifest'),'utf8'));
@@ -172,3 +172,35 @@ for(const token of [
  "playerMessage(detail)"
 ])assert(player.includes(token),'Player timing diagnostic missing: '+token);
 console.log('Velaris Web: player startup diagnostics wiring passed.');
+
+/* Google Cast SDK and sender contract. It must not break HLS local playback. */
+const castSender=fs.readFileSync(path.join(root,'cast9.js'),'utf8');
+const castScriptIndex=html.indexOf('<script src="./cast9.js" defer>');
+const googleScriptIndex=html.indexOf('cast_sender.js?loadCastFramework=1');
+assert(castScriptIndex>=0&&googleScriptIndex>castScriptIndex&&playerScriptIndex>googleScriptIndex,'Cast controller and Google SDK must load before player');
+assert(sw.includes('cast9.js'),'Cast sender script must be included in the PWA shell');
+for(const token of [
+ "window.__onGCastApiAvailable=isAvailable=>",
+ "receiverApplicationId:P9_CAST_RECEIVER_ID",
+ "window.cast.framework.CastContext.getInstance()",
+ "await castContext.requestSession()",
+ "new window.chrome.cast.media.MediaInfo(",
+ "new window.chrome.cast.media.LoadRequest(media)",
+ "await session.loadMedia(request)",
+ "controller.playOrPause()",
+ "controller.seek()",
+ "controller?.stop()",
+ "p9CastReadyListeners.delete(ready)"
+])assert(castSender.includes(token),'Missing Cast sender lifecycle contract: '+token);
+for(const token of [
+ "id=\"p9-cast-button\"",
+ "id=\"p9-cast-stop\"",
+ "castCtrl=p9CastController({",
+ "video.pause();castStop.hidden=false",
+ "castCtrl?.close()",
+ "castCtrl.isCasting()",
+ "report('Stopped',position)"
+])assert(player.includes(token),'Cast player integration missing: '+token);
+new vm.Script(castSender,{filename:'cast9.js'});
+new vm.Script(player,{filename:'player9.js'});
+console.log('Velaris Web: Google Cast sender and local HLS syntax checks passed.');
