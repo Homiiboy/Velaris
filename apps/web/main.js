@@ -195,14 +195,18 @@ async function detail(id){
       if(version!==revision||!onDetailPage()||!panel.isConnected)return;
       const episodes=result.Items||[];
       panel.innerHTML=episodes.length?episodes.map(episodeCard).join(''):'<p class="empty">Keine Episoden vorhanden.</p>';
-      panel.querySelectorAll('[data-episode]').forEach(b=>b.onclick=async()=>{
-       b.disabled=true;
-       try{
-        const ep=await api('/Users/'+encodeURIComponent(account.userId)+'/Items/'+encodeURIComponent(b.dataset.episode),{},account);
-        if(onDetailPage()&&panel.isConnected)play(ep);
-       }catch(err){
-        b.disabled=false;
-        if(onDetailPage()&&panel.isConnected)panel.insertAdjacentHTML('beforeend','<p class="error" role="alert">'+esc(err.message)+'</p>');
+      // Keep the native browser user gesture: a network await before play()
+      // causes Safari/iOS to reject autoplay and makes episode taps appear inert.
+      const episodesById=new Map(episodes.map(ep=>[String(ep.Id),ep]));
+      panel.querySelectorAll('[data-episode]').forEach(b=>b.onclick=event=>{
+       event.preventDefault();
+       if(!onDetailPage())return;
+       const ep=episodesById.get(b.dataset.episode);
+       if(!ep)return;
+       try{play(ep)}
+       catch(err){
+        console.error('Velaris episode player failed',err);
+        if(panel.isConnected)panel.insertAdjacentHTML('beforeend','<p class="error" role="alert">Folge konnte nicht gestartet werden: '+esc(err.message||'Unbekannter Fehler')+'</p>');
        }
       });
      }catch(err){if(version===revision&&onDetailPage()&&panel.isConnected)panel.innerHTML='<p class="error" role="alert">Episoden konnten nicht geladen werden: '+esc(err.message)+'</p>'}
