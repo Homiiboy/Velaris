@@ -131,4 +131,4 @@ for(const token of [
 ])assert(player.includes(token),'HLS browser playback or cleanup guard missing: '+token);
 console.log('Velaris Web: HLS browser playback wiring passed.');
 
-assert(player.includes("const isHls=/\.m3u8(?:\?|$)/i.test(url)"),'HLS stream detector must match .m3u8 with query parameters');
+assert(player.includes(String.raw`const isHls=/\.m3u8(?:\?|$)/i.test(url)`),'HLS stream detector must match .m3u8 with query parameters');
