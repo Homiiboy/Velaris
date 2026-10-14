@@ -198,7 +198,7 @@ for(const token of [
  "castCtrl=p9CastController({",
  "video.pause();castStop.hidden=false",
  "castCtrl?.close()",
- "castCtrl.isCasting()",
+ "castCtrl?.isCasting()",
  "report('Stopped',position)"
 ])assert(player.includes(token),'Cast player integration missing: '+token);
 new vm.Script(castSender,{filename:'cast9.js'});
