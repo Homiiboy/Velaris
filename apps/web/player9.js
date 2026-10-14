@@ -89,7 +89,7 @@ function p9Play(item){
  const currentSession=session();const previous=document.querySelectorAll('#p9-player');for(const old of previous)if(old!==root){const previousVideo=old.querySelector('video');if(previousVideo){previousVideo.pause();previousVideo.removeAttribute('src');previousVideo.load()}old.remove()}let castCtrl=null;let quality=prefs.quality,fallback=false,reloading=false,pendingPosition=(item.UserData?.PlaybackPositionTicks||0)/10000000,stopped=false,reported=0,playbackInfo=null,streamGeneration=0,sourceUrl='',hlsEngine=null,hlsError='',startupAt=0,infoReadyAt=0,mediaRequestedAt=0,manifestReadyAt=0,firstFrameReported=false,next=null,segments=[],skipSeen=new Set(),nextShown=false,countdown=null,lastNextCountdown=-1;
  const isAlive=()=>root.isConnected&&!stopped&&session()?.userId===currentSession.userId&&session()?.url===currentSession.url;
  const playerMessage=message=>{if(isAlive())note.textContent=message};
- const report=async type=>{if(!isAlive()&&type!=='Stopped')return;const pos=castCtrl?.isCasting()?castCtrl.currentTime():(Number.isFinite(video.currentTime)?video.currentTime:0);try{await api('/Sessions/Playing/'+type,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ItemId:item.Id,PositionTicks:Math.floor(pos*10000000),IsPaused:castCtrl?.isCasting()?castCtrl.remotePaused():video.paused,MediaSourceId:playbackInfo?.MediaSources?.[0]?.Id,PlaySessionId:playbackInfo?.PlaySessionId,PlayMethod:playbackInfo?.MediaSources?.[0]?.TranscodingUrl?'Transcode':'DirectStream'})},currentSession)}catch{}};
+ const report=async(type,positionOverride)=>{if(!isAlive()&&type!=='Stopped')return;const pos=Number.isFinite(positionOverride)?positionOverride:(castCtrl?.isCasting()?castCtrl.currentTime():(Number.isFinite(video.currentTime)?video.currentTime:0));try{await api('/Sessions/Playing/'+type,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ItemId:item.Id,PositionTicks:Math.floor(pos*10000000),IsPaused:castCtrl?.isCasting()?castCtrl.remotePaused():video.paused,MediaSourceId:playbackInfo?.MediaSources?.[0]?.Id,PlaySessionId:playbackInfo?.PlaySessionId,PlayMethod:playbackInfo?.MediaSources?.[0]?.TranscodingUrl?'Transcode':'DirectStream'})},currentSession)}catch{}};
  const tryPlay=()=>{
   const request=video.play();
   if(request&&typeof request.catch==='function')request.catch(err=>{
@@ -237,7 +237,7 @@ function p9Play(item){
    try{if(Number.isFinite(position)&&video.readyState>=1)video.currentTime=position}catch{}
    castStop.hidden=true;castButton.textContent='▣ Cast';
    clock.textContent=p9Format(position)+' · TV getrennt';
-   report('Stopped');
+   report('Stopped',position);
   }
  });
  castButton.onclick=()=>{if(castCtrl?.isCasting()){
