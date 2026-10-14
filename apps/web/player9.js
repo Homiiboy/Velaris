@@ -46,7 +46,6 @@ function p9Stream(item,quality,account,media,preferMp4=false){
   if(source?.Id)directParams.set('MediaSourceId',source.Id);
   return base(account)+'/Videos/'+id+'/stream?'+directParams;
  }
- if(!media)return base(account)+'/Videos/'+id+'/master.m3u8?'+new URLSearchParams({...Object.fromEntries(params),TranscodingContainer:'ts'});
  params.set('TranscodingContainer','ts');
  return base(account)+'/Videos/'+id+'/master.m3u8?'+params;
 }
