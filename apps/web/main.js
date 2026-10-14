@@ -31,7 +31,7 @@ function activeView(revision,user){return revision===viewRevision&&session()?.us
 function stopHero(){if(heroTimer)clearInterval(heroTimer);heroTimer=null}
 const glyphs={home:'⌂',movies:'▣',series:'▤',anime:'✦',animeMovies:'★',favorites:'♥',collections:'▦'};
 
-function header(s){return {'X-Emby-Authorization':'MediaBrowser Client="Velaris Web", Device="Web PWA", DeviceId="'+deviceId+'", Version="1.1.1"'+(s?.token?', Token="'+s.token+'"':'')}} 
+function header(s){return {'X-Emby-Authorization':'MediaBrowser Client="Velaris Web", Device="Web PWA", DeviceId="'+deviceId+'", Version="1.1.2"'+(s?.token?', Token="'+s.token+'"':'')}} 
 function base(s){return s.url.replace(/\/+$/,'')}
 async function api(path,options={},s=session()){const r=await fetch(base(s)+path,{...options,headers:{...header(s),...(options.headers||{})}});if(!r.ok)throw Error('Jellyfin HTTP '+r.status);if(r.status===204)return null;return r.json()}
 function image(item,type='Primary',w=500){const s=session();if(!s||!item?.Id)return '';const tag=type==='Backdrop'?item.BackdropImageTags?.[0]:item.ImageTags?.[type]||(type==='Primary'?item.PrimaryImageTag:null);if(!tag)return '';return base(s)+'/Items/'+encodeURIComponent(item.Id)+'/Images/'+type+'?maxWidth='+w+'&quality=85&tag='+encodeURIComponent(tag)+'&api_key='+encodeURIComponent(s.token)}
