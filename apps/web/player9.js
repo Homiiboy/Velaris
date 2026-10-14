@@ -26,14 +26,29 @@ function p9AuthorizedUrl(url,account){
 function p9Stream(item,quality,account,media,preferMp4=false){
  const source=media?.MediaSources?.[0],id=encodeURIComponent(item.Id);
  const transcoding=source?.TranscodingUrl, direct=source?.DirectStreamUrl;
- const supportedDirect=/^(mp4|m4v|mov|webm)$/i.test(source?.Container||'')&&source?.SupportsDirectPlay!==false;
- const chosen=!preferMp4?(transcoding||direct||(supportedDirect?'/Videos/'+id+'/stream?static=true&mediaSourceId='+encodeURIComponent(source.Id):null)):null;
- if(chosen)return p9AuthorizedUrl(chosen,account);
- const params=new URLSearchParams({static:'false',api_key:account.token,VideoCodec:'h264',AudioCodec:'aac'});
+ const params=new URLSearchParams({api_key:account.token,VideoCodec:'h264',AudioCodec:'aac'});
  if(source?.Id)params.set('MediaSourceId',source.Id);
  if(media?.PlaySessionId)params.set('PlaySessionId',media.PlaySessionId);
  if(quality!=='auto')params.set('MaxStreamingBitrate',quality);
- return base(account)+'/Videos/'+id+'/stream.mp4?'+params;
+ if(preferMp4){
+  params.set('static','false');
+  return base(account)+'/Videos/'+id+'/stream.mp4?'+params;
+ }
+ if(transcoding)return p9AuthorizedUrl(transcoding,account);
+ // PlaybackInfo may omit TranscodingUrl without a full Jellyfin device
+ // profile. Do not feed MKV/TS/AVI containers directly to HTML video:
+ // request a H.264/AAC HLS transcode that hls.js can actually consume.
+ const browserDirect=/^(mp4|m4v|mov|webm)$/i.test(source?.Container||'')
+  &&source?.SupportsDirectPlay!==false;
+ if(browserDirect){
+  if(direct)return p9AuthorizedUrl(direct,account);
+  const directParams=new URLSearchParams({api_key:account.token,static:'true'});
+  if(source?.Id)directParams.set('MediaSourceId',source.Id);
+  return base(account)+'/Videos/'+id+'/stream?'+directParams;
+ }
+ if(!media)return base(account)+'/Videos/'+id+'/master.m3u8?'+new URLSearchParams({...Object.fromEntries(params),TranscodingContainer:'ts'});
+ params.set('TranscodingContainer','ts');
+ return base(account)+'/Videos/'+id+'/master.m3u8?'+params;
 }
 async function p9NextEpisode(item,account=session()){
  if(!item.SeriesId||!account)return null;
@@ -80,7 +95,7 @@ function p9Play(item){
   if(!isAlive())return;
   pendingPosition=Math.max(0,position);
   sourceUrl=url;
-  hlsError='';
+  if(!fallback)hlsError='';
   resetEngine();
   const isHls=/\.m3u8(?:\?|$)/i.test(url);
   if(isHls&&!nativeHls&&mseHls()){
@@ -131,7 +146,7 @@ function p9Play(item){
    // MP4 response instead of an HLS manifest without an HLS.js engine.
    const negotiated=mediaSource?.TranscodingUrl||mediaSource?.DirectStreamUrl||'';
    const hls=/\.m3u8(?:\?|$)/i.test(negotiated);
-   fallback=!media||(!nativeHls&&!mseHls()&&hls);
+   fallback=!nativeHls&&!mseHls()&&(hls||!media);
    activateStream(p9Stream(item,quality,currentSession,media,fallback),pendingPosition);
    playerMessage(fallback?'MP4-Stream wird geladen …':'Jellyfin-Stream wird geladen …');
   }catch(error){
@@ -147,7 +162,7 @@ function p9Play(item){
  video.addEventListener('playing',()=>{playerMessage('');report('')});
  video.addEventListener('timeupdate',update);video.addEventListener('pause',()=>{if(!stopped)report('Progress');update()});
  video.addEventListener('ended',()=>{if(!isAlive())return;report('Stopped');if(next&&prefs.autoNext)playNext();else if(next)renderNext()});
- video.addEventListener('error',()=>{if(!isAlive())return;const position=video.currentTime||pendingPosition;if(!fallback){fallback=true;pendingPosition=position;activateStream(p9Stream(item,quality,currentSession,playbackInfo,true),position);playerMessage('Alternativen MP4-Stream versuchen …')}else{retry.hidden=false;playerMessage('Wiedergabe fehlgeschlagen (Medienfehler '+(video.error?.code||'?')+(hlsError?', HLS: '+hlsError:'')+'). Bitte Jellyfin-Stream und Codec prüfen.')}});
+ video.addEventListener('error',()=>{if(!isAlive())return;const position=video.currentTime||pendingPosition;if(!fallback){fallback=true;pendingPosition=position;activateStream(p9Stream(item,quality,currentSession,playbackInfo,true),position);playerMessage('Alternativen MP4-Stream versuchen …')}else{retry.hidden=false;playerMessage('Medienfehler '+(video.error?.code||'?')+(hlsError?' · HLS: '+hlsError:'')+' · '+(fallback?'MP4-Ersatzstream':'Jellyfin-Stream')+' konnte nicht abgespielt werden. Bitte Netzwerkstatus der Video-Anfrage prüfen.')}});
  root.querySelector('#p9-close').onclick=()=>doClose();
  root.querySelector('#p9-rewind').onclick=()=>{video.currentTime=Math.max(0,video.currentTime-10)};
  root.querySelector('#p9-forward').onclick=()=>{video.currentTime=Math.min(Number.isFinite(video.duration)?video.duration:Infinity,video.currentTime+10)};
