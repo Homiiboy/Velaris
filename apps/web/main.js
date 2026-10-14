@@ -168,6 +168,8 @@ async function detail(id){
   // layout() increments viewRevision; follow-up season requests belong to the new detail view.
   const detailRevision=viewRevision;
   const onDetailPage=()=>activeView(detailRevision,account.userId)&&!!app.querySelector('.details-screen');
+  // Prepare only playable detail items; this request does not start transcoding.
+  if(canPlay)void p9Warmup(item,account).catch(()=>{});
   app.querySelector('#back').onclick=render;
   if(canPlay)app.querySelector('#play').onclick=event=>{
     event.preventDefault();
@@ -206,7 +208,12 @@ async function detail(id){
       // Keep the native browser user gesture: a network await before play()
       // causes Safari/iOS to reject autoplay and makes episode taps appear inert.
       const episodesById=new Map(episodes.map(ep=>[String(ep.Id),ep]));
-      panel.querySelectorAll('[data-episode]').forEach(b=>b.onclick=event=>{
+      panel.querySelectorAll('[data-episode]').forEach(b=>{
+       // Warm only the episode the user is about to play; avoid an entire season of requests.
+       const warm=()=>{const ep=episodesById.get(b.dataset.episode);if(ep)void p9Warmup(ep,account).catch(()=>{})};
+       b.addEventListener('pointerenter',warm,{once:true});
+       b.addEventListener('focus',warm,{once:true});
+       b.onclick=event=>{
        event.preventDefault();
        if(!onDetailPage())return;
        const ep=episodesById.get(b.dataset.episode);
@@ -216,6 +223,7 @@ async function detail(id){
         console.error('Velaris episode player failed',err);
         if(panel.isConnected)panel.insertAdjacentHTML('beforeend','<p class="error" role="alert">Folge konnte nicht gestartet werden: '+esc(err.message||'Unbekannter Fehler')+'</p>');
        }
+       };
       });
      }catch(err){if(version===revision&&onDetailPage()&&panel.isConnected)panel.innerHTML='<p class="error" role="alert">Episoden konnten nicht geladen werden: '+esc(err.message)+'</p>'}
     };
