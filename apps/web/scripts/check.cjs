@@ -45,3 +45,33 @@ assert(runtime.includes('const ep=episodesById.get(b.dataset.episode)'),'Episode
 assert(runtime.includes('try{play(ep)}'),'Episode playback must start inside the click handler');
 assert(!runtime.includes("b.onclick=async()=>"),'Episode click must not await a request before opening the player');
 console.log('Velaris Web: direct episode playback wiring passed.');
+
+/* Regression coverage for profile navigation, optional home rows and next-episode ordering. */
+assert(runtime.includes('function profilePicker(){stopHero();viewRevision++'),'Profile picker must invalidate pending page loads');
+assert(runtime.includes('function auth(){stopHero();viewRevision++'),'Login must invalidate pending page loads');
+assert(runtime.includes('Promise.allSettled(['),'Optional Jellyfin rows must not break the full library');
+assert(player.includes('p9NextEpisode(item,currentSession)'),'Next episode must use the original player profile');
+
+const vm=require('node:vm');
+const sandbox={
+ api:async(_path,_opts,account)=>{
+  assert.equal(account.userId,'test-user');
+  return {Items:[
+   {Id:'episode-3',Type:'Episode',ParentIndexNumber:1,IndexNumber:3},
+   {Id:'episode-1',Type:'Episode',ParentIndexNumber:1,IndexNumber:1},
+   {Id:'episode-2',Type:'Episode',ParentIndexNumber:1,IndexNumber:2},
+   {Id:'episode-4',Type:'Episode',ParentIndexNumber:1,IndexNumber:4,IsMissing:true}
+  ]};
+ },
+ session:()=>({userId:'test-user',url:'https://example.invalid'}),
+ encodeURIComponent
+};
+vm.createContext(sandbox);
+vm.runInContext(player,sandbox,{filename:'player9.js'});
+(async()=>{
+ const next=await vm.runInContext("p9NextEpisode({Id:'episode-1',SeriesId:'series-1'})",sandbox);
+ assert.equal(next?.Id,'episode-2','Next episode must be ordered, even when Jellyfin results are unsorted');
+ const last=await vm.runInContext("p9NextEpisode({Id:'episode-3',SeriesId:'series-1'})",sandbox);
+ assert.equal(last,null,'Unavailable episodes must be skipped');
+ console.log('Velaris Web: player and profile regression checks passed.');
+})().catch(error=>{console.error(error);process.exitCode=1});
