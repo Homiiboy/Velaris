@@ -15,6 +15,26 @@ async function p9PlaybackInfo(item,quality,account){
   method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)
  },account);
 }
+// Short-lived in-memory warm-up: prepare Jellyfin PlaybackInfo while the user
+// is on the details page. Never persist stream URLs/tokens in browser storage.
+const P9_INFO_CACHE=new Map();
+function p9InfoKey(item,quality,account){
+ return [account.url,account.userId,account.token,item.Id,quality].join('|');
+}
+function p9Warmup(item,account=session(),quality=p9Prefs().quality){
+ if(!account||!item?.Id||!['Movie','Episode'].includes(item.Type))return Promise.resolve(null);
+ const key=p9InfoKey(item,quality,account),now=Date.now(),cached=P9_INFO_CACHE.get(key);
+ if(cached&&now-cached.at<20000)return cached.promise;
+ P9_INFO_CACHE.delete(key);
+ const promise=p9PlaybackInfo(item,quality,account).catch(error=>{
+  if(P9_INFO_CACHE.get(key)?.promise===promise)P9_INFO_CACHE.delete(key);
+  throw error;
+ });
+ P9_INFO_CACHE.set(key,{at:now,promise});
+ // Keep one account's short-lived entries only; avoid unbounded memory growth.
+ for(const [k,v] of P9_INFO_CACHE)if(now-v.at>=20000)P9_INFO_CACHE.delete(k);
+ return promise;
+}
 function p9AuthorizedUrl(url,account){
  const target=new URL(url,base(account)+'/');
  // Jellyfin's native client supplies X-Emby-Token. HTML video elements cannot
@@ -101,6 +121,7 @@ function p9Play(item){
    const Hls=window.Hls;
    hlsEngine=new Hls({
     enableWorker:true,
+    startFragPrefetch:true,
     xhrSetup:xhr=>xhr.setRequestHeader('X-Emby-Token',currentSession.token)
    });
    hlsEngine.on(Hls.Events.MANIFEST_PARSED,()=>{if(isAlive())tryPlay()});
@@ -135,7 +156,7 @@ function p9Play(item){
   retry.hidden=true;
   playerMessage('Jellyfin-Stream wird vorbereitet …');
   let media=null;
-  try{media=await p9PlaybackInfo(item,quality,currentSession)}
+  try{media=await p9Warmup(item,currentSession,quality)}
   catch(error){console.warn('Velaris PlaybackInfo unavailable; trying MP4 fallback',error)}
   if(!isAlive()||generation!==streamGeneration)return;
   playbackInfo=media;
