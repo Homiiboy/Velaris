@@ -1,6 +1,6 @@
 # Velaris Web (iPhone PWA)
 
-**Aktuelle Quellcode-Version: 1.1.3.** Die Versionsangabe liegt im PWA-Manifest und HTML-Metadaten; der Service-Worker-Cache wird mit einer neuen Kennung aktualisiert. Die Web-Version wird beim nächsten Deployment sichtbar. Browser/iPhone-Tests bleiben erforderlich.
+**Aktuelle Quellcode-Version: 1.2.0.** Die Versionsangabe liegt im PWA-Manifest und HTML-Metadaten; der Service-Worker-Cache wird mit einer neuen Kennung aktualisiert. Die Web-Version wird beim nächsten Deployment sichtbar. Browser/iPhone-Tests bleiben erforderlich.
 Eigenständige installierbare Web-App im gemeinsamen Velaris-Monorepo. Keine Apple-Developer-Mitgliedschaft oder kostenpflichtige Domain nötig.
 
 ## Schnellstart
@@ -51,3 +51,13 @@ MVP. Browser/iPhone-, Streaming-, Tailscale- und ZimaOS-Integrationstests stehen
 - Sammlungen mit cineastischem Hintergrund, Beschreibung und chronologisch sortierten Filmen.
 - Zahnrad im Header: Startreihen anzeigen/ausblenden und sortieren, sechs Farben. Einstellungen werden pro Server und Jellyfin-Profil **lokal im Browser** gespeichert (nicht zwischen Geräten synchronisiert).
 - Trailer-Autoplay bleibt deaktiviert. Echte iPhone-/Safari-/Jellyfin-Tests stehen aus.
+
+## Google Cast (Web 1.2.0)
+
+- Der Web-Player zeigt „▣ Cast“ und kann mit dem offiziellen Google Cast Web Sender SDK einen Chromecast oder Google TV mit dem **Default Media Receiver** (`CC1AD845`) auswählen.
+- Im Browser wird zuerst eine Jellyfin-Stream-URL ermittelt. Nach erfolgreichem Cast-LOAD pausiert die lokale Wiedergabe. Play/Pause, 10-Sekunden-Sprünge, Stop und Jellyfin-Fortschrittsberichte sind mit der Cast-Wiedergabe verbunden. Der lokale Player bleibt nach der Trennung angehalten, bis man selbst erneut auf Play tippt.
+- **Getesteter Sollweg:** Google Chrome auf einem kompatiblen Desktop mit Google-Cast-Unterstützung; Google Cast muss im Browser aktiviert und das Cast-Gerät im selben erreichbaren Netzwerk verfügbar sein. Der Web Sender SDK erfordert Zugriff auf `www.gstatic.com`.
+- **Wichtig:** Safari, die iPhone-Home-Bildschirm-PWA und manche mobile Browser stellen das Web-Sender-SDK nicht bereit. Es gibt dort keine garantierte Cast-Geräteauswahl; die native Velaris-Smartphone-App kann stattdessen ihren Google-Cast-SDK-Pfad verwenden.
+- **Tailscale:** Der Fernseher lädt das Video **selbst** und kann keine Tailscale-Verbindung oder Cookies vom sendenden Browser übernehmen. Eine Jellyfin-Adresse im privaten Tailnet ist für einen nicht eingebundenen Chromecast häufig unerreichbar. Jellyfin braucht für den TV eine erreichbare LAN-/HTTPS-Adresse mit passender Authentifizierung. Veröffentliche deinen Jellyfin-Server nicht ungeschützt im Internet, nur um Cast zu ermöglichen.
+- Der Default Media Receiver unterstützt nicht beliebige Formate oder Authentifizierungsmethoden; Jellyfin-HLS/MP4 ist erforderlich. Authentifizierte Jellyfin-HLS-Segmentanfragen vom Cast-Empfänger und die reale Geräteverbindung müssen auf dem eigenen Google TV getestet werden. Fehlschläge werden im Player angezeigt; die lokale Video-Wiedergabe bleibt bis zu einem erfolgreichen Cast-LOAD erhalten.
+- Stoppt man den Cast-Stream über den Player, wird der letzte gemeldete Fortschritt an Jellyfin übergeben. Schließt man den Web-Player während aktiven Castings, bleibt die Cast-Wiedergabe auf dem TV bestehen.
