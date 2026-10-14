@@ -112,6 +112,16 @@ vm.runInContext(player,negotiatedSandbox,{filename:'player9.js'});
  assert.match(mp4,/stream\.mp4/);
  assert.match(mp4,/MediaSourceId=media-source/);
  assert.match(mp4,/PlaySessionId=play-session/);
+ // A TS/MKV source with no negotiated URL must select HLS, never a raw
+ // browser-incompatible stream or immediate MP4-only fallback.
+ const mkv={PlaySessionId:'mkv-session',MediaSources:[{Id:'mkv-source',Container:'mkv',SupportsDirectPlay:true}]};
+ const mkvUrl=vm.runInContext("p9Stream({Id:'movie-1'},'auto',session(),"+JSON.stringify(mkv)+")",negotiatedSandbox);
+ assert.match(mkvUrl,/master\\.m3u8/);
+ assert.match(mkvUrl,/TranscodingContainer=ts/);
+ assert.match(mkvUrl,/MediaSourceId=mkv-source/);
+ const ts={MediaSources:[{Id:'ts-source',Container:'ts'}]};
+ const tsUrl=vm.runInContext("p9Stream({Id:'movie-1'},'auto',session(),"+JSON.stringify(ts)+")",negotiatedSandbox);
+ assert.match(tsUrl,/master\\.m3u8/);
  console.log('Velaris Web: negotiated playback URLs passed.');
 })().catch(error=>{console.error(error);process.exitCode=1});
 
