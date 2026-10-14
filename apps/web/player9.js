@@ -85,7 +85,7 @@ function p9Play(item){
  const prefs=p9Prefs(),html='<div id="p9-player" class="p9-player" role="region" aria-label="Velaris Videoplayer"><div class="p9-header"><button class="secondary" id="p9-close">‹ Zurück</button><strong>'+esc(item.Name)+'</strong><button class="secondary" id="p9-quality-button" aria-label="Streamingqualität ändern">⚙ Qualität</button></div><video id="p9-video" controls playsinline autoplay preload="metadata" aria-label="'+esc(item.Name)+'"></video><div class="p9-bottom"><div class="p9-transport"><button id="p9-rewind" aria-label="10 Sekunden zurück">↶ 10</button><button id="p9-toggle" aria-label="Pause oder Wiedergabe">❚❚</button><button id="p9-forward" aria-label="10 Sekunden vorwärts">10 ↷</button><span id="p9-clock" aria-live="off">0:00 / –:––</span></div><div id="p9-skip-zone" hidden><button id="p9-skip" class="secondary">Segment überspringen</button></div><div id="p9-next" class="p9-next" hidden></div><div id="p9-message" class="p9-message" role="status">Stream wird geladen …</div><button class="secondary" id="p9-retry" hidden>Erneut versuchen</button></div></div>';
  app.insertAdjacentHTML('beforeend',html);
  const root=app.querySelector('#p9-player'),video=root.querySelector('#p9-video'),clock=root.querySelector('#p9-clock'),note=root.querySelector('#p9-message'),retry=root.querySelector('#p9-retry'),nextBox=root.querySelector('#p9-next'),skipZone=root.querySelector('#p9-skip-zone'),skip=root.querySelector('#p9-skip');
- const currentSession=session();const previous=document.querySelectorAll('#p9-player');for(const old of previous)if(old!==root){const previousVideo=old.querySelector('video');if(previousVideo){previousVideo.pause();previousVideo.removeAttribute('src');previousVideo.load()}old.remove()}let quality=prefs.quality,fallback=false,reloading=false,pendingPosition=(item.UserData?.PlaybackPositionTicks||0)/10000000,stopped=false,reported=0,playbackInfo=null,streamGeneration=0,sourceUrl='',hlsEngine=null,hlsError='',next=null,segments=[],skipSeen=new Set(),nextShown=false,countdown=null,lastNextCountdown=-1;
+ const currentSession=session();const previous=document.querySelectorAll('#p9-player');for(const old of previous)if(old!==root){const previousVideo=old.querySelector('video');if(previousVideo){previousVideo.pause();previousVideo.removeAttribute('src');previousVideo.load()}old.remove()}let quality=prefs.quality,fallback=false,reloading=false,pendingPosition=(item.UserData?.PlaybackPositionTicks||0)/10000000,stopped=false,reported=0,playbackInfo=null,streamGeneration=0,sourceUrl='',hlsEngine=null,hlsError='',startupAt=0,infoReadyAt=0,mediaRequestedAt=0,manifestReadyAt=0,firstFrameReported=false,next=null,segments=[],skipSeen=new Set(),nextShown=false,countdown=null,lastNextCountdown=-1;
  const isAlive=()=>root.isConnected&&!stopped&&session()?.userId===currentSession.userId&&session()?.url===currentSession.url;
  const playerMessage=message=>{if(isAlive())note.textContent=message};
  const report=async type=>{if(!isAlive()&&type!=='Stopped')return;const pos=Number.isFinite(video.currentTime)?video.currentTime:0;try{await api('/Sessions/Playing/'+type,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ItemId:item.Id,PositionTicks:Math.floor(pos*10000000),IsPaused:video.paused,MediaSourceId:playbackInfo?.MediaSources?.[0]?.Id,PlaySessionId:playbackInfo?.PlaySessionId,PlayMethod:playbackInfo?.MediaSources?.[0]?.TranscodingUrl?'Transcode':'DirectStream'})},currentSession)}catch{}};
@@ -116,6 +116,7 @@ function p9Play(item){
   sourceUrl=url;
   if(!fallback)hlsError='';
   resetEngine();
+  mediaRequestedAt=performance.now();
   const isHls=/\.m3u8(?:\?|$)/i.test(url);
   if(isHls&&!nativeHls&&mseHls()){
    const Hls=window.Hls;
@@ -124,7 +125,7 @@ function p9Play(item){
     startFragPrefetch:true,
     xhrSetup:xhr=>xhr.setRequestHeader('X-Emby-Token',currentSession.token)
    });
-   hlsEngine.on(Hls.Events.MANIFEST_PARSED,()=>{if(isAlive())tryPlay()});
+   hlsEngine.on(Hls.Events.MANIFEST_PARSED,()=>{if(isAlive()){manifestReadyAt=performance.now();tryPlay()}});
    hlsEngine.on(Hls.Events.ERROR,(_event,data)=>{
     if(!isAlive()||!data?.fatal)return;
     // A fatal HLS issue should never strand the user with a spinner.
@@ -150,6 +151,7 @@ function p9Play(item){
  };
  const source=async(position=0)=>{
   if(!isAlive())return;
+  startupAt=performance.now();infoReadyAt=0;mediaRequestedAt=0;manifestReadyAt=0;firstFrameReported=false;
   const generation=++streamGeneration;
   pendingPosition=Math.max(0,position);
   reloading=true;
@@ -159,6 +161,7 @@ function p9Play(item){
   try{media=await p9Warmup(item,currentSession,quality)}
   catch(error){console.warn('Velaris PlaybackInfo unavailable; trying MP4 fallback',error)}
   if(!isAlive()||generation!==streamGeneration)return;
+  infoReadyAt=performance.now();
   playbackInfo=media;
   const mediaSource=media?.MediaSources?.[0];
   try{
@@ -179,7 +182,30 @@ function p9Play(item){
  const renderNext=()=>{if(!next||!isAlive())return;const remain=Number.isFinite(video.duration)?Math.max(0,video.duration-video.currentTime):Infinity;if(remain>90){nextBox.hidden=true;nextShown=false;return}nextShown=true;nextBox.hidden=false;nextBox.innerHTML='<div class="p9-next-info"><span class="eyebrow">ALS NÄCHSTES</span><strong>'+esc(next.Name)+'</strong><small>Staffel '+esc(next.ParentIndexNumber??'–')+' · Folge '+esc(next.IndexNumber??'–')+'</small></div><button class="primary" id="p9-next-start">Nächste Folge'+(prefs.autoNext?' · '+Math.ceil(remain)+'s':'')+'</button>';nextBox.querySelector('#p9-next-start').onclick=playNext};
  const update=()=>{if(!isAlive())return;const duration=Number.isFinite(video.duration)?video.duration:0;clock.textContent=p9Format(video.currentTime)+' / '+p9Format(duration)+(duration?'  ·  -'+p9Format(duration-video.currentTime):'');root.querySelector('#p9-toggle').textContent=video.paused?'▶':'❚❚';const segment=segments.find(x=>video.currentTime>=x.start&&video.currentTime<x.end&&x.end>video.currentTime+0.5&&!skipSeen.has(x.start));if(segment){const isCredits=/credit|outro/i.test(segment.type),isIntro=/intro|recap/i.test(segment.type);skipZone.hidden=false;skip.textContent=(isCredits?'Abspann':isIntro?'Intro / Rückblick':'Segment')+' überspringen';skip.onclick=()=>{video.currentTime=segment.end;skipSeen.add(segment.start)};if((isCredits&&prefs.skipCredits)||(isIntro&&prefs.skipIntro)){skip.onclick();skipZone.hidden=true}}else skipZone.hidden=true;if(next)renderNext();if(video.currentTime-reported>=15){reported=video.currentTime;report('Progress')}};
  video.addEventListener('loadedmetadata',()=>{if(!isAlive())return;if(pendingPosition>0&&Number.isFinite(video.duration)&&pendingPosition<video.duration-4){try{video.currentTime=pendingPosition;pendingPosition=0}catch{}}else if(pendingPosition<=0){pendingPosition=0}reloading=false;update()});
- video.addEventListener('playing',()=>{playerMessage('');report('')});
+ const reportStartup=()=>{
+  if(!isAlive()||firstFrameReported||!startupAt)return;
+  firstFrameReported=true;
+  const finish=performance.now();
+  const sec=ms=>(Math.max(0,ms)/1000).toFixed(1);
+  const info=infoReadyAt||mediaRequestedAt||finish;
+  const requested=mediaRequestedAt||finish;
+  const detail='Start '+sec(finish-startupAt)+'s · Jellyfin-Info '+sec(info-startupAt)
+   +'s · Stream/Puffer '+sec(finish-requested)+'s'
+   +(manifestReadyAt?' · HLS-Manifest '+sec(manifestReadyAt-requested)+'s':'');
+  playerMessage(detail);
+  console.info('Velaris player startup timing',{
+   totalSeconds:Number(sec(finish-startupAt)),
+   playbackInfoSeconds:Number(sec(info-startupAt)),
+   streamToFirstFrameSeconds:Number(sec(finish-requested)),
+   hlsManifestSeconds:manifestReadyAt?Number(sec(manifestReadyAt-requested)):null,
+   transport:hlsEngine?'hls.js':nativeHls?'native':'html5'
+  });
+ };
+ video.addEventListener('playing',()=>{report('')});
+ // loadedmetadata is not first-frame readiness; video "playing" can fire
+ // before video data appears. The playing event is used only as a fallback.
+ video.addEventListener('loadeddata',reportStartup,{once:true});
+ video.addEventListener('timeupdate',()=>{if(video.currentTime>0)reportStartup()});
  video.addEventListener('timeupdate',update);video.addEventListener('pause',()=>{if(!stopped)report('Progress');update()});
  video.addEventListener('ended',()=>{if(!isAlive())return;report('Stopped');if(next&&prefs.autoNext)playNext();else if(next)renderNext()});
  video.addEventListener('error',()=>{if(!isAlive())return;const position=video.currentTime||pendingPosition;if(!fallback){fallback=true;pendingPosition=position;activateStream(p9Stream(item,quality,currentSession,playbackInfo,true),position);playerMessage('Alternativen MP4-Stream versuchen …')}else{retry.hidden=false;playerMessage('Medienfehler '+(video.error?.code||'?')+(hlsError?' · HLS: '+hlsError:'')+' · '+(fallback?'MP4-Ersatzstream':'Jellyfin-Stream')+' konnte nicht abgespielt werden. Bitte Netzwerkstatus der Video-Anfrage prüfen.')}});
