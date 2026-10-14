@@ -91,7 +91,7 @@ function p9Play(item){
    // Safari can play Jellyfin HLS; other browsers need a browser-compatible
    // MP4 response instead of an HLS manifest without an HLS.js engine.
    const negotiated=mediaSource?.TranscodingUrl||mediaSource?.DirectStreamUrl||'';
-   const hls=/\\.m3u8(?:\\?|$)/i.test(negotiated);
+   const hls=/\.m3u8(?:\?|$)/i.test(negotiated);
    fallback=!media||(!supportsHls&&hls);
    activateStream(p9Stream(item,quality,currentSession,media,fallback),pendingPosition);
    playerMessage(fallback?'MP4-Stream wird geladen …':'Jellyfin-Stream wird geladen …');
