@@ -38,3 +38,10 @@ for(const token of ['#p9-close','#p9-rewind','#p9-forward','#p9-toggle','#p9-qua
 const stylesheet=fs.readFileSync(path.join(root,'style.css'),'utf8');
 assert(stylesheet.includes('.hero-stage .hero-copy .actions button'),'Hero buttons need a foreground hit area');
 console.log('Velaris Web: UI action wiring checks passed.');
+
+// Series episode taps must reach the player without awaiting a Jellyfin request.
+assert(runtime.includes('const episodesById=new Map(episodes.map(ep=>[String(ep.Id),ep]))'),'Episode detail must reuse loaded Jellyfin results');
+assert(runtime.includes('const ep=episodesById.get(b.dataset.episode)'),'Episode click must resolve immediately');
+assert(runtime.includes('try{play(ep)}'),'Episode playback must start inside the click handler');
+assert(!runtime.includes("b.onclick=async()=>"),'Episode click must not await a request before opening the player');
+console.log('Velaris Web: direct episode playback wiring passed.');
