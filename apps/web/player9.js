@@ -51,7 +51,7 @@ function p9Play(item){
  const prefs=p9Prefs(),html='<div id="p9-player" class="p9-player" role="region" aria-label="Velaris Videoplayer"><div class="p9-header"><button class="secondary" id="p9-close">‹ Zurück</button><strong>'+esc(item.Name)+'</strong><button class="secondary" id="p9-quality-button" aria-label="Streamingqualität ändern">⚙ Qualität</button></div><video id="p9-video" controls playsinline autoplay preload="metadata" aria-label="'+esc(item.Name)+'"></video><div class="p9-bottom"><div class="p9-transport"><button id="p9-rewind" aria-label="10 Sekunden zurück">↶ 10</button><button id="p9-toggle" aria-label="Pause oder Wiedergabe">❚❚</button><button id="p9-forward" aria-label="10 Sekunden vorwärts">10 ↷</button><span id="p9-clock" aria-live="off">0:00 / –:––</span></div><div id="p9-skip-zone" hidden><button id="p9-skip" class="secondary">Segment überspringen</button></div><div id="p9-next" class="p9-next" hidden></div><div id="p9-message" class="p9-message" role="status">Stream wird geladen …</div><button class="secondary" id="p9-retry" hidden>Erneut versuchen</button></div></div>';
  app.insertAdjacentHTML('beforeend',html);
  const root=app.querySelector('#p9-player'),video=root.querySelector('#p9-video'),clock=root.querySelector('#p9-clock'),note=root.querySelector('#p9-message'),retry=root.querySelector('#p9-retry'),nextBox=root.querySelector('#p9-next'),skipZone=root.querySelector('#p9-skip-zone'),skip=root.querySelector('#p9-skip');
- const currentSession=session();const previous=document.querySelectorAll('#p9-player');for(const old of previous)if(old!==root){const previousVideo=old.querySelector('video');if(previousVideo){previousVideo.pause();previousVideo.removeAttribute('src');previousVideo.load()}old.remove()}let quality=prefs.quality,fallback=false,reloading=false,pendingPosition=(item.UserData?.PlaybackPositionTicks||0)/10000000,stopped=false,reported=0,playbackInfo=null,streamGeneration=0,sourceUrl='',next=null,segments=[],skipSeen=new Set(),nextShown=false,countdown=null,lastNextCountdown=-1;
+ const currentSession=session();const previous=document.querySelectorAll('#p9-player');for(const old of previous)if(old!==root){const previousVideo=old.querySelector('video');if(previousVideo){previousVideo.pause();previousVideo.removeAttribute('src');previousVideo.load()}old.remove()}let quality=prefs.quality,fallback=false,reloading=false,pendingPosition=(item.UserData?.PlaybackPositionTicks||0)/10000000,stopped=false,reported=0,playbackInfo=null,streamGeneration=0,sourceUrl='',hlsEngine=null,hlsError='',next=null,segments=[],skipSeen=new Set(),nextShown=false,countdown=null,lastNextCountdown=-1;
  const isAlive=()=>root.isConnected&&!stopped&&session()?.userId===currentSession.userId&&session()?.url===currentSession.url;
  const playerMessage=message=>{if(isAlive())note.textContent=message};
  const report=async type=>{if(!isAlive()&&type!=='Stopped')return;const pos=Number.isFinite(video.currentTime)?video.currentTime:0;try{await api('/Sessions/Playing/'+type,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ItemId:item.Id,PositionTicks:Math.floor(pos*10000000),IsPaused:video.paused,MediaSourceId:playbackInfo?.MediaSources?.[0]?.Id,PlaySessionId:playbackInfo?.PlaySessionId,PlayMethod:playbackInfo?.MediaSources?.[0]?.TranscodingUrl?'Transcode':'DirectStream'})},currentSession)}catch{}};
@@ -63,16 +63,55 @@ function p9Play(item){
    playerMessage(err?.name==='NotAllowedError'?'Tippe auf ▶, um die Wiedergabe zu starten.':'Stream konnte nicht gestartet werden: '+(err?.message||'Playerfehler'));
   });
  };
- // Native HLS works in Safari; Chromium/Firefox require an MP4 fallback unless
- // a separate MediaSource-based HLS player is installed.
- const supportsHls=!!video.canPlayType('application/vnd.apple.mpegurl')||!!video.canPlayType('application/x-mpegURL');
+ // Safari plays HLS natively. Chrome/Firefox use hls.js (MediaSource).
+ const nativeHls=!!video.canPlayType('application/vnd.apple.mpegurl')||!!video.canPlayType('application/x-mpegURL');
+ const mseHls=()=>!!(window.Hls&&typeof window.Hls.isSupported==='function'&&window.Hls.isSupported());
+ const resetEngine=()=>{
+  if(hlsEngine){hlsEngine.destroy();hlsEngine=null}
+  video.pause();
+  video.removeAttribute('src');
+  video.load();
+ };
+ const showStreamError=message=>{
+  retry.hidden=false;
+  playerMessage(message);
+ };
  const activateStream=(url,position)=>{
   if(!isAlive())return;
   pendingPosition=Math.max(0,position);
   sourceUrl=url;
-  video.src=url;
-  video.load();
-  tryPlay();
+  hlsError='';
+  resetEngine();
+  const isHls=/\\.m3u8(?:\\?|$)/i.test(url);
+  if(isHls&&!nativeHls&&mseHls()){
+   const Hls=window.Hls;
+   hlsEngine=new Hls({
+    enableWorker:true,
+    xhrSetup:xhr=>xhr.setRequestHeader('X-Emby-Token',currentSession.token)
+   });
+   hlsEngine.on(Hls.Events.MANIFEST_PARSED,()=>{if(isAlive())tryPlay()});
+   hlsEngine.on(Hls.Events.ERROR,(_event,data)=>{
+    if(!isAlive()||!data?.fatal)return;
+    // A fatal HLS issue should never strand the user with a spinner.
+    const detail=[data.type,data.details,data.response?.code].filter(Boolean).join(' / ');
+    hlsError=detail||'Unbekannter HLS-Fehler';
+    console.error('Velaris HLS playback failed', {type:data.type,details:data.details,status:data.response?.code});
+    if(!fallback){
+     fallback=true;
+     try{activateStream(p9Stream(item,quality,currentSession,playbackInfo,true),video.currentTime||pendingPosition)}
+     catch(e){showStreamError('HLS-Fehler: '+hlsError+'; '+e.message)}
+    }else showStreamError('HLS-Wiedergabe fehlgeschlagen: '+hlsError);
+   });
+   hlsEngine.attachMedia(video);
+   hlsEngine.loadSource(url);
+   playerMessage('HLS-Stream wird geladen …');
+  }else if(isHls&&!nativeHls){
+   showStreamError('HLS-Wiedergabe ist in diesem Browser nicht verfügbar. Bitte die Browser-Verbindung oder hls.js prüfen.');
+  }else{
+   video.src=url;
+   video.load();
+   tryPlay();
+  }
  };
  const source=async(position=0)=>{
   if(!isAlive())return;
@@ -92,7 +131,7 @@ function p9Play(item){
    // MP4 response instead of an HLS manifest without an HLS.js engine.
    const negotiated=mediaSource?.TranscodingUrl||mediaSource?.DirectStreamUrl||'';
    const hls=/\.m3u8(?:\?|$)/i.test(negotiated);
-   fallback=!media||(!supportsHls&&hls);
+   fallback=!media||(!nativeHls&&!mseHls()&&hls);
    activateStream(p9Stream(item,quality,currentSession,media,fallback),pendingPosition);
    playerMessage(fallback?'MP4-Stream wird geladen …':'Jellyfin-Stream wird geladen …');
   }catch(error){
@@ -100,7 +139,7 @@ function p9Play(item){
    playerMessage('Stream konnte nicht vorbereitet werden: '+(error?.message||'Unbekannter Fehler'));
   }
  };
- const doClose=(reload=true)=>{if(stopped)return;report('Stopped');stopped=true;video.pause();video.removeAttribute('src');video.load();clearInterval(countdown);root.remove();if(reload&&session()?.userId===currentSession.userId&&session()?.url===currentSession.url)load()};
+ const doClose=(reload=true)=>{if(stopped)return;report('Stopped');stopped=true;streamGeneration++;resetEngine();clearInterval(countdown);root.remove();if(reload&&session()?.userId===currentSession.userId&&session()?.url===currentSession.url)load()};
  const playNext=()=>{if(next&&isAlive()){const target=next;doClose(false);p9Play(target)}};
  const renderNext=()=>{if(!next||!isAlive())return;const remain=Number.isFinite(video.duration)?Math.max(0,video.duration-video.currentTime):Infinity;if(remain>90){nextBox.hidden=true;nextShown=false;return}nextShown=true;nextBox.hidden=false;nextBox.innerHTML='<div class="p9-next-info"><span class="eyebrow">ALS NÄCHSTES</span><strong>'+esc(next.Name)+'</strong><small>Staffel '+esc(next.ParentIndexNumber??'–')+' · Folge '+esc(next.IndexNumber??'–')+'</small></div><button class="primary" id="p9-next-start">Nächste Folge'+(prefs.autoNext?' · '+Math.ceil(remain)+'s':'')+'</button>';nextBox.querySelector('#p9-next-start').onclick=playNext};
  const update=()=>{if(!isAlive())return;const duration=Number.isFinite(video.duration)?video.duration:0;clock.textContent=p9Format(video.currentTime)+' / '+p9Format(duration)+(duration?'  ·  -'+p9Format(duration-video.currentTime):'');root.querySelector('#p9-toggle').textContent=video.paused?'▶':'❚❚';const segment=segments.find(x=>video.currentTime>=x.start&&video.currentTime<x.end&&x.end>video.currentTime+0.5&&!skipSeen.has(x.start));if(segment){const isCredits=/credit|outro/i.test(segment.type),isIntro=/intro|recap/i.test(segment.type);skipZone.hidden=false;skip.textContent=(isCredits?'Abspann':isIntro?'Intro / Rückblick':'Segment')+' überspringen';skip.onclick=()=>{video.currentTime=segment.end;skipSeen.add(segment.start)};if((isCredits&&prefs.skipCredits)||(isIntro&&prefs.skipIntro)){skip.onclick();skipZone.hidden=true}}else skipZone.hidden=true;if(next)renderNext();if(video.currentTime-reported>=15){reported=video.currentTime;report('Progress')}};
@@ -108,7 +147,7 @@ function p9Play(item){
  video.addEventListener('playing',()=>{playerMessage('');report('')});
  video.addEventListener('timeupdate',update);video.addEventListener('pause',()=>{if(!stopped)report('Progress');update()});
  video.addEventListener('ended',()=>{if(!isAlive())return;report('Stopped');if(next&&prefs.autoNext)playNext();else if(next)renderNext()});
- video.addEventListener('error',()=>{if(!isAlive())return;const position=video.currentTime||pendingPosition;if(!fallback){fallback=true;pendingPosition=position;activateStream(p9Stream(item,quality,currentSession,playbackInfo,true),position);playerMessage('Alternativen MP4-Stream versuchen …')}else{retry.hidden=false;playerMessage('Wiedergabe fehlgeschlagen (Medienfehler '+(video.error?.code||'?')+'). Prüfe in Chrome Netzwerk → stream.mp4/m3u8 auf den HTTP-Status.')}});
+ video.addEventListener('error',()=>{if(!isAlive())return;const position=video.currentTime||pendingPosition;if(!fallback){fallback=true;pendingPosition=position;activateStream(p9Stream(item,quality,currentSession,playbackInfo,true),position);playerMessage('Alternativen MP4-Stream versuchen …')}else{retry.hidden=false;playerMessage('Wiedergabe fehlgeschlagen (Medienfehler '+(video.error?.code||'?')+(hlsError?', HLS: '+hlsError:'')+'). Bitte Jellyfin-Stream und Codec prüfen.')}});
  root.querySelector('#p9-close').onclick=()=>doClose();
  root.querySelector('#p9-rewind').onclick=()=>{video.currentTime=Math.max(0,video.currentTime-10)};
  root.querySelector('#p9-forward').onclick=()=>{video.currentTime=Math.min(Number.isFinite(video.duration)?video.duration:Infinity,video.currentTime+10)};
