@@ -6,7 +6,35 @@ function p9Save(v){localStorage.setItem(p9Key(),JSON.stringify(v))}
 function p9Settings(){
  stopHero();const prefs=p9Prefs();layout('<main class="page p9-settings"><button id="p9-back" class="pill">‹ Zurück</button><div class="eyebrow">PLAYER & SMART FEATURES</div><h1>Wiedergabe</h1><p class="hint">Die Einstellungen gelten nur für dieses Jellyfin-Profil auf diesem Gerät.</p><label class="p9-field">Maximale Streaming-Bitrate<select id="p9-quality">'+P9_QUALITY.map(([v,n])=>'<option value="'+v+'" '+(v===prefs.quality?'selected':'')+'>'+n+'</option>').join('')+'</select></label><p class="hint">Ein Bitratenlimit wird bei Jellyfin angefordert; die tatsächliche Qualität hängt von Server, Transcoding und Codec ab.</p>'+[['autoNext','Nächste Folge automatisch starten'],['skipIntro','Erkannte Intros automatisch überspringen'],['skipCredits','Erkannten Abspann automatisch überspringen']].map(([k,label])=>'<label class="p9-toggle"><span>'+label+'</span><input type="checkbox" data-p9-setting="'+k+'" '+(prefs[k]?'checked':'')+'></label>').join('')+'<p class="hint">Intro-/Abspann-Skips funktionieren nur mit entsprechenden Jellyfin-MediaSegments-Daten. Ohne Segmente bleibt die Wiedergabe unverändert.</p></main>');app.querySelector('#p9-back').onclick=render;app.querySelector('#p9-quality').onchange=e=>p9Save({...p9Prefs(),quality:e.target.value});app.querySelectorAll('[data-p9-setting]').forEach(e=>e.onchange=()=>p9Save({...p9Prefs(),[e.dataset.p9Setting]:e.checked}))}
 function p9Format(seconds){if(!Number.isFinite(seconds))return '–:––';const total=Math.max(0,Math.floor(seconds)),h=Math.floor(total/3600),m=Math.floor(total%3600/60),s=String(total%60).padStart(2,'0');return h? h+':'+String(m).padStart(2,'0')+':'+s:m+':'+s}
-function p9Stream(item,quality,fallback=false){const s=session(),id=encodeURIComponent(item.Id),params=new URLSearchParams({api_key:s.token,VideoCodec:'h264',AudioCodec:'aac'});if(quality!=='auto')params.set('MaxStreamingBitrate',quality);if(fallback){params.set('static','false');return base(s)+'/Videos/'+id+'/stream.mp4?'+params}params.set('TranscodingContainer','ts');return base(s)+'/Videos/'+id+'/master.m3u8?'+params}
+// Match the native smartphone client: negotiate playback and use the chosen
+// Jellyfin MediaSource, PlaySessionId and server-provided stream URLs.
+async function p9PlaybackInfo(item,quality,account){
+ const body={UserId:account.userId,AutoOpenLiveStream:true,EnableDirectPlay:true,EnableDirectStream:true,EnableTranscoding:true};
+ if(quality!=='auto')body.MaxStreamingBitrate=Number(quality);
+ return api('/Items/'+encodeURIComponent(item.Id)+'/PlaybackInfo?UserId='+encodeURIComponent(account.userId),{
+  method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)
+ },account);
+}
+function p9AuthorizedUrl(url,account){
+ const target=new URL(url,base(account)+'/');
+ // Jellyfin's native client supplies X-Emby-Token. HTML video elements cannot
+ // set that header, so authenticate media URLs using the Jellyfin query token.
+ if(target.origin!==new URL(base(account)).origin)throw Error('Jellyfin hat eine externe Stream-Adresse zurückgegeben.');
+ if(!target.searchParams.has('api_key')&&!target.searchParams.has('ApiKey'))target.searchParams.set('api_key',account.token);
+ return target.href;
+}
+function p9Stream(item,quality,account,media,preferMp4=false){
+ const source=media?.MediaSources?.[0],id=encodeURIComponent(item.Id);
+ const transcoding=source?.TranscodingUrl, direct=source?.DirectStreamUrl;
+ const supportedDirect=/^(mp4|m4v|mov|webm)$/i.test(source?.Container||'')&&source?.SupportsDirectPlay!==false;
+ const chosen=!preferMp4?(transcoding||direct||(supportedDirect?'/Videos/'+id+'/stream?static=true&mediaSourceId='+encodeURIComponent(source.Id):null)):null;
+ if(chosen)return p9AuthorizedUrl(chosen,account);
+ const params=new URLSearchParams({static:'false',api_key:account.token,VideoCodec:'h264',AudioCodec:'aac'});
+ if(source?.Id)params.set('MediaSourceId',source.Id);
+ if(media?.PlaySessionId)params.set('PlaySessionId',media.PlaySessionId);
+ if(quality!=='auto')params.set('MaxStreamingBitrate',quality);
+ return base(account)+'/Videos/'+id+'/stream.mp4?'+params;
+}
 async function p9NextEpisode(item,account=session()){
  if(!item.SeriesId||!account)return null;
  try{
