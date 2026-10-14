@@ -82,13 +82,14 @@ async function p9NextEpisode(item,account=session()){
 async function p9Segments(item){try{const data=await api('/MediaSegments/'+encodeURIComponent(item.Id));return(data.Items||[]).filter(x=>Number.isFinite(x.StartTicks)&&Number.isFinite(x.EndTicks)&&x.EndTicks>x.StartTicks).map(x=>({type:String(x.Type||'').toLowerCase(),start:x.StartTicks/10000000,end:x.EndTicks/10000000})).sort((a,b)=>a.start-b.start)}catch{return []}}
 function p9Play(item){
  stopHero();if(item.Type==='Series')return detail(item.Id);
- const prefs=p9Prefs(),html='<div id="p9-player" class="p9-player" role="region" aria-label="Velaris Videoplayer"><div class="p9-header"><button class="secondary" id="p9-close">‹ Zurück</button><strong>'+esc(item.Name)+'</strong><button class="secondary" id="p9-quality-button" aria-label="Streamingqualität ändern">⚙ Qualität</button></div><video id="p9-video" controls playsinline autoplay preload="metadata" aria-label="'+esc(item.Name)+'"></video><div class="p9-bottom"><div class="p9-transport"><button id="p9-rewind" aria-label="10 Sekunden zurück">↶ 10</button><button id="p9-toggle" aria-label="Pause oder Wiedergabe">❚❚</button><button id="p9-forward" aria-label="10 Sekunden vorwärts">10 ↷</button><span id="p9-clock" aria-live="off">0:00 / –:––</span></div><div id="p9-skip-zone" hidden><button id="p9-skip" class="secondary">Segment überspringen</button></div><div id="p9-next" class="p9-next" hidden></div><div id="p9-message" class="p9-message" role="status">Stream wird geladen …</div><button class="secondary" id="p9-retry" hidden>Erneut versuchen</button></div></div>';
+ const prefs=p9Prefs(),html='<div id="p9-player" class="p9-player" role="region" aria-label="Velaris Videoplayer"><div class="p9-header"><button class="secondary" id="p9-close">‹ Zurück</button><strong>'+esc(item.Name)+'</strong><button class="secondary" id="p9-cast-button" type="button" aria-label="Auf Chromecast übertragen">▣ Cast</button><button class="secondary" id="p9-quality-button" aria-label="Streamingqualität ändern">⚙ Qualität</button></div><video id="p9-video" controls playsinline autoplay preload="metadata" aria-label="'+esc(item.Name)+'"></video><div class="p9-bottom"><div class="p9-transport"><button id="p9-rewind" aria-label="10 Sekunden zurück">↶ 10</button><button id="p9-toggle" aria-label="Pause oder Wiedergabe">❚❚</button><button id="p9-forward" aria-label="10 Sekunden vorwärts">10 ↷</button><span id="p9-clock" aria-live="off">0:00 / –:––</span></div><div id="p9-skip-zone" hidden><button id="p9-skip" class="secondary">Segment überspringen</button></div><div id="p9-next" class="p9-next" hidden></div><div id="p9-message" class="p9-message" role="status">Stream wird geladen …</div><div class="p9-cast-status" id="p9-cast-status" role="status" aria-live="polite"></div><button class="secondary" id="p9-cast-stop" type="button" hidden>TV-Wiedergabe beenden</button><button class="secondary" id="p9-retry" hidden>Erneut versuchen</button></div></div>';
  app.insertAdjacentHTML('beforeend',html);
  const root=app.querySelector('#p9-player'),video=root.querySelector('#p9-video'),clock=root.querySelector('#p9-clock'),note=root.querySelector('#p9-message'),retry=root.querySelector('#p9-retry'),nextBox=root.querySelector('#p9-next'),skipZone=root.querySelector('#p9-skip-zone'),skip=root.querySelector('#p9-skip');
- const currentSession=session();const previous=document.querySelectorAll('#p9-player');for(const old of previous)if(old!==root){const previousVideo=old.querySelector('video');if(previousVideo){previousVideo.pause();previousVideo.removeAttribute('src');previousVideo.load()}old.remove()}let quality=prefs.quality,fallback=false,reloading=false,pendingPosition=(item.UserData?.PlaybackPositionTicks||0)/10000000,stopped=false,reported=0,playbackInfo=null,streamGeneration=0,sourceUrl='',hlsEngine=null,hlsError='',startupAt=0,infoReadyAt=0,mediaRequestedAt=0,manifestReadyAt=0,firstFrameReported=false,next=null,segments=[],skipSeen=new Set(),nextShown=false,countdown=null,lastNextCountdown=-1;
+ const castStatus=root.querySelector('#p9-cast-status'),castStop=root.querySelector('#p9-cast-stop'),castButton=root.querySelector('#p9-cast-button');
+ const currentSession=session();const previous=document.querySelectorAll('#p9-player');for(const old of previous)if(old!==root){const previousVideo=old.querySelector('video');if(previousVideo){previousVideo.pause();previousVideo.removeAttribute('src');previousVideo.load()}old.remove()}let castCtrl=null;let quality=prefs.quality,fallback=false,reloading=false,pendingPosition=(item.UserData?.PlaybackPositionTicks||0)/10000000,stopped=false,reported=0,playbackInfo=null,streamGeneration=0,sourceUrl='',hlsEngine=null,hlsError='',startupAt=0,infoReadyAt=0,mediaRequestedAt=0,manifestReadyAt=0,firstFrameReported=false,next=null,segments=[],skipSeen=new Set(),nextShown=false,countdown=null,lastNextCountdown=-1;
  const isAlive=()=>root.isConnected&&!stopped&&session()?.userId===currentSession.userId&&session()?.url===currentSession.url;
  const playerMessage=message=>{if(isAlive())note.textContent=message};
- const report=async type=>{if(!isAlive()&&type!=='Stopped')return;const pos=Number.isFinite(video.currentTime)?video.currentTime:0;try{await api('/Sessions/Playing/'+type,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ItemId:item.Id,PositionTicks:Math.floor(pos*10000000),IsPaused:video.paused,MediaSourceId:playbackInfo?.MediaSources?.[0]?.Id,PlaySessionId:playbackInfo?.PlaySessionId,PlayMethod:playbackInfo?.MediaSources?.[0]?.TranscodingUrl?'Transcode':'DirectStream'})},currentSession)}catch{}};
+ const report=async type=>{if(!isAlive()&&type!=='Stopped')return;const pos=castCtrl?.isCasting()?castCtrl.currentTime():(Number.isFinite(video.currentTime)?video.currentTime:0);try{await api('/Sessions/Playing/'+type,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ItemId:item.Id,PositionTicks:Math.floor(pos*10000000),IsPaused:castCtrl?.isCasting()?castCtrl.remotePaused():video.paused,MediaSourceId:playbackInfo?.MediaSources?.[0]?.Id,PlaySessionId:playbackInfo?.PlaySessionId,PlayMethod:playbackInfo?.MediaSources?.[0]?.TranscodingUrl?'Transcode':'DirectStream'})},currentSession)}catch{}};
  const tryPlay=()=>{
   const request=video.play();
   if(request&&typeof request.catch==='function')request.catch(err=>{
@@ -177,10 +178,10 @@ function p9Play(item){
    playerMessage('Stream konnte nicht vorbereitet werden: '+(error?.message||'Unbekannter Fehler'));
   }
  };
- const doClose=(reload=true)=>{if(stopped)return;report('Stopped');stopped=true;streamGeneration++;resetEngine();clearInterval(countdown);root.remove();if(reload&&session()?.userId===currentSession.userId&&session()?.url===currentSession.url)load()};
+ const doClose=(reload=true)=>{if(stopped)return;if(!castCtrl?.isCasting())report('Stopped');castCtrl?.close();stopped=true;streamGeneration++;resetEngine();clearInterval(countdown);root.remove();if(reload&&session()?.userId===currentSession.userId&&session()?.url===currentSession.url)load()};
  const playNext=()=>{if(next&&isAlive()){const target=next;doClose(false);p9Play(target)}};
  const renderNext=()=>{if(!next||!isAlive())return;const remain=Number.isFinite(video.duration)?Math.max(0,video.duration-video.currentTime):Infinity;if(remain>90){nextBox.hidden=true;nextShown=false;return}nextShown=true;nextBox.hidden=false;nextBox.innerHTML='<div class="p9-next-info"><span class="eyebrow">ALS NÄCHSTES</span><strong>'+esc(next.Name)+'</strong><small>Staffel '+esc(next.ParentIndexNumber??'–')+' · Folge '+esc(next.IndexNumber??'–')+'</small></div><button class="primary" id="p9-next-start">Nächste Folge'+(prefs.autoNext?' · '+Math.ceil(remain)+'s':'')+'</button>';nextBox.querySelector('#p9-next-start').onclick=playNext};
- const update=()=>{if(!isAlive())return;const duration=Number.isFinite(video.duration)?video.duration:0;clock.textContent=p9Format(video.currentTime)+' / '+p9Format(duration)+(duration?'  ·  -'+p9Format(duration-video.currentTime):'');root.querySelector('#p9-toggle').textContent=video.paused?'▶':'❚❚';const segment=segments.find(x=>video.currentTime>=x.start&&video.currentTime<x.end&&x.end>video.currentTime+0.5&&!skipSeen.has(x.start));if(segment){const isCredits=/credit|outro/i.test(segment.type),isIntro=/intro|recap/i.test(segment.type);skipZone.hidden=false;skip.textContent=(isCredits?'Abspann':isIntro?'Intro / Rückblick':'Segment')+' überspringen';skip.onclick=()=>{video.currentTime=segment.end;skipSeen.add(segment.start)};if((isCredits&&prefs.skipCredits)||(isIntro&&prefs.skipIntro)){skip.onclick();skipZone.hidden=true}}else skipZone.hidden=true;if(next)renderNext();if(video.currentTime-reported>=15){reported=video.currentTime;report('Progress')}};
+ const update=()=>{if(!isAlive())return;if(castCtrl?.isCasting())return;const duration=Number.isFinite(video.duration)?video.duration:0;clock.textContent=p9Format(video.currentTime)+' / '+p9Format(duration)+(duration?'  ·  -'+p9Format(duration-video.currentTime):'');root.querySelector('#p9-toggle').textContent=video.paused?'▶':'❚❚';const segment=segments.find(x=>video.currentTime>=x.start&&video.currentTime<x.end&&x.end>video.currentTime+0.5&&!skipSeen.has(x.start));if(segment){const isCredits=/credit|outro/i.test(segment.type),isIntro=/intro|recap/i.test(segment.type);skipZone.hidden=false;skip.textContent=(isCredits?'Abspann':isIntro?'Intro / Rückblick':'Segment')+' überspringen';skip.onclick=()=>{video.currentTime=segment.end;skipSeen.add(segment.start)};if((isCredits&&prefs.skipCredits)||(isIntro&&prefs.skipIntro)){skip.onclick();skipZone.hidden=true}}else skipZone.hidden=true;if(next)renderNext();if(video.currentTime-reported>=15){reported=video.currentTime;report('Progress')}};
  video.addEventListener('loadedmetadata',()=>{if(!isAlive())return;if(pendingPosition>0&&Number.isFinite(video.duration)&&pendingPosition<video.duration-4){try{video.currentTime=pendingPosition;pendingPosition=0}catch{}}else if(pendingPosition<=0){pendingPosition=0}reloading=false;update()});
  const reportStartup=()=>{
   if(!isAlive()||firstFrameReported||!startupAt)return;
@@ -210,9 +211,39 @@ function p9Play(item){
  video.addEventListener('ended',()=>{if(!isAlive())return;report('Stopped');if(next&&prefs.autoNext)playNext();else if(next)renderNext()});
  video.addEventListener('error',()=>{if(!isAlive())return;const position=video.currentTime||pendingPosition;if(!fallback){fallback=true;pendingPosition=position;activateStream(p9Stream(item,quality,currentSession,playbackInfo,true),position);playerMessage('Alternativen MP4-Stream versuchen …')}else{retry.hidden=false;playerMessage('Medienfehler '+(video.error?.code||'?')+(hlsError?' · HLS: '+hlsError:'')+' · '+(fallback?'MP4-Ersatzstream':'Jellyfin-Stream')+' konnte nicht abgespielt werden. Bitte Netzwerkstatus der Video-Anfrage prüfen.')}});
  root.querySelector('#p9-close').onclick=()=>doClose();
- root.querySelector('#p9-rewind').onclick=()=>{video.currentTime=Math.max(0,video.currentTime-10)};
- root.querySelector('#p9-forward').onclick=()=>{video.currentTime=Math.min(Number.isFinite(video.duration)?video.duration:Infinity,video.currentTime+10)};
- root.querySelector('#p9-toggle').onclick=()=>video.paused?video.play().catch(()=>{}):video.pause();
+ root.querySelector('#p9-rewind').onclick=()=>{if(castCtrl?.isCasting())castCtrl.seek(-10);else video.currentTime=Math.max(0,video.currentTime-10)};
+ root.querySelector('#p9-forward').onclick=()=>{if(castCtrl?.isCasting())castCtrl.seek(10);else video.currentTime=Math.min(Number.isFinite(video.duration)?video.duration:Infinity,video.currentTime+10)};
+ root.querySelector('#p9-toggle').onclick=()=>{if(castCtrl?.isCasting())castCtrl.toggle();else if(video.paused)void video.play().catch(()=>{});else video.pause()};
+ // Casting uses Jellyfin's authenticated stream URL; the TV is the receiver.
+ // Local playback is paused only after the remote LOAD succeeds.
+ castCtrl=p9CastController({
+  item,account:currentSession,
+  getUrl:()=>sourceUrl,
+  getStart:()=>video.currentTime||pendingPosition,
+  onStatus:message=>{if(isAlive())castStatus.textContent=message},
+  onStarted:position=>{
+   if(!isAlive())return;
+   video.pause();castStop.hidden=false;castButton.textContent='▣ TV verbunden';
+   clock.textContent=p9Format(position)+' · Chromecast';report('');
+  },
+  onPosition:position=>{
+   if(!isAlive())return;
+   clock.textContent=p9Format(position)+' · Chromecast';
+   report('Progress');
+  },
+  onStopped:position=>{
+   if(!isAlive())return;
+   // Keep the browser paused: resuming local playback is explicitly user-driven.
+   try{if(Number.isFinite(position)&&video.readyState>=1)video.currentTime=position}catch{}
+   castStop.hidden=true;castButton.textContent='▣ Cast';
+   clock.textContent=p9Format(position)+' · TV getrennt';
+   report('Stopped');
+  }
+ });
+ castButton.onclick=()=>{if(castCtrl?.isCasting()){
+  castStatus.textContent='Bereits verbunden. Mit „TV-Wiedergabe beenden“ trennen.';
+ }else void castCtrl.start()};
+ castStop.onclick=()=>castCtrl.stop();
  retry.onclick=()=>{
   if(video.readyState>=2 && video.paused){tryPlay();return}
   void source(video.currentTime||pendingPosition);
