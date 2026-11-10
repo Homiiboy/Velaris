@@ -170,6 +170,11 @@ function p9Play(item){
   reloading=true;
   retry.hidden=true;
   playerMessage('Jellyfin-Stream wird vorbereitet …');
+  startupTimer=setTimeout(()=>{
+   if(!isAlive()||generation!==streamGeneration||firstFrameReported)return;
+   retry.hidden=false;retry.textContent='Erneut versuchen';
+   playerMessage('Jellyfin antwortet nicht schnell genug. Bitte „Erneut versuchen“ wählen oder die Serververbindung prüfen.');
+  },15000);
   let media=null;
   try{media=await p9Warmup(item,currentSession,quality)}
   catch(error){console.warn('Velaris PlaybackInfo unavailable; trying MP4 fallback',error)}
@@ -258,6 +263,11 @@ function p9Play(item){
  }else void castCtrl.start()};
  castStop.onclick=()=>castCtrl.stop();
  retry.onclick=()=>{
+  // Safari requires a user gesture to begin media playback. Keep that gesture
+  // synchronous instead of issuing a new PlaybackInfo request before play().
+  if(isIos&&sourceUrl&&video.paused){
+   tryPlay();return;
+  }
   if(video.paused&&video.currentSrc){tryPlay();return}
   void source(video.currentTime||pendingPosition);
  };
