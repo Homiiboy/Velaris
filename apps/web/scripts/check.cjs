@@ -176,8 +176,10 @@ console.log('Velaris Web: player startup diagnostics wiring passed.');
 /* Google Cast SDK and sender contract. It must not break HLS local playback. */
 const castSender=fs.readFileSync(path.join(root,'cast9.js'),'utf8');
 const castScriptIndex=html.indexOf('<script src="./cast9.js" defer>');
-const googleScriptIndex=html.indexOf('cast_sender.js?loadCastFramework=1');
-assert(castScriptIndex>=0&&googleScriptIndex>castScriptIndex&&playerScriptIndex>googleScriptIndex,'Cast controller and Google SDK must load before player');
+assert(castScriptIndex>=0&&castScriptIndex<playerScriptIndex,'Cast controller must load before player');
+assert(!html.includes('cast_sender.js?loadCastFramework=1'),'Google Cast SDK must not block iPhone page load');
+assert(castSender.includes("script.src='https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1'"),'SDK must be loaded only on eligible clients');
+assert(castSender.includes('if(!p9CastClientEligible())return;'),'Cast SDK must not load on Safari/iOS');
 assert(sw.includes('cast9.js'),'Cast sender script must be included in the PWA shell');
 for(const token of [
  "window.__onGCastApiAvailable=isAvailable=>",
@@ -204,3 +206,16 @@ for(const token of [
 new vm.Script(castSender,{filename:'cast9.js'});
 new vm.Script(player,{filename:'player9.js'});
 console.log('Velaris Web: Google Cast sender and local HLS syntax checks passed.');
+
+/* Safari playback regression: no unsupported Cast SDK request, and a visible
+ * manual start when native autoplay is delayed or blocked. */
+for(const token of [
+ "if(!p9CastClientEligible())castButton.hidden=true",
+ "if(isIos){retry.hidden=false;retry.textContent='▶ Wiedergabe starten'}",
+ "startupTimer=setTimeout(",
+ "if(isIos&&sourceUrl&&video.paused){",
+ "clearStartupTimer();retry.hidden=true",
+ "const isHls=/\\.m3u8(?:\\?|$)/i.test(url)"
+])assert(player.includes(token),'iPhone playback regression guard missing: '+token);
+assert(castSender.includes("!/iPad|iPhone|iPod|Android/i.test(ua)"),'No Cast SDK on iOS');
+console.log('Velaris Web: Safari HLS and Cast isolation guards passed.');
