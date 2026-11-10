@@ -256,7 +256,7 @@ const libraryMembership=[
 ];
 catContext.members=memberCases;catContext.libraries=libraryMembership;
 const categorized=vm.runInContext('velarisBuildCategories(members,libraries)',catContext);
-const titles=key=>categorized[key].map(x=>x.Id);
+const titles=key=>Array.from(categorized[key],x=>x.Id);
 assert.deepEqual(titles('movies'),['film1'],'Known movie folder must override anime genre');
 assert.deepEqual(titles('animeMovies'),['animeFilm1'],'Anime film folder must override missing tags');
 assert.deepEqual(titles('series'),['series1'],'Known series folder must override anime genre');
