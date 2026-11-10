@@ -3,7 +3,7 @@ const fs=require('node:fs');
 const path=require('node:path');
 const assert=require('node:assert/strict');
 const root=path.resolve(__dirname,'..');
-for(const f of ['index.html','main.js','player9.js','cast9.js','style.css','sw.js','manifest.webmanifest','icon.svg','Dockerfile','nginx.conf']){
+for(const f of ['index.html','main.js','catalog.js','player9.js','cast9.js','style.css','sw.js','manifest.webmanifest','icon.svg','Dockerfile','nginx.conf']){
  assert(fs.existsSync(path.join(root,f)), 'Missing '+f);
 }
 const manifest=JSON.parse(fs.readFileSync(path.join(root,'manifest.webmanifest'),'utf8'));
@@ -219,3 +219,54 @@ for(const token of [
 ])assert(player.includes(token),'iPhone playback regression guard missing: '+token);
 assert(castSender.includes("!/iPad|iPhone|iPod|Android/i.test(ua)"),'No Cast SDK on iOS');
 console.log('Velaris Web: Safari HLS and Cast isolation guards passed.');
+
+/* Jellyfin catalog completeness and folder-based category regression tests. */
+const catalogScript=fs.readFileSync(path.join(root,'catalog.js'),'utf8');
+new vm.Script(catalogScript,{filename:'catalog.js'});
+const catContext={console,URLSearchParams};
+vm.createContext(catContext);
+vm.runInContext(catalogScript,catContext,{filename:'catalog.js'});
+assert(html.includes('<script src="./catalog.js" defer>'),'Catalog helper must load before main UI');
+assert(html.indexOf('catalog.js')<html.indexOf('<script src="./main.js"'),'Catalog script order is wrong');
+assert(sw.includes('catalog.js'),'PWA must cache catalog helper');
+assert(runtime.includes("velarisPaged((start,limit)=>page("),'Main library must be paginated');
+assert(runtime.includes('velarisBuildCategories(items,successful)'),'Categories must use Jellyfin library membership');
+assert(!runtime.includes('Limit=250'),'Main catalog must not be truncated to 250 results');
+for(const [library,expected] of [
+ ['Anime Filme','animeMovies'],['Anime','anime'],['Filme','movies'],
+ ['Serien','series'],['Animation','animation'],['Cartoons','cartoons']
+]){
+ const result=vm.runInContext("velarisLibraryKind({Name:"+JSON.stringify(library)+"})",catContext);
+ assert.equal(result,expected,library+' mapping mismatch');
+}
+const memberCases=[
+ {Id:'film1',Name:'Film',Type:'Movie',Genres:['Anime']},
+ {Id:'animeFilm1',Name:'Anime Film',Type:'Movie',Genres:['Action']},
+ {Id:'series1',Name:'Serie',Type:'Series',Genres:['Anime']},
+ {Id:'anime1',Name:'Anime Serie',Type:'Series',Genres:[]},
+ {Id:'animation1',Name:'Animation',Type:'Movie',Genres:[]},
+ {Id:'fallback1',Name:'Unbekannte Serie',Type:'Series',Genres:['Anime']}
+];
+const libraryMembership=[
+ {kind:'movies',items:[memberCases[0]]},
+ {kind:'animeMovies',items:[memberCases[1]]},
+ {kind:'series',items:[memberCases[2]]},
+ {kind:'anime',items:[memberCases[3]]},
+ {kind:'animation',items:[memberCases[4]]}
+];
+catContext.members=memberCases;catContext.libraries=libraryMembership;
+const categorized=vm.runInContext('velarisBuildCategories(members,libraries)',catContext);
+const titles=key=>categorized[key].map(x=>x.Id);
+assert.deepEqual(titles('movies'),['film1'],'Known movie folder must override anime genre');
+assert.deepEqual(titles('animeMovies'),['animeFilm1'],'Anime film folder must override missing tags');
+assert.deepEqual(titles('series'),['series1'],'Known series folder must override anime genre');
+assert.deepEqual(titles('anime'),['anime1','fallback1'],'Unmapped anime series use metadata fallback');
+assert.deepEqual(titles('animation'),['animation1']);
+(async()=>{
+ const all=Array.from({length:437},(_,i)=>({Id:'id-'+i}));
+ catContext.pages=(start,limit)=>({Items:all.slice(start,start+limit),TotalRecordCount:all.length});
+ const paged=await vm.runInContext('velarisPaged(pages,200)',catContext);
+ assert.equal(paged.length,437,'Pagination must return all 437 items');
+ assert.equal(paged[436].Id,'id-436');
+ console.log('Velaris Web: library category mapping and pagination passed.');
+})().catch(error=>{console.error(error);process.exitCode=1});
