@@ -133,7 +133,7 @@ async function load(){stopHero();const account=session();if(!account)return auth
  const revision=viewRevision;
  try{
   const u=encodeURIComponent(account.userId),root='/Users/'+u+'/Items';
-  const page=(extra,start,limit)=>api(root+'?'+new URLSearchParams({...extra,StartIndex:String(start),Limit:String(limit)}),{},account);
+  const page=(extra,start,limit)=>api(root+'?'+new URLSearchParams({...extra,EnableTotalRecordCount:'true',StartIndex:String(start),Limit:String(limit)}),{},account);
   // Never truncate the main catalog at 250: Jellyfin libraries can contain
   // thousands of titles. Page with StartIndex until all results are fetched.
   const [items,views]=await Promise.all([
