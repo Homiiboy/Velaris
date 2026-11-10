@@ -1,5 +1,22 @@
 /* Velaris Web Google Cast sender — default media receiver, no custom receiver. */
 const P9_CAST_RECEIVER_ID='CC1AD845';
+// The Google Cast Web Sender SDK is not supported by Safari/iOS PWA.
+// Never put this third-party script in the critical path of local playback.
+function p9CastClientEligible(){
+ const ua=navigator.userAgent||'';
+ return !/iPad|iPhone|iPod|Android/i.test(ua)
+  &&/(Chrome|Chromium|Edg)\//i.test(ua)
+  &&!!window.isSecureContext;
+}
+function p9LoadCastSdk(){
+ if(!p9CastClientEligible())return;
+ const script=document.createElement('script');
+ script.src='https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1';
+ script.async=true;
+ script.onerror=()=>console.warn('Velaris Cast SDK unavailable; local playback unaffected');
+ document.head.appendChild(script);
+}
+
 let p9CastAvailable=false;
 const p9CastReadyListeners=new Set();
 function p9CastNotifyReady(){for(const callback of p9CastReadyListeners){try{callback()}catch{}}}
@@ -127,3 +144,6 @@ function p9CastController({item,account,getUrl,getStart,onStatus,onStarted,onPos
  };
  return {start:castStart,toggle,seek,stop,close,isCasting:()=>active,currentTime,remotePaused:()=>!!remote?.isPaused,available:canUse};
 }
+
+// Load after the independent Jellyfin player scripts have started.
+p9LoadCastSdk();
