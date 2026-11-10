@@ -66,6 +66,8 @@ function velarisBuildCategories(items,libraries){
   if(kind)buckets[kind].add(String(item.Id));
  }
  const result={};
- for(const kind of VELARIS_CATEGORY_KEYS)result[kind]=(items||[]).filter(item=>buckets[kind].has(String(item.Id)));
+ for(const kind of VELARIS_CATEGORY_KEYS)result[kind]=(items||[])
+  .filter(item=>buckets[kind].has(String(item.Id)))
+  .sort((a,b)=>String(a.SortName||a.Name||'').localeCompare(String(b.SortName||b.Name||''),'de',{sensitivity:'base',numeric:true}));
  return result;
 }
