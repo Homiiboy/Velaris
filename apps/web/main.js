@@ -13,7 +13,7 @@ function restoreSessions(){
   return accounts;
  }catch{return []}
 }
-const state={sessions:restoreSessions(),active:0,tab:'home',items:[],resume:[],favorites:[],series:[],filter:[],busy:false,detail:null,player:null,query:''};
+const state={sessions:restoreSessions(),active:0,tab:'home',items:[],categories:{},resume:[],favorites:[],series:[],filter:[],busy:false,detail:null,player:null,query:''};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const session=()=>state.sessions[state.active];
 const deviceId=(()=>{
@@ -29,7 +29,7 @@ let heroTimer=null,heroIndex=0;
 let viewRevision=0;
 function activeView(revision,user){return revision===viewRevision&&session()?.userId===user&&!!app.querySelector('.shell')}
 function stopHero(){if(heroTimer)clearInterval(heroTimer);heroTimer=null}
-const glyphs={home:'⌂',movies:'▣',series:'▤',anime:'✦',animeMovies:'★',favorites:'♥',collections:'▦'};
+const glyphs={home:'⌂',movies:'▣',series:'▤',anime:'✦',animeMovies:'★',animation:'◈',cartoons:'✿',favorites:'♥',collections:'▦'};
 
 function header(s){return {'X-Emby-Authorization':'MediaBrowser Client="Velaris Web", Device="Web PWA", DeviceId="'+deviceId+'", Version="1.2.1"'+(s?.token?', Token="'+s.token+'"':'')}} 
 function base(s){return s.url.replace(/\/+$/,'')}
@@ -63,13 +63,18 @@ async function p8Collection(id){stopHero();const account=session();if(!account)r
 function p8Preview(item){document.getElementById('p8-preview')?.remove();const art=image(item,'Backdrop',900)||image(item,'Primary',600),playable=['Movie','Episode'].includes(item.Type);app.insertAdjacentHTML('beforeend','<div id="p8-preview" class="p8-overlay"><div class="p8-dialog" role="dialog" aria-modal="true" aria-label="Schnellvorschau '+esc(item.Name)+'"><button class="p8-x">✕</button>'+(art?'<img src="'+esc(art)+'" alt="">':'')+'<div class="p8-dialog-copy"><div class="eyebrow">SCHNELLVORSCHAU</div><h2>'+esc(item.Name)+'</h2><p>'+esc([item.ProductionYear,item.CommunityRating?'★ '+Number(item.CommunityRating).toFixed(1):''].filter(Boolean).join(' · '))+'</p><p>'+esc((item.Overview||'').slice(0,190))+'</p><div class="actions">'+(playable?'<button class="primary" id="p8-play">▶ Abspielen</button>':'')+'<button class="secondary" id="p8-detail">Details</button>'+(item.Type!=='BoxSet'?'<button class="secondary" id="p8-fav">♡ Meine Liste</button>':'')+'</div></div></div></div>');const el=app.querySelector('#p8-preview'),escKey=e=>{if(e.key==='Escape')close()},close=()=>{el.remove();window.removeEventListener('keydown',escKey)};window.addEventListener('keydown',escKey);el.onclick=e=>{if(e.target===el)close()};el.querySelector('.p8-x').onclick=close;el.querySelector('#p8-detail').onclick=()=>{close();item.Type==='BoxSet'?p8Collection(item.Id):detail(item.Id)};el.querySelector('#p8-play')?.addEventListener('click',()=>{close();play(item)});el.querySelector('#p8-fav')?.addEventListener('click',async()=>{try{await api('/Users/'+encodeURIComponent(session().userId)+'/FavoriteItems/'+encodeURIComponent(item.Id),{method:item.UserData?.IsFavorite?'DELETE':'POST'});close();load()}catch(e){el.querySelector('#p8-fav').textContent='Fehler: '+e.message}});el.querySelector('.p8-x').focus()}
 function p8Wire(){app.querySelectorAll('[data-item]').forEach(b=>{const item=[...state.items,...state.resume,...state.favorites,...(state.collections||[])].find(x=>x.Id===b.dataset.item);if(!item)return;let timer,opened=false;b.onpointerdown=e=>{if(e.pointerType==='mouse')return;opened=false;timer=setTimeout(()=>{opened=true;p8Preview(item)},550)};const cancel=()=>clearTimeout(timer);b.onpointerup=cancel;b.onpointerleave=cancel;b.onpointercancel=cancel;b.oncontextmenu=e=>{e.preventDefault();cancel();p8Preview(item)};b.onclick=e=>{if(opened){e.preventDefault();opened=false;return}item.Type==='BoxSet'?p8Collection(item.Id):detail(item.Id)}})}
 
-function nav(){return '<nav class="tabs" aria-label="Hauptnavigation">'+[['home','Start'],['movies','Filme'],['series','Serien'],['anime','Anime'],['animeMovies','Anime Filme'],['favorites','Meine Liste'],['collections','Sammlungen']].map(([id,label])=>'<button data-tab="'+id+'" aria-label="'+label+'" aria-current="'+(state.tab===id?'page':'false')+'" class="'+(state.tab===id?'selected':'')+'"><b aria-hidden="true">'+glyphs[id]+'</b><span>'+label+'</span></button>').join('')+'</nav>'}
+function nav(){return '<nav class="tabs" aria-label="Hauptnavigation">'+[['home','Start'],['movies','Filme'],['series','Serien'],['anime','Anime'],['animeMovies','Anime Filme'],['animation','Animation'],['cartoons','Cartoons'],['favorites','Meine Liste'],['collections','Sammlungen']].map(([id,label])=>'<button data-tab="'+id+'" aria-label="'+label+'" aria-current="'+(state.tab===id?'page':'false')+'" class="'+(state.tab===id?'selected':'')+'"><b aria-hidden="true">'+glyphs[id]+'</b><span>'+label+'</span></button>').join('')+'</nav>'}
 function layout(inner){viewRevision++;app.innerHTML='<div class="shell"><header class="top"><div class="logo">VELARIS</div><div class="top-actions"><button class="pill p9-settings-trigger" id="p9-settings" aria-label="Wiedergabeeinstellungen">▶</button><button class="pill p8-settings-trigger" id="p8-settings" aria-label="Startseite anpassen">⚙</button><button class="pill search-trigger" id="search" aria-label="Suche öffnen">⌕ <span>Suche</span></button><button class="avatar" id="profile" title="Profil wechseln">'+esc(session()?.name?.slice(0,1).toUpperCase())+'</button></div></header>'+inner+nav()+'</div>';app.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{state.tab=b.dataset.tab;render()});app.querySelector('#profile').onclick=()=>{state.active=Math.max(0,Math.min(state.active,state.sessions.length-1));profilePicker()};app.querySelector('#search').onclick=searchUI;app.querySelector('#p8-settings').onclick=p8Customize;app.querySelector('#p9-settings').onclick=p9Settings;p8Theme()}
 function post(item){const src=image(item);const progress=item.UserData?.PlayedPercentage;return '<button class="poster" type="button" data-item="'+esc(item.Id)+'">'+(src?'<img loading="lazy" src="'+esc(src)+'" alt="'+esc(item.Name)+'">':'<div class="placeholder">✦</div>')+(progress>0&&progress<100?'<div class="progress"><i style="width:'+Math.min(100,Math.max(0,progress))+'%"></i></div>':'')+'<span class="poster-title">'+esc(item.Name)+'</span></button>'}
 function wireItems(){p8Wire()}
 function row(title,items,key=''){return items.length?'<section class="media-section"><h2 class="row-title">'+esc(title)+'<span class="row-arrow">›</span></h2><div class="rail">'+items.map((item,i)=>key==='top'?'<div class="p8-ranked"><span class="p8-rank">'+(i+1)+'</span>'+post(item)+'</div>':post(item)).join('')+'</div></section>':''}
 function section(items,title){layout('<main class="page"><h1>'+esc(title)+'</h1>'+(items.length?'<div class="grid">'+items.map(post).join('')+'</div>':'<div class="empty">Hier sind noch keine Medien vorhanden.</div>')+'</main>');wireItems()}
-function render(){stopHero();if(!session())return auth();const types={movies:['Movie'],series:['Series'],anime:['Series'],animeMovies:['Movie']};if(state.tab==='favorites')return section(state.favorites,'Meine Liste');if(state.tab==='collections')return section(state.collections||[],'Sammlungen');if(types[state.tab]){let items=state.items.filter(i=>types[state.tab].includes(i.Type));if(state.tab==='anime'||state.tab==='animeMovies')items=items.filter(i=>(i.Genres||[]).some(g=>/anime/i.test(g))||(i.Tags||[]).some(t=>/anime/i.test(t)));if(state.tab==='movies'||state.tab==='series')items=items.filter(i=>!(i.Genres||[]).some(g=>/anime/i.test(g)));return section(items,({movies:'Filme',series:'Serien',anime:'Anime',animeMovies:'Anime Filme'})[state.tab])}const featured=state.items.filter(i=>i.BackdropImageTags?.length).slice(0,6);if(!featured.length&&state.items[0])featured.push(state.items[0]);heroIndex=Math.min(heroIndex,Math.max(0,featured.length-1));const h=featured.length?'<section class="hero-stage" aria-label="Im Rampenlicht"><div id="hero-mount"></div><div class="hero-dots" id="hero-dots" role="group" aria-label="Highlights"></div></section>':'<main class="page"><h1>Willkommen bei Velaris</h1><p>Auf diesem Jellyfin-Konto wurden noch keine Medien gefunden.</p></main>';layout(h+'<div class="rows">'+p8HomeRows()+'</div><div class="install">Tipp: In Safari über Teilen → Zum Home-Bildschirm hinzufügen kannst du Velaris wie eine App starten.</div>');wireItems();if(!featured.length)return;const mount=app.querySelector('#hero-mount'),dots=app.querySelector('#hero-dots');const heroAction=async(action,item)=>{
+function render(){stopHero();if(!session())return auth();
+ const categoryLabels={movies:'Filme',series:'Serien',anime:'Anime',animeMovies:'Anime Filme',animation:'Animation',cartoons:'Cartoons'};
+ if(state.tab==='favorites')return section(state.favorites,'Meine Liste');
+ if(state.tab==='collections')return section(state.collections||[],'Sammlungen');
+ if(categoryLabels[state.tab])return section(state.categories[state.tab]||[],categoryLabels[state.tab]);
+ const featured=state.items.filter(i=>i.BackdropImageTags?.length).slice(0,6);if(!featured.length&&state.items[0])featured.push(state.items[0]);heroIndex=Math.min(heroIndex,Math.max(0,featured.length-1));const h=featured.length?'<section class="hero-stage" aria-label="Im Rampenlicht"><div id="hero-mount"></div><div class="hero-dots" id="hero-dots" role="group" aria-label="Highlights"></div></section>':'<main class="page"><h1>Willkommen bei Velaris</h1><p>Auf diesem Jellyfin-Konto wurden noch keine Medien gefunden.</p></main>';layout(h+'<div class="rows">'+p8HomeRows()+'</div><div class="install">Tipp: In Safari über Teilen → Zum Home-Bildschirm hinzufügen kannst du Velaris wie eine App starten.</div>');wireItems();if(!featured.length)return;const mount=app.querySelector('#hero-mount'),dots=app.querySelector('#hero-dots');const heroAction=async(action,item)=>{
  if(action==='details')return detail(item.Id);
  if(action!=='play')return;
  if(item.Type!=='Series')return play(item);
@@ -123,15 +128,47 @@ const scheduleHero=()=>{
  },6500);
 };
 showHero();scheduleHero()}
-async function load(){stopHero();const account=session();if(!account)return auth();layout('<main class="page skeleton-page"><div class="skeleton skeleton-banner"></div><div class="skeleton skeleton-heading"></div><div class="skeleton-rail">'+Array(6).fill('<div class="skeleton skeleton-poster"></div>').join('')+'</div><p class="hint">Deine Mediathek wird geladen …</p></main>');const revision=viewRevision;try{const u=encodeURIComponent(account.userId);const recent=await api('/Users/'+u+'/Items?Recursive=true&IncludeItemTypes=Movie,Series&SortBy=DateCreated&SortOrder=Descending&Limit=250&Fields=Overview,Genres,Tags',{},account);
-if(!activeView(revision,account.userId))return;
-// Optional home rows must never prevent the film/series library from loading.
-const optional=await Promise.allSettled([
- api('/Users/'+u+'/Items/Resume?Limit=40&Fields=Overview',{},account),
- api('/Users/'+u+'/Items?Recursive=true&Filters=IsFavorite&IncludeItemTypes=Movie,Series&Limit=100',{},account),
- api('/Users/'+u+'/Items?Recursive=true&IncludeItemTypes=BoxSet&Limit=100',{},account)
-]);
-const [resume,favs,collections]=optional.map(result=>result.status==='fulfilled'?result.value:{Items:[]});if(!activeView(revision,account.userId))return;state.items=recent.Items||[];state.resume=resume.Items||[];state.favorites=favs.Items||[];state.collections=collections.Items||[];render()}catch(e){if(!activeView(revision,account.userId))return;layout('<main class="page"><h1>Verbindung fehlgeschlagen</h1><p>'+esc(e.message)+'</p><button id="retry" class="primary">Erneut versuchen</button> <button class="secondary" id="logout">Abmelden</button></main>');app.querySelector('#retry').onclick=load;app.querySelector('#logout').onclick=logout}}
+async function load(){stopHero();const account=session();if(!account)return auth();
+ layout('<main class="page skeleton-page"><div class="skeleton skeleton-banner"></div><div class="skeleton skeleton-heading"></div><div class="skeleton-rail">'+Array(6).fill('<div class="skeleton skeleton-poster"></div>').join('')+'</div><p class="hint">Deine Mediathek wird geladen …</p></main>');
+ const revision=viewRevision;
+ try{
+  const u=encodeURIComponent(account.userId),root='/Users/'+u+'/Items';
+  const page=(extra,start,limit)=>api(root+'?'+new URLSearchParams({...extra,StartIndex:String(start),Limit:String(limit)}),{},account);
+  // Never truncate the main catalog at 250: Jellyfin libraries can contain
+  // thousands of titles. Page with StartIndex until all results are fetched.
+  const [items,views]=await Promise.all([
+   velarisPaged((start,limit)=>page({Recursive:'true',IncludeItemTypes:'Movie,Series',SortBy:'DateCreated',SortOrder:'Descending',Fields:'Overview,Genres,Tags'},start,limit)),
+   api('/Users/'+u+'/Views',{},account).catch(error=>{console.warn('Jellyfin library views unavailable',error);return {Items:[]}})
+  ]);
+  if(!activeView(revision,account.userId))return;
+  const recognized=(views.Items||[]).map(v=>({...v,kind:velarisLibraryKind(v)})).filter(v=>v.kind&&v.Id);
+  const memberships=await Promise.allSettled(recognized.map(async library=>({
+   kind:library.kind,
+   items:await velarisPaged((start,limit)=>page({ParentId:library.Id,Recursive:'true',IncludeItemTypes:'Movie,Series',Fields:'Genres,Tags'},start,limit))
+  })));
+  if(!activeView(revision,account.userId))return;
+  const successful=memberships.filter(x=>x.status==='fulfilled').map(x=>x.value);
+  const failed=memberships.filter(x=>x.status==='rejected').length;
+  if(failed)console.warn('Velaris: '+failed+' Jellyfin libraries could not be classified; using metadata fallback');
+  // Optional home rows must not prevent browsing the full media library.
+  const optional=await Promise.allSettled([
+   api('/Users/'+u+'/Items/Resume?Limit=40&Fields=Overview',{},account),
+   velarisPaged((start,limit)=>page({Recursive:'true',Filters:'IsFavorite',IncludeItemTypes:'Movie,Series'},start,limit)),
+   velarisPaged((start,limit)=>page({Recursive:'true',IncludeItemTypes:'BoxSet'},start,limit))
+  ]);
+  if(!activeView(revision,account.userId))return;
+  const [resume,favs,collections]=optional.map(result=>result.status==='fulfilled'?result.value:[]);
+  state.items=items;state.categories=velarisBuildCategories(items,successful);
+  state.resume=resume?.Items||[];
+  state.favorites=favs||[];
+  state.collections=collections||[];
+  render();
+ }catch(e){
+  if(!activeView(revision,account.userId))return;
+  layout('<main class="page"><h1>Verbindung fehlgeschlagen</h1><p>'+esc(e.message)+'</p><button id="retry" class="primary">Erneut versuchen</button> <button class="secondary" id="logout">Abmelden</button></main>');
+  app.querySelector('#retry').onclick=load;app.querySelector('#logout').onclick=logout;
+ }
+}
 function searchUI(){
  stopHero();
  layout('<main class="page search-page"><div class="eyebrow">VELARIS ENTDECKEN</div><h1>Was möchtest du ansehen?</h1><div class="search-box"><span aria-hidden="true">⌕</span><input aria-label="Filme und Serien suchen" id="query" type="search" autocomplete="off" placeholder="Filme, Serien, Schauspieler …"></div><p id="search-count" class="hint"></p><div id="results" class="grid search-results"></div></main>');
@@ -236,6 +273,6 @@ async function detail(id){
 
 function play(item){return p9Play(item)}
 function p9LegacyPlayer(item){stopHero();if(item.Type==='Series')return detail(item.Id);const s=session();const id=encodeURIComponent(item.Id);const token=encodeURIComponent(s.token);const source=base(s)+'/Videos/'+id+'/master.m3u8?api_key='+token+'&VideoCodec=h264&AudioCodec=aac&TranscodingContainer=ts';app.insertAdjacentHTML('beforeend','<div class="video-wrap" id="player"><div class="player-top"><button class="secondary video-close" id="close-player">‹ Zurück</button><div class="player-title">'+esc(item.Name)+'</div></div><video controls playsinline autoplay preload="metadata" aria-label="Videoplayer: '+esc(item.Name)+'"></video><div class="player-note" id="player-note" role="status">Stream wird geladen …</div></div>');const node=app.querySelector('#player'),video=node.querySelector('video');video.addEventListener('playing',()=>{const note=node.querySelector('#player-note');if(note)note.textContent=''});video.src=source;const resumeSeconds=(item.UserData?.PlaybackPositionTicks||0)/10000000;let didResume=false;video.addEventListener('loadedmetadata',()=>{if(!didResume&&resumeSeconds>10&&Number.isFinite(video.duration)&&resumeSeconds<video.duration-15){didResume=true;video.currentTime=resumeSeconds}});let timer=0;const report=async event=>{if(!Number.isFinite(video.currentTime)||video.currentTime<0)return;const body={ItemId:item.Id,PositionTicks:Math.floor(video.currentTime*10000000),IsPaused:video.paused,PlayMethod:'Transcode'};try{await api('/Sessions/Playing/'+event,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})}catch{}};video.addEventListener('playing',()=>report(''));video.addEventListener('timeupdate',()=>{if(video.currentTime-timer>15){timer=video.currentTime;report('Progress')}});video.addEventListener('ended',()=>report('Stopped'));const close=()=>{report('Stopped');video.pause();video.removeAttribute('src');video.load();node.remove();load()};node.querySelector('#close-player').onclick=close;video.addEventListener('error',()=>{const note=node.querySelector('#player-note');if(note)note.textContent=video.dataset.fallback?'Wiedergabe fehlgeschlagen. Bitte Jellyfin-Streaming und HTTPS prüfen.':'Alternativen Stream versuchen …';if(video.dataset.fallback)return;video.dataset.fallback='1';video.src=base(s)+'/Videos/'+id+'/stream.mp4?static=false&api_key='+token+'&VideoCodec=h264&AudioCodec=aac';video.load()})}
-function logout(){stopHero();viewRevision++;if(!state.sessions.length)return auth();state.sessions.splice(state.active,1);state.active=0;state.items=[];state.resume=[];state.favorites=[];state.query='';save();state.sessions.length?profilePicker():auth()}
+function logout(){stopHero();viewRevision++;if(!state.sessions.length)return auth();state.sessions.splice(state.active,1);state.active=0;state.items=[];state.categories={};state.resume=[];state.favorites=[];state.query='';save();state.sessions.length?profilePicker():auth()}
 if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('./sw.js').catch(()=>{});
 if(state.sessions.length)profilePicker();else auth();
