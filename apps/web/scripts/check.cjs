@@ -280,9 +280,9 @@ for(const token of [
  "state.categories=velarisBuildCategories(initial,[]);",
  "render();",
  "void (async()=>{",
- "state.items=all;",
+ "state.items=Array.from(combined.values());",
  "let firstViewRevision=viewRevision;",
- "state.categories=velarisBuildCategories(all,libraries);"
+ "state.categories=velarisBuildCategories(state.items,[...initialLibraries,...libraries]);"
 ])assert(runtime.includes(token),'Progressive catalog loading guard missing: '+token);
 assert(runtime.indexOf('state.items=initial;')<runtime.indexOf('const memberships=await Promise.allSettled(recognized.map'),'First page must render before library membership lookup');
 assert(catalogScript.includes('response?.TotalRecordCount==null?NaN'),'Missing total record count must not be interpreted as zero');
@@ -343,3 +343,18 @@ for(const token of [
 assert(runtime.indexOf("const first=await page(")>runtime.indexOf("let globalItemsFallback=false;"),
  'Fallback must be enabled before the first page is requested');
 console.log('Velaris Web: Jellyfin 10.11 empty user-scoped catalog fallback guards passed.');
+
+/* Recover real Jellyfin media after a zero-result global query by inspecting
+ * the authenticated user's library folders; do not erase folder results when
+ * the delayed global query also returns zero. */
+for(const token of [
+ "query.set('UserId',account.userId);",
+ "const views=await api('/Users/'+u+'/Views',{},account);",
+ "api('/Items?'+new URLSearchParams({...extra,UserId:account.userId",
+ "initial=Array.from(unique.values());",
+ "state.catalogStatus+=' Bibliotheksabfrage: '",
+ "state.items=Array.from(combined.values());",
+ "state.categories=velarisBuildCategories(state.items,[...initialLibraries,...libraries]);",
+ "id=\\\"catalog-status\\\""
+])assert(runtime.includes(token),'Folder-first Jellyfin catalog recovery missing: '+token);
+console.log('Velaris Web: user-bound Jellyfin folder recovery guards passed.');
