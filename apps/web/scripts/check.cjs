@@ -373,3 +373,17 @@ for(const asset of ['index.html','style.css','manifest.webmanifest','sw.js','ico
  assert(copied.has(asset),'Production Docker image is missing '+asset);
 }
 console.log('Velaris Web: Docker production asset parity passed.');
+
+/* Safari: request Jellyfin's real MediaSourceId and PlaySessionId asynchronously
+ * while preserving immediate play in the original user gesture. */
+for(const token of [
+ "media?.MediaSources?.[0]||item.MediaSources?.[0]",
+ "const iosGeneration=streamGeneration;",
+ "void p9Warmup(item,currentSession,quality).then(info=>{",
+ "playbackInfo=info;",
+ "p9Stream(item,quality,currentSession,info,true)",
+ "castButton.style.display='none'"
+])assert(player.includes(token),'iOS Jellyfin negotiated fallback missing: '+token);
+const safariSource=player.slice(player.indexOf('if(isIos&&nativeHls){',player.indexOf('const source=async')),player.indexOf('\n  clearStartupTimer();',player.indexOf('if(isIos&&nativeHls){',player.indexOf('const source=async'))+10));
+assert(!safariSource.includes('await '),'Native iOS player must remain gesture synchronous');
+console.log('Velaris Web: iOS source negotiation and fallback checks passed.');
