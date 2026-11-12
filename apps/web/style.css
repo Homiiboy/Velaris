@@ -272,3 +272,16 @@ button:disabled{cursor:wait;opacity:.65}
 #p9-cast-stop{border-color:#a58aff;min-height:42px;background:#2b2040d9;color:white}
 #p9-cast-stop[hidden]{display:none!important}
 @media(max-width:480px){#p9-cast-button{font-size:11px;padding:7px 8px;min-width:58px}.p9-cast-status{font-size:11px}}
+
+/* iPhone Cast Bridge: separate overlay; no changes to the classic video player. */
+.velaris-cast-overlay{position:fixed;inset:0;z-index:10050;background:rgba(4,5,12,.85);display:flex;align-items:center;justify-content:center;padding:calc(env(safe-area-inset-top) + 16px) 16px calc(env(safe-area-inset-bottom) + 16px)}
+.velaris-cast-panel{background:#151420;border:1px solid #ffffff32;border-radius:20px;padding:20px;max-width:540px;width:100%;max-height:88svh;overflow:auto;box-shadow:0 20px 80px #0009;display:grid;gap:14px}
+.velaris-cast-panel header{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.velaris-cast-panel h2{font-size:20px;margin:0}
+#velaris-cast-devices{display:grid;gap:8px}
+#velaris-cast-devices button{width:100%;min-height:50px;text-align:left}
+#velaris-cast-feedback{color:#d7c9ff;line-height:1.5;min-height:36px;overflow-wrap:anywhere}
+#velaris-cast-controls{display:flex;flex-wrap:wrap;gap:8px}
+#velaris-cast-controls[hidden]{display:none}
+#velaris-cast-controls button{min-height:44px}
+#velaris-cast-position{flex-basis:100%;margin:0}
