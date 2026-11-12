@@ -293,3 +293,21 @@ assert(catalogScript.includes('response?.TotalRecordCount==null?NaN'),'Missing t
  assert.equal(result.length,405,'Catalog with null TotalRecordCount must still paginate');
  console.log('Velaris Web: progressive display and null-count pagination passed.');
 })().catch(error=>{console.error(error);process.exitCode=1});
+
+/* iOS native playback must keep the first video.play() in the tap gesture.
+ * No PlaybackInfo await is allowed before setting the Safari media URL. */
+for(const token of [
+ 'if(isIos&&nativeHls){',
+ 'activateStream(p9Stream(item,quality,currentSession,null),position)',
+ 'video.src=url;',
+ 'video.load();',
+ 'tryPlay();',
+ "retry.dataset.forceMp4=isIos?'1':''",
+ "if(isIos&&nativeHls&&(retry.dataset.forceMp4==='1'"
+])assert(player.includes(token),'Safari synchronous playback or fallback missing: '+token);
+const iosPathStart=player.indexOf('if(isIos&&nativeHls){',player.indexOf('const source=async'));
+const iosPathEnd=player.indexOf('\n  clearStartupTimer();',iosPathStart+10);
+const iosPath=player.slice(iosPathStart,iosPathEnd);
+assert(iosPath.includes('activateStream('),'iOS should start native HLS immediately');
+assert(!iosPath.includes('await '),'iOS must not await a network request before playback');
+console.log('Velaris Web: synchronous iPhone HLS start regression guards passed.');
