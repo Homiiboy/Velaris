@@ -95,7 +95,7 @@ function p9Play(item){
  const tryPlay=()=>{
   const request=video.play();
   if(request&&typeof request.catch==='function')request.catch(err=>{
-   if(!isAlive())return;
+   if(!isAlive()||err?.name==='AbortError')return;
    retry.hidden=false;
    playerMessage(err?.name==='NotAllowedError'?'Tippe auf ▶, um die Wiedergabe zu starten.':'Stream konnte nicht gestartet werden: '+(err?.message||'Playerfehler'));
   });
@@ -125,9 +125,11 @@ function p9Play(item){
   startupTimer=setTimeout(()=>{
    if(!isAlive()||firstFrameReported||castCtrl?.isCasting())return;
    retry.hidden=false;
-   retry.textContent='▶ Wiedergabe starten';
+   retry.textContent=isIos?'Alternativen Stream versuchen':'▶ Wiedergabe starten';
+   retry.dataset.forceMp4=isIos?'1':'';
    playerMessage('Das Video benötigt länger als erwartet. Tippe auf ▶, um es manuell zu starten. Falls es nicht funktioniert, „Erneut versuchen“ wählen.');
   },12000);
+  retry.dataset.forceMp4='';
   if(isIos){retry.hidden=false;retry.textContent='▶ Wiedergabe starten'}
   const isHls=/\.m3u8(?:\?|$)/i.test(url);
   if(isHls&&!nativeHls&&mseHls()){
@@ -166,7 +168,7 @@ function p9Play(item){
   // Native Safari playback must start in the user's original click gesture.
   // Avoid awaiting PlaybackInfo before assigning video.src and calling play().
   if(isIos&&nativeHls){
-   streamGeneration++;
+   clearStartupTimer();streamGeneration++;
    fallback=false;
    playbackInfo=null;
    startupAt=performance.now();infoReadyAt=startupAt;manifestReadyAt=0;firstFrameReported=false;
@@ -278,7 +280,7 @@ function p9Play(item){
  retry.onclick=()=>{
   // Safari requires a user gesture to begin media playback. Keep that gesture
   // synchronous instead of issuing a new PlaybackInfo request before play().
-  if(isIos&&nativeHls&&(!video.currentSrc||video.error)){
+  if(isIos&&nativeHls&&(retry.dataset.forceMp4==='1'||!video.currentSrc||video.error)){
    // Fallback for a stalled or rejected native HLS request.
    fallback=true;
    activateStream(p9Stream(item,quality,currentSession,playbackInfo,true),video.currentTime||pendingPosition);
