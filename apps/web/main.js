@@ -128,41 +128,57 @@ const scheduleHero=()=>{
  },6500);
 };
 showHero();scheduleHero()}
-async function load(){stopHero();const account=session();if(!account)return auth();
+async function load(){
+ stopHero();const account=session();if(!account)return auth();
  layout('<main class="page skeleton-page"><div class="skeleton skeleton-banner"></div><div class="skeleton skeleton-heading"></div><div class="skeleton-rail">'+Array(6).fill('<div class="skeleton skeleton-poster"></div>').join('')+'</div><p class="hint">Deine Mediathek wird geladen …</p></main>');
- const revision=viewRevision;
+ const revision=viewRevision,u=encodeURIComponent(account.userId),root='/Users/'+u+'/Items';
+ const owned=()=>session()?.userId===account.userId&&session()?.url===account.url;
+ const page=(extra,start,limit)=>api(root+'?'+new URLSearchParams({...extra,EnableTotalRecordCount:'true',StartIndex:String(start),Limit:String(limit)}),{},account);
  try{
-  const u=encodeURIComponent(account.userId),root='/Users/'+u+'/Items';
-  const page=(extra,start,limit)=>api(root+'?'+new URLSearchParams({...extra,EnableTotalRecordCount:'true',StartIndex:String(start),Limit:String(limit)}),{},account);
-  // Never truncate the main catalog at 250: Jellyfin libraries can contain
-  // thousands of titles. Page with StartIndex until all results are fetched.
-  const [items,views]=await Promise.all([
-   velarisPaged((start,limit)=>page({Recursive:'true',IncludeItemTypes:'Movie,Series',SortBy:'DateCreated',SortOrder:'Descending',Fields:'Overview,Genres,Tags'},start,limit)),
-   api('/Users/'+u+'/Views',{},account).catch(error=>{console.warn('Jellyfin library views unavailable',error);return {Items:[]}})
-  ]);
+  // Show the first results immediately. Never hold the entire interface behind
+  // all Jellyfin libraries, favorites and optional home-row requests.
+  const first=await page({Recursive:'true',IncludeItemTypes:'Movie,Series',SortBy:'DateCreated',SortOrder:'Descending',Fields:'Overview,Genres,Tags'},0,VELARIS_PAGE_SIZE);
   if(!activeView(revision,account.userId))return;
-  const recognized=(views.Items||[]).map(v=>({...v,kind:velarisLibraryKind(v)})).filter(v=>v.kind&&v.Id);
-  const memberships=await Promise.allSettled(recognized.map(async library=>({
-   kind:library.kind,
-   items:await velarisPaged((start,limit)=>page({ParentId:library.Id,Recursive:'true',IncludeItemTypes:'Movie,Series',Fields:'Genres,Tags'},start,limit))
-  })));
-  if(!activeView(revision,account.userId))return;
-  const successful=memberships.filter(x=>x.status==='fulfilled').map(x=>x.value);
-  const failed=memberships.filter(x=>x.status==='rejected').length;
-  if(failed)console.warn('Velaris: '+failed+' Jellyfin libraries could not be classified; using metadata fallback');
-  // Optional home rows must not prevent browsing the full media library.
-  const optional=await Promise.allSettled([
-   api('/Users/'+u+'/Items/Resume?Limit=40&Fields=Overview',{},account),
-   velarisPaged((start,limit)=>page({Recursive:'true',Filters:'IsFavorite',IncludeItemTypes:'Movie,Series'},start,limit)),
-   velarisPaged((start,limit)=>page({Recursive:'true',IncludeItemTypes:'BoxSet'},start,limit))
-  ]);
-  if(!activeView(revision,account.userId))return;
-  const [resume,favs,collections]=optional.map(result=>result.status==='fulfilled'?result.value:[]);
-  state.items=items;state.categories=velarisBuildCategories(items,successful);
-  state.resume=resume?.Items||[];
-  state.favorites=favs||[];
-  state.collections=collections||[];
+  const initial=first.Items||[];
+  state.items=initial;
+  state.categories=velarisBuildCategories(initial,[]);
+  state.resume=[];state.favorites=[];state.collections=[];
   render();
+  // render() advances viewRevision; do not reset a page the user opens during
+  // background refreshes. Data still updates for later navigation.
+  const firstViewRevision=viewRevision;
+  const updateVisible=()=>{if(owned()&&viewRevision===firstViewRevision&&state.tab==='home')render()};
+  void (async()=>{
+   try{
+    const all=await velarisPaged((start,limit)=>start===0?Promise.resolve(first):page({Recursive:'true',IncludeItemTypes:'Movie,Series',SortBy:'DateCreated',SortOrder:'Descending',Fields:'Overview,Genres,Tags'},start,limit));
+    if(!owned())return;
+    state.items=all;
+    state.categories=velarisBuildCategories(all,[]);
+    updateVisible();
+    const views=await api('/Users/'+u+'/Views',{},account).catch(error=>{console.warn('Velaris library views unavailable',error);return {Items:[]}});
+    if(!owned())return;
+    const recognized=(views.Items||[]).map(v=>({...v,kind:velarisLibraryKind(v)})).filter(v=>v.kind&&v.Id);
+    const memberships=await Promise.allSettled(recognized.map(async library=>({
+     kind:library.kind,
+     items:await velarisPaged((start,limit)=>page({ParentId:library.Id,Recursive:'true',IncludeItemTypes:'Movie,Series',Fields:'Genres,Tags'},start,limit))
+    })));
+    if(!owned())return;
+    const libraries=memberships.filter(x=>x.status==='fulfilled').map(x=>x.value);
+    state.categories=velarisBuildCategories(all,libraries);
+    updateVisible();
+   }catch(error){console.warn('Velaris background catalog refresh failed',error)}
+  })();
+  void (async()=>{
+   const optional=await Promise.allSettled([
+    api('/Users/'+u+'/Items/Resume?Limit=40&Fields=Overview',{},account),
+    velarisPaged((start,limit)=>page({Recursive:'true',Filters:'IsFavorite',IncludeItemTypes:'Movie,Series'},start,limit)),
+    velarisPaged((start,limit)=>page({Recursive:'true',IncludeItemTypes:'BoxSet'},start,limit))
+   ]);
+   if(!owned())return;
+   const [resume,favs,collections]=optional.map(result=>result.status==='fulfilled'?result.value:[]);
+   state.resume=resume?.Items||[];state.favorites=favs||[];state.collections=collections||[];
+   updateVisible();
+  })().catch(error=>console.warn('Velaris optional home rows failed',error));
  }catch(e){
   if(!activeView(revision,account.userId))return;
   layout('<main class="page"><h1>Verbindung fehlgeschlagen</h1><p>'+esc(e.message)+'</p><button id="retry" class="primary">Erneut versuchen</button> <button class="secondary" id="logout">Abmelden</button></main>');
