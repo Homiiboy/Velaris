@@ -74,7 +74,7 @@ function render(){stopHero();if(!session())return auth();
  if(state.tab==='favorites')return section(state.favorites,'Meine Liste');
  if(state.tab==='collections')return section(state.collections||[],'Sammlungen');
  if(categoryLabels[state.tab])return section(state.categories[state.tab]||[],categoryLabels[state.tab]);
- const featured=state.items.filter(i=>i.BackdropImageTags?.length).slice(0,6);if(!featured.length&&state.items[0])featured.push(state.items[0]);heroIndex=Math.min(heroIndex,Math.max(0,featured.length-1));const h=featured.length?'<section class="hero-stage" aria-label="Im Rampenlicht"><div id="hero-mount"></div><div class="hero-dots" id="hero-dots" role="group" aria-label="Highlights"></div></section>':'<main class="page"><h1>Willkommen bei Velaris</h1><p>Auf diesem Jellyfin-Konto wurden noch keine Medien gefunden.</p></main>';layout(h+'<div class="rows">'+p8HomeRows()+'</div><div class="install">Tipp: In Safari über Teilen → Zum Home-Bildschirm hinzufügen kannst du Velaris wie eine App starten.</div>');wireItems();if(!featured.length)return;const mount=app.querySelector('#hero-mount'),dots=app.querySelector('#hero-dots');const heroAction=async(action,item)=>{
+ const featured=state.items.filter(i=>i.BackdropImageTags?.length).slice(0,6);if(!featured.length&&state.items[0])featured.push(state.items[0]);heroIndex=Math.min(heroIndex,Math.max(0,featured.length-1));const h=featured.length?'<section class="hero-stage" aria-label="Im Rampenlicht"><div id="hero-mount"></div><div class="hero-dots" id="hero-dots" role="group" aria-label="Highlights"></div></section>':'<main class="page"><h1>Willkommen bei Velaris</h1><p>Jellyfin hat für diese Anmeldung keine Filme oder Serien an Velaris zurückgegeben. Prüfe die Bibliotheksrechte oder aktualisiere die Seite.</p></main>';layout(h+'<div class="rows">'+p8HomeRows()+'</div><div class="install">Tipp: In Safari über Teilen → Zum Home-Bildschirm hinzufügen kannst du Velaris wie eine App starten.</div>');wireItems();if(!featured.length)return;const mount=app.querySelector('#hero-mount'),dots=app.querySelector('#hero-dots');const heroAction=async(action,item)=>{
  if(action==='details')return detail(item.Id);
  if(action!=='play')return;
  if(item.Type!=='Series')return play(item);
@@ -133,7 +133,27 @@ async function load(){
  layout('<main class="page skeleton-page"><div class="skeleton skeleton-banner"></div><div class="skeleton skeleton-heading"></div><div class="skeleton-rail">'+Array(6).fill('<div class="skeleton skeleton-poster"></div>').join('')+'</div><p class="hint">Deine Mediathek wird geladen …</p></main>');
  const revision=viewRevision,u=encodeURIComponent(account.userId),root='/Users/'+u+'/Items';
  const owned=()=>session()?.userId===account.userId&&session()?.url===account.url;
- const page=(extra,start,limit)=>api(root+'?'+new URLSearchParams({...extra,EnableTotalRecordCount:'true',StartIndex:String(start),Limit:String(limit)}),{},account);
+ // Jellyfin 10.11.x may return zero for /Users/{id}/Items?Recursive=true
+ // even when the same authenticated user can browse their libraries.
+ // Retry through /Items using the same user's access token; keep that
+ // endpoint for subsequent pages once it has returned media.
+ let globalItemsFallback=false;
+ const page=async(extra,start,limit)=>{
+  const query=new URLSearchParams({...extra,EnableTotalRecordCount:'true',StartIndex:String(start),Limit:String(limit)});
+  const globalPath='/Items?'+query;
+  if(globalItemsFallback)return api(globalPath,{},account);
+  const primary=await api(root+'?'+query,{},account);
+  if(start!==0||(primary.Items||[]).length)return primary;
+  try{
+   const alternative=await api(globalPath,{},account);
+   if((alternative.Items||[]).length){
+    globalItemsFallback=true;
+    console.info('Velaris: Jellyfin user-scoped item query returned no results; using authenticated /Items fallback');
+    return alternative;
+   }
+  }catch(error){console.warn('Velaris Jellyfin catalog fallback unavailable',error)}
+  return primary;
+ };
  try{
   // Show the first results immediately. Never hold the entire interface behind
   // all Jellyfin libraries, favorites and optional home-row requests.
