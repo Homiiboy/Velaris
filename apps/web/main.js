@@ -146,8 +146,8 @@ async function load(){
   render();
   // render() advances viewRevision; do not reset a page the user opens during
   // background refreshes. Data still updates for later navigation.
-  const firstViewRevision=viewRevision;
-  const updateVisible=()=>{if(owned()&&viewRevision===firstViewRevision&&state.tab==='home')render()};
+  let firstViewRevision=viewRevision;
+  const updateVisible=()=>{if(owned()&&viewRevision===firstViewRevision&&state.tab==='home'){render();firstViewRevision=viewRevision}};
   void (async()=>{
    try{
     const all=await velarisPaged((start,limit)=>start===0?Promise.resolve(first):page({Recursive:'true',IncludeItemTypes:'Movie,Series',SortBy:'DateCreated',SortOrder:'Descending',Fields:'Overview,Genres,Tags'},start,limit));
