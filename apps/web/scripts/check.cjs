@@ -277,7 +277,7 @@ assert.deepEqual(titles('animation'),['animation1']);
 for(const token of [
  "const first=await page(",
  "state.items=initial;",
- "state.categories=velarisBuildCategories(initial,[]);",
+ "state.categories=velarisBuildCategories(initial,initialLibraries);",
  "render();",
  "void (async()=>{",
  "state.items=Array.from(combined.values());",
