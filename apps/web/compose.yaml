@@ -6,6 +6,10 @@ services:
     restart: unless-stopped
     ports:
       - "127.0.0.1:8088:80"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - velaris-cast-bridge
     read_only: true
     tmpfs:
       - /var/cache/nginx
@@ -13,3 +17,21 @@ services:
       - /tmp
     security_opt:
       - no-new-privileges:true
+
+  velaris-cast-bridge:
+    build: ./cast-bridge
+    image: velaris-cast-bridge:local
+    container_name: velaris-cast-bridge
+    restart: unless-stopped
+    # Multicast discovery is only reliable on the ZimaOS host network.
+    network_mode: host
+    environment:
+      CAST_BRIDGE_PORT: "8766"
+      JELLYFIN_LOCAL_URL: "http://127.0.0.1:8097"
+      JELLYFIN_CAST_URL: "${JELLYFIN_CAST_URL:-http://192.168.0.74:8097}"
+      CAST_KNOWN_HOSTS: "${CAST_KNOWN_HOSTS:-}"
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
