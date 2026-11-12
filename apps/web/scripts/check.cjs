@@ -327,3 +327,19 @@ for(const token of [
  "for(const eventName of ['loadstart','loadedmetadata','loadeddata','canplay','waiting','stalled','suspend','emptied'])"
 ])assert(player.includes(token),'Safari diagnostics / stalled-HLS recovery missing: '+token);
 console.log('Velaris Web: Safari media state diagnosis and automatic recovery guards passed.');
+
+/* Jellyfin 10.11.11 regression: /Users/{id}/Items?Recursive=true
+ * can return zero although /Items returns actual library titles. */
+for(const token of [
+ "let globalItemsFallback=false;",
+ "const globalPath='/Items?'+query;",
+ "if(globalItemsFallback)return api(globalPath,{},account);",
+ "const primary=await api(root+'?'+query,{},account);",
+ "const alternative=await api(globalPath,{},account);",
+ "if((alternative.Items||[]).length){",
+ "globalItemsFallback=true;",
+ "return alternative;"
+])assert(runtime.includes(token),'Jellyfin empty user-scoped catalog fallback missing: '+token);
+assert(runtime.indexOf("const first=await page(")>runtime.indexOf("let globalItemsFallback=false;"),
+ 'Fallback must be enabled before the first page is requested');
+console.log('Velaris Web: Jellyfin 10.11 empty user-scoped catalog fallback guards passed.');
