@@ -363,7 +363,7 @@ console.log('Velaris Web: user-bound Jellyfin folder recovery guards passed.');
  * The Dockerfile previously omitted catalog.js and cast9.js even while the
  * main application and index.html were at the newest version. */
 const dockerfile=fs.readFileSync(path.join(root,'Dockerfile'),'utf8');
-const localScripts=Array.from(html.matchAll(/<script[^>]+src="(\.\/[^"]+)"[^>]*><\/script>/g),match=>match[1].slice(2));
+const localScripts=Array.from(html.matchAll(/<script[^>]+src="(\.\/[^"]+)"[^>]*><\/script>/g),match=>match[1].slice(2).split('?')[0]);
 const dockerCopy=dockerfile.match(/^COPY\s+([^\n]+)\s+\/usr\/share\/nginx\/html\//m);
 assert(dockerCopy,'Dockerfile must copy static assets into nginx');
 const copied=new Set(dockerCopy[1].trim().split(/\s+/));
@@ -429,3 +429,10 @@ assert(runtime.includes('velaris-cast-open'),'Cast Bridge details button missing
 assert(bridgeNginx.includes('location /api/cast/')&&bridgeNginx.includes('host.docker.internal:8766'),'Nginx Cast Bridge proxy missing');
 assert(bridgeCompose.includes('network_mode: host')&&bridgeCompose.includes('host.docker.internal:host-gateway'),'Docker Cast Bridge discovery routing missing');
 console.log('Velaris Web: authenticated LAN Cast Bridge guards passed.');
+
+/* Clicking the new Cast button must be visible, even if bridge script is stale. */
+assert(runtime.includes("castButton.onclick=event=>"),'Cast button handler missing');
+assert(runtime.includes("Cast Bridge nicht geladen. Bitte Velaris aktualisieren"),'Cast missing-script feedback missing');
+assert(runtime.includes("Cast-Fenster konnte nicht geöffnet werden:"),'Cast dialog exception feedback missing');
+assert(html.includes('cast-bridge.js?v=1213')&&html.includes('main.js?v=1213'),'iPhone cache bust missing');
+console.log('Velaris Web: Cast button feedback and cache-bust checks passed.');
