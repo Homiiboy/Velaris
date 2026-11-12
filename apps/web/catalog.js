@@ -24,7 +24,7 @@ async function velarisPaged(fetchPage,limit=VELARIS_PAGE_SIZE){
  for(let page=0;page<500;page++){
   const response=await fetchPage(start,limit);
   const items=Array.isArray(response?.Items)?response.Items:[];
-  const supplied=Number(response?.TotalRecordCount);
+  const supplied=response?.TotalRecordCount==null?NaN:Number(response.TotalRecordCount);
   if(Number.isFinite(supplied)&&supplied>=0)total=supplied;
   let added=0;
   for(const item of items){
