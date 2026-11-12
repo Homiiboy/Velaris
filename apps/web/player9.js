@@ -163,6 +163,19 @@ function p9Play(item){
  };
  const source=async(position=0)=>{
   if(!isAlive())return;
+  // Native Safari playback must start in the user's original click gesture.
+  // Avoid awaiting PlaybackInfo before assigning video.src and calling play().
+  if(isIos&&nativeHls){
+   streamGeneration++;
+   fallback=false;
+   playbackInfo=null;
+   startupAt=performance.now();infoReadyAt=startupAt;manifestReadyAt=0;firstFrameReported=false;
+   retry.hidden=false;retry.textContent='▶ Wiedergabe starten';
+   playerMessage('Safari-HLS-Stream wird geladen …');
+   try{activateStream(p9Stream(item,quality,currentSession,null),position)}
+   catch(error){showStreamError('Safari-Stream konnte nicht gestartet werden: '+(error?.message||'Unbekannter Fehler'))}
+   return;
+  }
   clearStartupTimer();
   startupAt=performance.now();infoReadyAt=0;mediaRequestedAt=0;manifestReadyAt=0;firstFrameReported=false;
   const generation=++streamGeneration;
@@ -265,6 +278,13 @@ function p9Play(item){
  retry.onclick=()=>{
   // Safari requires a user gesture to begin media playback. Keep that gesture
   // synchronous instead of issuing a new PlaybackInfo request before play().
+  if(isIos&&nativeHls&&(!video.currentSrc||video.error)){
+   // Fallback for a stalled or rejected native HLS request.
+   fallback=true;
+   activateStream(p9Stream(item,quality,currentSession,playbackInfo,true),video.currentTime||pendingPosition);
+   playerMessage('Alternativen MP4-Stream versuchen …');
+   return;
+  }
   if(isIos&&sourceUrl&&video.paused){
    tryPlay();return;
   }
