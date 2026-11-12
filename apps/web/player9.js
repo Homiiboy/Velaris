@@ -44,7 +44,7 @@ function p9AuthorizedUrl(url,account){
  return target.href;
 }
 function p9Stream(item,quality,account,media,preferMp4=false){
- const source=media?.MediaSources?.[0],id=encodeURIComponent(item.Id);
+ const source=media?.MediaSources?.[0]||item.MediaSources?.[0],id=encodeURIComponent(item.Id);
  const transcoding=source?.TranscodingUrl, direct=source?.DirectStreamUrl;
  const params=new URLSearchParams({api_key:account.token,VideoCodec:'h264',AudioCodec:'aac'});
  if(source?.Id)params.set('MediaSourceId',source.Id);
@@ -87,7 +87,7 @@ function p9Play(item){
  const root=app.querySelector('#p9-player'),video=root.querySelector('#p9-video'),clock=root.querySelector('#p9-clock'),note=root.querySelector('#p9-message'),retry=root.querySelector('#p9-retry'),nextBox=root.querySelector('#p9-next'),skipZone=root.querySelector('#p9-skip-zone'),skip=root.querySelector('#p9-skip');
  const diagnostics=root.querySelector('#p9-diagnostics'),castStatus=root.querySelector('#p9-cast-status'),castStop=root.querySelector('#p9-cast-stop'),castButton=root.querySelector('#p9-cast-button');
  const isIos=/iPad|iPhone|iPod/i.test(navigator.userAgent||'');
- if(!p9CastClientEligible())castButton.hidden=true;
+ if(!p9CastClientEligible()){castButton.hidden=true;castButton.style.display='none'}
  const currentSession=session();const previous=document.querySelectorAll('#p9-player');for(const old of previous)if(old!==root){const previousVideo=old.querySelector('video');if(previousVideo){previousVideo.pause();previousVideo.removeAttribute('src');previousVideo.load()}old.remove()}let startupTimer=null;let stage='Initialisierung',stageError='',startedFallback=false;let castCtrl=null;let quality=prefs.quality,fallback=false,reloading=false,pendingPosition=(item.UserData?.PlaybackPositionTicks||0)/10000000,stopped=false,reported=0,playbackInfo=null,streamGeneration=0,sourceUrl='',hlsEngine=null,hlsError='',startupAt=0,infoReadyAt=0,mediaRequestedAt=0,manifestReadyAt=0,firstFrameReported=false,next=null,segments=[],skipSeen=new Set(),nextShown=false,countdown=null,lastNextCountdown=-1;
  const isAlive=()=>root.isConnected&&!stopped&&session()?.userId===currentSession.userId&&session()?.url===currentSession.url;
  const playerMessage=message=>{if(isAlive())note.textContent=message};
@@ -190,6 +190,22 @@ function p9Play(item){
    fallback=false;
    playbackInfo=null;
    startupAt=performance.now();infoReadyAt=startupAt;manifestReadyAt=0;firstFrameReported=false;
+   // Keep the first Safari play() inside the user gesture. In parallel ask
+   // Jellyfin for MediaSourceId/PlaySessionId for retries and MP4 fallback.
+   const iosGeneration=streamGeneration;
+   void p9Warmup(item,currentSession,quality).then(info=>{
+    if(!isAlive()||streamGeneration!==iosGeneration)return;
+    playbackInfo=info;
+    infoReadyAt=performance.now();
+    if(!firstFrameReported&&fallback&&video.error){
+     try{activateStream(p9Stream(item,quality,currentSession,info,true),pendingPosition)}
+     catch(error){stageError='Jellyfin Stream: '+(error?.message||'Fehler');mediaDiagnostic()}
+    }
+   }).catch(error=>{
+    if(!isAlive()||streamGeneration!==iosGeneration)return;
+    stageError='PlaybackInfo: '+(error?.message||'nicht verfügbar');
+    mediaDiagnostic();
+   });
    retry.hidden=false;retry.textContent='▶ Wiedergabe starten';
    playerMessage('Safari-HLS-Stream wird geladen …');
    try{activateStream(p9Stream(item,quality,currentSession,null),position)}
