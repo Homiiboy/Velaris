@@ -69,3 +69,51 @@ MVP. Browser/iPhone-, Streaming-, Tailscale- und ZimaOS-Integrationstests stehen
 - **Erkannte Bibliotheksnamen:** Filme / Movies, Serien / Series, Anime (inklusive Anime Serien), Anime Filme / Anime Movies, Animation sowie Cartoons / Zeichentrick. Groß-/Kleinschreibung, Leerzeichen und Bindestriche werden ignoriert. Für andere Namen wird der Jellyfin-Bibliothekstyp genutzt; nicht eindeutig zuordenbare Medien werden anhand von Typ, Genre und Tags einsortiert.
 - **Alphabetisch:** Die sechs Kategorieansichten sind alphabetisch sortiert. Die Startseite bleibt nach Datum, Bewertung beziehungsweise Wiedergabefortschritt aufgebaut.
 - **Hinweis:** Werden einzelne Bibliotheken vom Jellyfin-Konto nicht angezeigt, können die Rechte dieses Kontos beziehungsweise die tatsächliche Bibliothekszuordnung in Jellyfin die Ursache sein. Eine fehlgeschlagene Bibliotheksabfrage führt zur vorsichtigen Metadaten-Zuordnung; für die exakte Zuordnung muss Jellyfin seine Bibliotheksansichten bereitstellen.
+
+
+## Chromecast von iPhone PWA (Velaris Cast Bridge)
+Chromecast-Sender über das Google Web SDK sind auf iOS nicht verfügbar. Deshalb nutzt
+Velaris Web eine **lokale Cast Bridge**, die auf ZimaOS läuft und den Chromecast im
+Heimnetz fernsteuert. Der funktionierende Original-iPhone-Player bleibt unverändert.
+
+Die Bridge wird mit `docker compose up -d --build` automatisch mitgebaut.
+Sie nutzt `network_mode: host`, damit Chromecast-mDNS-Geräte im LAN erkannt
+werden. Velaris Web ruft sie ausschließlich über
+`https://zimaos.tailbcd9a8.ts.net/api/cast/` auf; der Nginx-Proxy leitet
+intern zum Bridge-Port 8766 weiter. Jeder Befehl benötigt einen gültigen
+Jellyfin-Zugangstoken, der serverseitig geprüft wird.
+
+Um die lokale Jellyfin-Adresse für Chromecast anzupassen, in
+`apps/web/.env` anlegen (die Datei nicht in Git einchecken):
+
+```dotenv
+JELLYFIN_CAST_URL=http://192.168.0.74:8097
+# Optional: einzelne Chromecast-IP(s), falls mDNS im Heimnetz nicht funktioniert:
+# CAST_KNOWN_HOSTS=192.168.0.85
+```
+
+**Erster Test:**
+```sh
+cd ~/AppData/Velaris
+git pull origin main
+cd apps/web
+sudo docker compose up -d --build
+sudo docker compose ps
+sudo docker logs --tail 80 velaris-cast-bridge
+```
+
+Auf iPhone in Velaris einen Film oder eine Episode öffnen → **Auf TV abspielen**
+→ Chromecast wählen. Der Chromecast braucht **keine Jellyfin-App**, muss aber
+von sich aus `http://192.168.0.74:8097` erreichen können. Die eigentliche
+Videodekodierung/HLS-Transkodierung muss auf dem Chromecast funktionieren;
+Empfänger- und Jellyfin-Kompatibilität sind noch auf realem Gerät zu testen.
+
+**Netzwerksicherheit:** Der Bridge-Dienst lauscht im Host-Netz auf Port 8766 und
+prüft jede Anfrage über Jellyfin-Authentifizierung. Diesen Port **nicht**
+ins Internet weiterleiten. Für zusätzliche Abschottung den Host-Port
+per ZimaOS-Firewall auf Docker-Zugriff begrenzen. Der Fernseher erhält zum
+Abspielen einen zeitweise verwendeten Jellyfin-Zugriffstoken in der Stream-URL;
+nur vertrauenswürdige Chromecast-Geräte im Heimnetz verwenden.
+
+Zum Debuggen: `sudo docker compose logs -f velaris-cast-bridge`.
+Die Bridge gibt keine Stream-URLs oder Tokens aus.
