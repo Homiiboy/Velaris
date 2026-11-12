@@ -358,3 +358,18 @@ for(const token of [
  "id=\\\"catalog-status\\\""
 ])assert(runtime.includes(token),'Folder-first Jellyfin catalog recovery missing: '+token);
 console.log('Velaris Web: user-bound Jellyfin folder recovery guards passed.');
+
+/* The production nginx image MUST include every local script from index.html.
+ * The Dockerfile previously omitted catalog.js and cast9.js even while the
+ * main application and index.html were at the newest version. */
+const dockerfile=fs.readFileSync(path.join(root,'Dockerfile'),'utf8');
+const localScripts=Array.from(html.matchAll(/<script[^>]+src="(\.\/[^"]+)"[^>]*><\/script>/g),match=>match[1].slice(2));
+const dockerCopy=dockerfile.match(/^COPY\s+([^\n]+)\s+\/usr\/share\/nginx\/html\//m);
+assert(dockerCopy,'Dockerfile must copy static assets into nginx');
+const copied=new Set(dockerCopy[1].trim().split(/\s+/));
+for(const localScript of localScripts)assert(copied.has(localScript),
+ 'Production Docker image is missing '+localScript);
+for(const asset of ['index.html','style.css','manifest.webmanifest','sw.js','icon.svg']){
+ assert(copied.has(asset),'Production Docker image is missing '+asset);
+}
+console.log('Velaris Web: Docker production asset parity passed.');
