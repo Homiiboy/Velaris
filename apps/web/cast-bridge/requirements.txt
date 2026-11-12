@@ -1,1 +1,1 @@
-PyChromecast>=14.0,<15
+PyChromecast==14.1.1
