@@ -282,6 +282,7 @@ async function detail(id){
       if(button?.isConnected)button.insertAdjacentHTML('afterend','<p class="error" role="alert">Player konnte nicht gestartet werden: '+esc(err.message||'Unbekannter Fehler')+'</p>');
     }
   };
+  if(canPlay)app.querySelector('#velaris-cast-open')?.addEventListener('click',()=>VelarisCastBridge.open(item,account));
   app.querySelector('#fav').onclick=async()=>{
    const button=app.querySelector('#fav');if(!button)return;button.disabled=true;
    try{await api('/Users/'+encodeURIComponent(session().userId)+'/FavoriteItems/'+encodeURIComponent(item.Id),{method:fav?'DELETE':'POST'});await load();await detail(id)}
