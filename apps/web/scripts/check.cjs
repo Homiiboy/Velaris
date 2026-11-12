@@ -387,3 +387,14 @@ for(const token of [
 const safariSource=player.slice(player.indexOf('if(isIos&&nativeHls){',player.indexOf('const source=async')),player.indexOf('\n  clearStartupTimer();',player.indexOf('if(isIos&&nativeHls){',player.indexOf('const source=async'))+10));
 assert(!safariSource.includes('await '),'Native iOS player must remain gesture synchronous');
 console.log('Velaris Web: iOS source negotiation and fallback checks passed.');
+
+/* Regression rollback: iPhone must use the working pre-Chromecast player,
+ * without disabling Chromecast for desktop browsers. */
+const classic=fs.readFileSync(path.join(root,'player9-classic.js'),'utf8');
+assert(html.includes('<script src="./player9-classic.js" defer></script>'),'Load pre-Cast player before current player');
+assert(classic.includes('const p9PlayClassic=(()=>{'),'Pre-Cast implementation must be isolated');
+assert(classic.includes('return p9Play;'),'Pre-Cast implementation must expose its own play entrypoint');
+assert(player.includes("typeof p9PlayClassic==='function')return p9PlayClassic(item)"),'iPhone playback must use classic player');
+assert(!classic.includes('p9CastController('),'Classic player must not require Cast SDK');
+assert(sw.includes('player9-classic.js'),'PWA must cache classic player');
+console.log('Velaris Web: iPhone pre-Chromecast player rollback checks passed.');
