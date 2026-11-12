@@ -398,3 +398,16 @@ assert(player.includes("typeof p9PlayClassic==='function')return p9PlayClassic(i
 assert(!classic.includes('p9CastController('),'Classic player must not require Cast SDK');
 assert(sw.includes('player9-classic.js'),'PWA must cache classic player');
 console.log('Velaris Web: iPhone pre-Chromecast player rollback checks passed.');
+
+/* AirPlay must be opt-in only when WebKit reports a nearby receiver.
+ * It must never replace the proven iPhone stream creation code. */
+for(const token of [
+ 'id="p9-airplay-button" type="button" hidden',
+ "typeof video.webkitShowPlaybackTargetPicker==='function'",
+ "'webkitplaybacktargetavailabilitychanged'",
+ "event?.availability==='available'",
+ "video.webkitShowPlaybackTargetPicker()"
+])assert(classic.includes(token),'iPhone optional AirPlay control missing: '+token);
+assert(classic.includes('return base(account)+\'/Videos/\'+id+\'/master.m3u8?\'+params'),
+ 'Original iOS HLS stream request unexpectedly changed');
+console.log('Velaris Web: safe optional AirPlay and original stream regression guards passed.');
