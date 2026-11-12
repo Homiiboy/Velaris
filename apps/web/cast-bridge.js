@@ -13,6 +13,44 @@ const VelarisCastBridge=(()=>{
  }
  function open(item,account){
   document.getElementById('velaris-cast-dialog')?.remove();
+  // Keep this modal independently positioned even if an older PWA CSS file
+  // is cached by iOS Safari. Scoped styles are installed once.
+  if(!document.getElementById('velaris-cast-modal-styles')){
+   const style=document.createElement('style');
+   style.id='velaris-cast-modal-styles';
+   style.textContent=`
+    #velaris-cast-dialog{position:fixed!important;inset:0!important;z-index:2147483000!important;
+      display:flex!important;align-items:center!important;justify-content:center!important;
+      box-sizing:border-box!important;width:100vw!important;height:100dvh!important;
+      margin:0!important;padding:calc(env(safe-area-inset-top) + 16px) 16px calc(env(safe-area-inset-bottom) + 16px)!important;
+      background:rgba(3,3,10,.86)!important;overflow:hidden!important;overscroll-behavior:contain!important}
+    #velaris-cast-dialog .velaris-cast-panel{position:relative!important;box-sizing:border-box!important;
+      display:flex!important;flex-direction:column!important;gap:14px!important;
+      width:min(100%,520px)!important;max-height:calc(100dvh - 48px)!important;
+      min-width:0!important;margin:0!important;padding:20px!important;
+      border:1px solid rgba(188,164,255,.4)!important;border-radius:20px!important;
+      background:#171421!important;color:#fff!important;
+      box-shadow:0 24px 80px rgba(0,0,0,.7)!important;
+      overflow-y:auto!important;overscroll-behavior:contain!important;
+      -webkit-overflow-scrolling:touch!important}
+    #velaris-cast-dialog .velaris-cast-panel header{position:static!important;
+      display:flex!important;flex-direction:row!important;align-items:center!important;
+      justify-content:space-between!important;gap:12px!important;padding:0!important;
+      background:transparent!important;min-height:0!important}
+    #velaris-cast-dialog .velaris-cast-panel h2{font-size:19px!important;line-height:1.25!important;
+      margin:0!important;color:#fff!important;letter-spacing:normal!important}
+    #velaris-cast-dialog .velaris-cast-panel .hint{font-size:13px!important;line-height:1.45!important;
+      color:#c9c3d7!important;margin:0!important}
+    #velaris-cast-dialog #velaris-cast-feedback{font-size:14px!important;line-height:1.5!important;
+      color:#dccfff!important;overflow-wrap:anywhere!important}
+    #velaris-cast-dialog #velaris-cast-devices{display:grid!important;gap:8px!important}
+    #velaris-cast-dialog #velaris-cast-devices button{width:100%!important;text-align:left!important}
+    #velaris-cast-dialog #velaris-cast-controls:not([hidden]){display:flex!important;flex-wrap:wrap!important;gap:8px!important}
+    #velaris-cast-dialog #velaris-cast-controls[hidden]{display:none!important}
+    @media(max-width:440px){#velaris-cast-dialog .velaris-cast-panel{padding:16px!important}}
+   `;
+   document.head.appendChild(style);
+  }
   const overlay=document.createElement('div');
   overlay.id='velaris-cast-dialog';
   overlay.className='velaris-cast-overlay';
@@ -29,12 +67,18 @@ const VelarisCastBridge=(()=>{
    +'<p id="velaris-cast-position" class="hint"></p></div>'
    +'<p class="hint">ZimaOS und Chromecast müssen im selben Netzwerk sein. Der Chromecast muss die lokale Jellyfin-Adresse erreichen können.</p>'
    +'</section>';
+  const oldBodyOverflow=document.body.style.overflow;
+  document.body.style.overflow='hidden';
   document.body.appendChild(overlay);
   const devices=overlay.querySelector('#velaris-cast-devices'),feedback=overlay.querySelector('#velaris-cast-feedback');
   const controls=overlay.querySelector('#velaris-cast-controls'),positionNode=overlay.querySelector('#velaris-cast-position');
   let selected=null,position=0,closed=false,interval=null;
   const info=value=>{if(!closed)feedback.textContent=value};
-  const close=()=>{closed=true;if(interval)clearInterval(interval);overlay.remove()};
+  const onKeyDown=event=>{if(event.key==='Escape')close()};
+  const close=()=>{if(closed)return;closed=true;if(interval)clearInterval(interval);
+   document.removeEventListener('keydown',onKeyDown);document.body.style.overflow=oldBodyOverflow;overlay.remove()};
+  document.addEventListener('keydown',onKeyDown);
+  overlay.querySelector('#velaris-cast-close').focus();
   overlay.querySelector('#velaris-cast-close').onclick=close;
   overlay.onclick=event=>{if(event.target===overlay)close()};
   const updateStatus=async()=>{
