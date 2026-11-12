@@ -270,3 +270,26 @@ assert.deepEqual(titles('animation'),['animation1']);
  assert.equal(paged[436].Id,'id-436');
  console.log('Velaris Web: library category mapping and pagination passed.');
 })().catch(error=>{console.error(error);process.exitCode=1});
+
+/* Main screen should render as soon as Jellyfin delivers the first page.
+ * Loading category memberships, the rest of the catalog or favorites must not
+ * keep the skeleton visible indefinitely. */
+for(const token of [
+ "const first=await page(",
+ "state.items=initial;",
+ "state.categories=velarisBuildCategories(initial,[]);",
+ "render();",
+ "void (async()=>{",
+ "state.items=all;",
+ "let firstViewRevision=viewRevision;",
+ "state.categories=velarisBuildCategories(all,libraries);"
+])assert(runtime.includes(token),'Progressive catalog loading guard missing: '+token);
+assert(runtime.indexOf('state.items=initial;')<runtime.indexOf('const memberships=await Promise.allSettled(recognized.map'),'First page must render before library membership lookup');
+assert(catalogScript.includes('response?.TotalRecordCount==null?NaN'),'Missing total record count must not be interpreted as zero');
+(async()=>{
+ const many=Array.from({length:405},(_,i)=>({Id:'no-total-'+i}));
+ catContext.withoutTotal=(start,limit)=>({Items:many.slice(start,start+limit),TotalRecordCount:null});
+ const result=await vm.runInContext('velarisPaged(withoutTotal,200)',catContext);
+ assert.equal(result.length,405,'Catalog with null TotalRecordCount must still paginate');
+ console.log('Velaris Web: progressive display and null-count pagination passed.');
+})().catch(error=>{console.error(error);process.exitCode=1});
