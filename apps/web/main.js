@@ -282,7 +282,27 @@ async function detail(id){
       if(button?.isConnected)button.insertAdjacentHTML('afterend','<p class="error" role="alert">Player konnte nicht gestartet werden: '+esc(err.message||'Unbekannter Fehler')+'</p>');
     }
   };
-  if(canPlay)app.querySelector('#velaris-cast-open')?.addEventListener('click',()=>VelarisCastBridge.open(item,account));
+  const castButton=app.querySelector('#velaris-cast-open');
+  if(castButton){
+   castButton.onclick=event=>{
+    event.preventDefault();
+    const fail=message=>{
+     const existing=app.querySelector('#velaris-cast-error');
+     if(existing)existing.remove();
+     castButton.insertAdjacentHTML('afterend','<p id="velaris-cast-error" class="error" role="alert">'+esc(message)+'</p>');
+    };
+    try{
+     if(!canPlay)return fail('Bitte zuerst einen Film oder eine Episode auswählen.');
+     if(typeof VelarisCastBridge==='undefined'||typeof VelarisCastBridge.open!=='function'){
+      return fail('Cast Bridge nicht geladen. Bitte Velaris aktualisieren (Version 1.2.13).');
+     }
+     VelarisCastBridge.open(item,account);
+    }catch(error){
+     console.error('Velaris Cast Bridge dialog failed',error);
+     fail('Cast-Fenster konnte nicht geöffnet werden: '+(error?.message||'Unbekannter Fehler'));
+    }
+   };
+  }
   app.querySelector('#fav').onclick=async()=>{
    const button=app.querySelector('#fav');if(!button)return;button.disabled=true;
    try{await api('/Users/'+encodeURIComponent(session().userId)+'/FavoriteItems/'+encodeURIComponent(item.Id),{method:fav?'DELETE':'POST'});await load();await detail(id)}
