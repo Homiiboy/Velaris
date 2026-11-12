@@ -3,7 +3,7 @@ const fs=require('node:fs');
 const path=require('node:path');
 const assert=require('node:assert/strict');
 const root=path.resolve(__dirname,'..');
-for(const f of ['index.html','main.js','catalog.js','player9.js','cast9.js','style.css','sw.js','manifest.webmanifest','icon.svg','Dockerfile','nginx.conf']){
+for(const f of ['index.html','main.js','catalog.js','player9.js','cast9.js','style.css','sw.js','manifest.webmanifest','icon.svg','Dockerfile','nginx.conf','cast-bridge.js','cast-bridge/server.py','cast-bridge/Dockerfile','cast-bridge/requirements.txt']){
  assert(fs.existsSync(path.join(root,f)), 'Missing '+f);
 }
 const manifest=JSON.parse(fs.readFileSync(path.join(root,'manifest.webmanifest'),'utf8'));
@@ -411,3 +411,21 @@ for(const token of [
 assert(classic.includes('return base(account)+\'/Videos/\'+id+\'/master.m3u8?\'+params'),
  'Original iOS HLS stream request unexpectedly changed');
 console.log('Velaris Web: safe optional AirPlay and original stream regression guards passed.');
+
+/* Separate Chromecast bridge must not change working iPhone player. */
+const bridgeUi=fs.readFileSync(path.join(root,'cast-bridge.js'),'utf8');
+const bridgePy=fs.readFileSync(path.join(root,'cast-bridge/server.py'),'utf8');
+const bridgeNginx=fs.readFileSync(path.join(root,'nginx.conf'),'utf8');
+const bridgeCompose=fs.readFileSync(path.join(root,'compose.yaml'),'utf8');
+for(const token of ["X-Velaris-Jellyfin-Token","/api/cast/","velaris-cast-dialog","itemId:item.Id","'control'"]){
+ assert(bridgeUi.includes(token),'Cast Bridge web UI missing '+token);
+}
+for(const token of ['jellyfin_get("/Users/Me", token)','device_for(device_id, user_id','_ACTIVE[device_id] = user_id','JELLYFIN_CAST_URL','pychromecast.get_chromecasts(','cast.media_controller.play_media(']){
+ assert(bridgePy.includes(token),'Cast Bridge access control or discovery missing '+token);
+}
+assert(html.includes('cast-bridge.js'),'Cast Bridge browser script missing');
+assert(runtime.includes('VelarisCastBridge.open(item,account)'),'Cast Bridge details action missing');
+assert(runtime.includes('velaris-cast-open'),'Cast Bridge details button missing');
+assert(bridgeNginx.includes('location /api/cast/')&&bridgeNginx.includes('host.docker.internal:8766'),'Nginx Cast Bridge proxy missing');
+assert(bridgeCompose.includes('network_mode: host')&&bridgeCompose.includes('host.docker.internal:host-gateway'),'Docker Cast Bridge discovery routing missing');
+console.log('Velaris Web: authenticated LAN Cast Bridge guards passed.');
