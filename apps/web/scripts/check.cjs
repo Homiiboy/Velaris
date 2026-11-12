@@ -311,3 +311,19 @@ const iosPath=player.slice(iosPathStart,iosPathEnd);
 assert(iosPath.includes('activateStream('),'iOS should start native HLS immediately');
 assert(!iosPath.includes('await '),'iOS must not await a network request before playback');
 console.log('Velaris Web: synchronous iPhone HLS start regression guards passed.');
+
+/* Safari regression diagnostics: the player must surface meaningful video
+ * readiness states and attempt one MP4 fallback when native HLS stalls. */
+for(const token of [
+ 'id="p9-diagnostics"',
+ "diagnostics.textContent='Player: '+stage",
+ 'video.networkState',
+ 'video.readyState',
+ "stageUpdate('Stream angefordert')",
+ "stageUpdate('Safari-HLS wird geladen'",
+ 'if(isIos&&!fallback){',
+ "p9Stream(item,quality,currentSession,playbackInfo,true)",
+ "playerMessage('Safari: MP4-Ersatzstream wird geladen …')",
+ "for(const eventName of ['loadstart','loadedmetadata','loadeddata','canplay','waiting','stalled','suspend','emptied'])"
+])assert(player.includes(token),'Safari diagnostics / stalled-HLS recovery missing: '+token);
+console.log('Velaris Web: Safari media state diagnosis and automatic recovery guards passed.');
