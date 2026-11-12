@@ -13,7 +13,7 @@ function restoreSessions(){
   return accounts;
  }catch{return []}
 }
-const state={sessions:restoreSessions(),active:0,tab:'home',items:[],categories:{},resume:[],favorites:[],series:[],filter:[],busy:false,detail:null,player:null,query:''};
+const state={sessions:restoreSessions(),active:0,tab:'home',items:[],categories:{},catalogStatus:'',resume:[],favorites:[],series:[],filter:[],busy:false,detail:null,player:null,query:''};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const session=()=>state.sessions[state.active];
 const deviceId=(()=>{
@@ -74,7 +74,7 @@ function render(){stopHero();if(!session())return auth();
  if(state.tab==='favorites')return section(state.favorites,'Meine Liste');
  if(state.tab==='collections')return section(state.collections||[],'Sammlungen');
  if(categoryLabels[state.tab])return section(state.categories[state.tab]||[],categoryLabels[state.tab]);
- const featured=state.items.filter(i=>i.BackdropImageTags?.length).slice(0,6);if(!featured.length&&state.items[0])featured.push(state.items[0]);heroIndex=Math.min(heroIndex,Math.max(0,featured.length-1));const h=featured.length?'<section class="hero-stage" aria-label="Im Rampenlicht"><div id="hero-mount"></div><div class="hero-dots" id="hero-dots" role="group" aria-label="Highlights"></div></section>':'<main class="page"><h1>Willkommen bei Velaris</h1><p>Jellyfin hat für diese Anmeldung keine Filme oder Serien an Velaris zurückgegeben. Prüfe die Bibliotheksrechte oder aktualisiere die Seite.</p><button type="button" class="primary" id="catalog-retry">Mediathek erneut laden</button></main>';layout(h+'<div class="rows">'+p8HomeRows()+'</div><div class="install">Tipp: In Safari über Teilen → Zum Home-Bildschirm hinzufügen kannst du Velaris wie eine App starten.</div>');wireItems();if(!featured.length){const retry=app.querySelector('#catalog-retry');if(retry)retry.onclick=load;return;}const mount=app.querySelector('#hero-mount'),dots=app.querySelector('#hero-dots');const heroAction=async(action,item)=>{
+ const featured=state.items.filter(i=>i.BackdropImageTags?.length).slice(0,6);if(!featured.length&&state.items[0])featured.push(state.items[0]);heroIndex=Math.min(heroIndex,Math.max(0,featured.length-1));const h=featured.length?'<section class="hero-stage" aria-label="Im Rampenlicht"><div id="hero-mount"></div><div class="hero-dots" id="hero-dots" role="group" aria-label="Highlights"></div></section>':'<main class="page"><h1>Willkommen bei Velaris</h1><p>Jellyfin hat für diese Anmeldung keine Filme oder Serien an Velaris zurückgegeben.</p><p class="hint" id="catalog-status">'+esc(state.catalogStatus||'API-Abfrage ohne Treffer')+'</p><button type="button" class="primary" id="catalog-retry">Mediathek erneut laden</button></main>';layout(h+'<div class="rows">'+p8HomeRows()+'</div><div class="install">Tipp: In Safari über Teilen → Zum Home-Bildschirm hinzufügen kannst du Velaris wie eine App starten.</div>');wireItems();if(!featured.length){const retry=app.querySelector('#catalog-retry');if(retry)retry.onclick=load;return;}const mount=app.querySelector('#hero-mount'),dots=app.querySelector('#hero-dots');const heroAction=async(action,item)=>{
  if(action==='details')return detail(item.Id);
  if(action!=='play')return;
  if(item.Type!=='Series')return play(item);
@@ -140,6 +140,7 @@ async function load(){
  let globalItemsFallback=false;
  const page=async(extra,start,limit)=>{
   const query=new URLSearchParams({...extra,EnableTotalRecordCount:'true',StartIndex:String(start),Limit:String(limit)});
+  query.set('UserId',account.userId);
   const globalPath='/Items?'+query;
   if(globalItemsFallback)return api(globalPath,{},account);
   const primary=await api(root+'?'+query,{},account);
@@ -159,9 +160,36 @@ async function load(){
   // all Jellyfin libraries, favorites and optional home-row requests.
   const first=await page({Recursive:'true',IncludeItemTypes:'Movie,Series',SortBy:'DateCreated',SortOrder:'Descending',Fields:'Overview,Genres,Tags'},0,VELARIS_PAGE_SIZE);
   if(!activeView(revision,account.userId))return;
-  const initial=first.Items||[];
+  let initial=first.Items||[];
+  let initialLibraries=[];
+  state.catalogStatus='Globale Suche: '+initial.length+' Treffer.';
+  if(!initial.length){
+   // Folder-first browsing is the same approach Jellyfin's own UI uses.
+   // A broken recursive global query must not hide an otherwise accessible library.
+   try{
+    const views=await api('/Users/'+u+'/Views',{},account);
+    if(!activeView(revision,account.userId))return;
+    const folders=(views.Items||[]).filter(v=>v.Id&&['movies','tvshows'].includes(v.CollectionType)||v.Id&&velarisLibraryKind(v));
+    state.catalogStatus+=' Bibliotheken: '+folders.length+'.';
+    const results=await Promise.allSettled(folders.map(async v=>{
+     const extra={ParentId:v.Id,Recursive:'true',IncludeItemTypes:'Movie,Series',Fields:'Overview,Genres,Tags',SortBy:'DateCreated',SortOrder:'Descending'};
+     // Explicit userId in /Items and ParentId reduce Jellyfin 10.11 query failures.
+     const data=await api('/Items?'+new URLSearchParams({...extra,UserId:account.userId,StartIndex:'0',Limit:String(VELARIS_PAGE_SIZE)}),{},account);
+     return {kind:velarisLibraryKind(v),items:data.Items||[],total:data.TotalRecordCount};
+    }));
+    if(!activeView(revision,account.userId))return;
+    const success=results.filter(x=>x.status==='fulfilled').map(x=>x.value);
+    const unique=new Map();
+    for(const entry of success)for(const item of entry.items)if(item?.Id&&['Movie','Series'].includes(item.Type))unique.set(String(item.Id),item);
+    initial=Array.from(unique.values());
+    initialLibraries=success;
+    state.catalogStatus+=' Bibliotheksabfrage: '+initial.length+' Titel; '+(results.length-success.length)+' Fehler.';
+   }catch(error){
+    state.catalogStatus+=' Bibliotheksabfrage fehlgeschlagen: '+(error?.message||'Unbekannt');
+   }
+  }
   state.items=initial;
-  state.categories=velarisBuildCategories(initial,[]);
+  state.categories=velarisBuildCategories(initial,initialLibraries);
   state.resume=[];state.favorites=[];state.collections=[];
   render();
   // render() advances viewRevision; do not reset a page the user opens during
@@ -172,8 +200,10 @@ async function load(){
    try{
     const all=await velarisPaged((start,limit)=>start===0?Promise.resolve(first):page({Recursive:'true',IncludeItemTypes:'Movie,Series',SortBy:'DateCreated',SortOrder:'Descending',Fields:'Overview,Genres,Tags'},start,limit));
     if(!owned())return;
-    state.items=all;
-    state.categories=velarisBuildCategories(all,[]);
+    const combined=new Map(state.items.map(item=>[String(item.Id),item]));
+    for(const item of all)if(item?.Id)combined.set(String(item.Id),item);
+    state.items=Array.from(combined.values());
+    state.categories=velarisBuildCategories(state.items,initialLibraries);
     updateVisible();
     const views=await api('/Users/'+u+'/Views',{},account).catch(error=>{console.warn('Velaris library views unavailable',error);return {Items:[]}});
     if(!owned())return;
@@ -184,7 +214,7 @@ async function load(){
     })));
     if(!owned())return;
     const libraries=memberships.filter(x=>x.status==='fulfilled').map(x=>x.value);
-    state.categories=velarisBuildCategories(all,libraries);
+    state.categories=velarisBuildCategories(state.items,[...initialLibraries,...libraries]);
     updateVisible();
    }catch(error){console.warn('Velaris background catalog refresh failed',error)}
   })();
@@ -309,6 +339,6 @@ async function detail(id){
 
 function play(item){return p9Play(item)}
 function p9LegacyPlayer(item){stopHero();if(item.Type==='Series')return detail(item.Id);const s=session();const id=encodeURIComponent(item.Id);const token=encodeURIComponent(s.token);const source=base(s)+'/Videos/'+id+'/master.m3u8?api_key='+token+'&VideoCodec=h264&AudioCodec=aac&TranscodingContainer=ts';app.insertAdjacentHTML('beforeend','<div class="video-wrap" id="player"><div class="player-top"><button class="secondary video-close" id="close-player">‹ Zurück</button><div class="player-title">'+esc(item.Name)+'</div></div><video controls playsinline autoplay preload="metadata" aria-label="Videoplayer: '+esc(item.Name)+'"></video><div class="player-note" id="player-note" role="status">Stream wird geladen …</div></div>');const node=app.querySelector('#player'),video=node.querySelector('video');video.addEventListener('playing',()=>{const note=node.querySelector('#player-note');if(note)note.textContent=''});video.src=source;const resumeSeconds=(item.UserData?.PlaybackPositionTicks||0)/10000000;let didResume=false;video.addEventListener('loadedmetadata',()=>{if(!didResume&&resumeSeconds>10&&Number.isFinite(video.duration)&&resumeSeconds<video.duration-15){didResume=true;video.currentTime=resumeSeconds}});let timer=0;const report=async event=>{if(!Number.isFinite(video.currentTime)||video.currentTime<0)return;const body={ItemId:item.Id,PositionTicks:Math.floor(video.currentTime*10000000),IsPaused:video.paused,PlayMethod:'Transcode'};try{await api('/Sessions/Playing/'+event,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})}catch{}};video.addEventListener('playing',()=>report(''));video.addEventListener('timeupdate',()=>{if(video.currentTime-timer>15){timer=video.currentTime;report('Progress')}});video.addEventListener('ended',()=>report('Stopped'));const close=()=>{report('Stopped');video.pause();video.removeAttribute('src');video.load();node.remove();load()};node.querySelector('#close-player').onclick=close;video.addEventListener('error',()=>{const note=node.querySelector('#player-note');if(note)note.textContent=video.dataset.fallback?'Wiedergabe fehlgeschlagen. Bitte Jellyfin-Streaming und HTTPS prüfen.':'Alternativen Stream versuchen …';if(video.dataset.fallback)return;video.dataset.fallback='1';video.src=base(s)+'/Videos/'+id+'/stream.mp4?static=false&api_key='+token+'&VideoCodec=h264&AudioCodec=aac';video.load()})}
-function logout(){stopHero();viewRevision++;if(!state.sessions.length)return auth();state.sessions.splice(state.active,1);state.active=0;state.items=[];state.categories={};state.resume=[];state.favorites=[];state.query='';save();state.sessions.length?profilePicker():auth()}
+function logout(){stopHero();viewRevision++;if(!state.sessions.length)return auth();state.sessions.splice(state.active,1);state.active=0;state.items=[];state.categories={};state.catalogStatus='';state.resume=[];state.favorites=[];state.query='';save();state.sessions.length?profilePicker():auth()}
 if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('./sw.js').catch(()=>{});
 if(state.sessions.length)profilePicker();else auth();
