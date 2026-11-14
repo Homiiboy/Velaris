@@ -1,6 +1,6 @@
 # Velaris Web (iPhone PWA)
 
-**Aktuelle Quellcode-Version: 2.0.1.** Mediennavigation auf Web/Desktop oben unter dem Header, auf iPhone weiterhin unten. Kategorie-Farbpass: Schwarz bleibt als Grundfläche, aktive Kategorie-Akzente sind Violett/Grün/Eisblau/Orange/Gelb. YouTube-Rot ist für die künftige Integration reserviert. Die Versionsangabe liegt im PWA-Manifest und HTML-Metadaten; der Service-Worker-Cache wird mit einer neuen Kennung aktualisiert. Die Web-Version wird beim nächsten Deployment sichtbar. Browser/iPhone-Tests bleiben erforderlich.
+**Aktuelle Quellcode-Version: 2.1.0.** Mediennavigation auf Web/Desktop oben unter dem Header, auf iPhone weiterhin unten. Sämtliche vorhandenen Kategorien erhalten eigene VELARIS-Überschriften, Akzentfarben, Fokusränder und Fortschrittsanzeigen. Kategorie-Farbpass: Schwarz bleibt als Grundfläche, aktive Kategorie-Akzente sind Violett/Grün/Eisblau/Orange/Gelb. YouTube-Rot ist für die künftige Integration reserviert. Die Versionsangabe liegt im PWA-Manifest und HTML-Metadaten; der Service-Worker-Cache wird mit einer neuen Kennung aktualisiert. Die Web-Version wird beim nächsten Deployment sichtbar. Browser/iPhone-Tests bleiben erforderlich.
 Eigenständige installierbare Web-App im gemeinsamen Velaris-Monorepo. Keine Apple-Developer-Mitgliedschaft oder kostenpflichtige Domain nötig.
 
 ## Schnellstart
