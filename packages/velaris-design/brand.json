@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "name": "VELARIS",
   "theme": {
     "background": "#08080D",
@@ -32,7 +32,8 @@
     "animeMovies": "Anime Filme",
     "collections": "Sammlungen",
     "animation": "Animation",
-    "cartoons": "Cartoons"
+    "cartoons": "Cartoons",
+    "youtube": "YouTube"
   },
   "homeRows": {
     "topTen": "Top 10 für dich",
@@ -77,6 +78,10 @@
     "series": "#7DD3FC",
     "anime": "#FF8A00",
     "animeMovies": "#FFD43B",
+    "animation": "#FF6FAE",
+    "cartoons": "#00D9C0",
+    "favorites": "#E8A0FF",
+    "collections": "#D9A86C",
     "youtube": "#FF0033"
   }
 }
