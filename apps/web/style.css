@@ -306,3 +306,22 @@ button:disabled{cursor:wait;opacity:.65}
     .shell{padding-bottom:calc(97px + env(safe-area-inset-bottom))}
   }
 }
+
+/* Velaris Web 2.1.0 – branded category color pass, shared by desktop and iPhone PWA.
+   Background stays near-black; accents follow the active category. */
+:root{--accent-contrast:#fff}
+.logo .brand-section{color:var(--accent);letter-spacing:.04em;font-size:.82em;transition:color .25s ease}
+.category-page{background:radial-gradient(ellipse 48% 190px at 15% 0%,color-mix(in srgb,var(--accent) 11%,transparent),transparent 90%),#08080D}
+.category-heading{padding:6px 0 22px;margin-bottom:8px;border-bottom:1px solid color-mix(in srgb,var(--accent) 28%,transparent)}
+.category-heading h1{color:var(--accent);font-size:clamp(25px,3vw,43px);letter-spacing:.035em;line-height:1.15;margin:0 0 7px;text-shadow:0 0 33px color-mix(in srgb,var(--accent) 22%,transparent)}
+.category-heading p{color:#b9b9c3;margin:0;font-size:14px}
+.category-heading:after{content:"";display:block;margin-top:17px;width:75px;height:3px;background:var(--accent);border-radius:8px}
+.tabs button.selected{color:var(--accent)}
+.tabs button.selected:before{background:var(--accent);box-shadow:0 0 13px var(--accent)}
+.tabs button:focus-visible,.poster:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.poster:hover img,.poster:focus-visible img{border-color:var(--accent);box-shadow:0 7px 26px color-mix(in srgb,var(--accent) 26%,transparent)}
+.primary,.p8-dialog .primary{background:var(--accent);color:var(--accent-contrast);box-shadow:0 8px 24px color-mix(in srgb,var(--accent) 22%,transparent)}
+.primary:hover{background:color-mix(in srgb,var(--accent) 80%,white)}
+.eyebrow,.section-kicker,.row-arrow{color:var(--accent)}
+.poster .progress i,.episode-progress i,.hero-dot.active{background:var(--accent)}
+@media(max-width:849px){.logo .brand-section{font-size:.7em}.category-heading h1{font-size:26px}}
