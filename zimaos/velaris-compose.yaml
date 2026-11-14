@@ -1,15 +1,19 @@
 name: velaris-zimaos
 services:
   velaris-web:
-    image: velaris-web:local
+    # Public, pullable Docker image: ZimaOS does not need a private/local image.
+    image: nginx:1.27-alpine
     container_name: velaris-zimaos-web
     restart: unless-stopped
     ports:
-      - target: 80
-        published: "8089"
-        protocol: tcp
+      - "8089:80"
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    volumes:
+      # Replace __VELARIS_WEB_DIR__ with the *absolute* ZimaOS path to apps/web
+      # before importing into the ZimaOS app installer.
+      - "__VELARIS_WEB_DIR__:/usr/share/nginx/html:ro"
+      - "__VELARIS_WEB_DIR__/nginx.conf:/etc/nginx/conf.d/default.conf:ro"
     read_only: true
     tmpfs:
       - /var/cache/nginx
@@ -31,8 +35,8 @@ x-casaos:
     en_US: Your Jellyfin streaming experience
     de_DE: Deine Jellyfin-Streaming-App
   description:
-    en_US: Velaris 2.0.0 with category accent colors and Jellyfin playback.
-    de_DE: Velaris 2.0.0 mit Kategorie-Akzentfarben und Jellyfin-Wiedergabe.
+    en_US: Velaris Web 2.0.0 using the shared ZimaOS checkout.
+    de_DE: Velaris Web 2.0.0 aus dem gemeinsamen ZimaOS-Repository.
   author: Velaris
   developer: Velaris
   category: Entertainment
@@ -42,6 +46,3 @@ x-casaos:
   version: "2.0.0"
   update_at: "2026-11-14"
   repo: https://github.com/Homiiboy/Velaris
-  release_notes:
-    en_US: Category accent colors for the Velaris 2.0.0 web app.
-    de_DE: Kategorie-Akzentfarben für Velaris Web 2.0.0.
