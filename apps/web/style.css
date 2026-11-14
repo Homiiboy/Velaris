@@ -325,3 +325,47 @@ button:disabled{cursor:wait;opacity:.65}
 .eyebrow,.section-kicker,.row-arrow{color:var(--accent)}
 .poster .progress i,.episode-progress i,.hero-dot.active{background:var(--accent)}
 @media(max-width:849px){.logo .brand-section{font-size:.7em}.category-heading h1{font-size:26px}}
+
+
+/* Velaris YouTube category – Web 2.1.1 (UI 1–4, playback transport gated). */
+.yt-page{--accent:#FF0033;min-height:65vh}
+.yt-add{display:grid;gap:14px;margin:22px 0 38px;padding:22px;border-radius:18px;border:1px solid #ff003344;background:linear-gradient(125deg,#2a101b,#121017)}
+.yt-add h2,.yt-library h2{font-size:clamp(18px,3vw,25px);margin:0 0 6px}
+.yt-add .hint{margin:0;color:#c7bbc3}
+.yt-add-form{display:flex;gap:10px;flex-wrap:wrap}
+.yt-add-form input{flex:1 1 235px;min-width:0;min-height:48px;background:#08080dcc;border:1px solid #ffffff44;border-radius:11px;color:white;font:inherit;padding:10px 13px}
+.yt-add-form input:focus-visible{outline:2px solid #ff0033}
+.yt-add-form .primary{min-height:48px}
+.yt-feedback{min-height:20px;color:#efb0bd;font-size:13px;margin:0}
+.yt-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));gap:22px;margin:18px 0 32px}
+.yt-card{border:0;padding:0;background:transparent;text-align:left;color:#fff;cursor:pointer;min-width:0;display:flex;flex-direction:column;gap:9px}
+.yt-card-art{position:relative;display:block;overflow:hidden;aspect-ratio:16/9;border-radius:13px;background:#22141a;border:1px solid #ffffff26}
+.yt-card-art img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .25s}
+.yt-card:hover img,.yt-card:focus-visible img{transform:scale(1.045)}
+.yt-card:hover .yt-card-art,.yt-card:focus-visible .yt-card-art{border-color:#FF0033;box-shadow:0 9px 32px #ff00332e}
+.yt-card:focus-visible{outline:2px solid #ff0033;outline-offset:5px;border-radius:10px}
+.yt-duration{position:absolute;bottom:9px;right:9px;background:#000d;border-radius:5px;font-size:12px;padding:4px 7px;font-weight:800}
+.yt-play-icon{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:grid;place-items:center;width:58px;height:42px;border-radius:13px;background:#ff0033d9;font-size:20px;opacity:.0;transition:opacity .2s}
+.yt-card:hover .yt-play-icon,.yt-card:focus-visible .yt-play-icon{opacity:1}
+.yt-card-info{display:flex;flex-direction:column;gap:5px;padding:2px 4px}
+.yt-card-info strong{line-height:1.35;font-size:15px;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+.yt-card-info small{color:#bdb5be;font-size:13px}
+.yt-details>.pill{margin-bottom:16px}
+.yt-detail-art{width:100%;max-width:1060px;aspect-ratio:16/9;border-radius:20px;overflow:hidden;background:#161016;border:1px solid #ffffff24;margin:12px 0 28px}
+.yt-detail-art img{width:100%;height:100%;object-fit:cover}
+.yt-details h1{font-size:clamp(24px,5vw,44px);margin:8px 0 14px;max-width:980px;line-height:1.15}
+.yt-meta{display:flex;flex-wrap:wrap;gap:16px;color:#d7cad1;font-weight:700;margin-bottom:22px}
+.yt-actions{display:flex;flex-wrap:wrap;gap:12px}
+.yt-actions button{min-height:46px}
+.yt-copy{color:#d3cbd1;white-space:pre-wrap;overflow-wrap:anywhere;max-width:830px;line-height:1.65;padding-top:20px}
+.yt-player{position:fixed;inset:0;z-index:10020;background:#050507;display:flex;align-items:center;justify-content:center;color:white}
+.yt-player video{width:100%;height:100%;object-fit:contain;max-height:100svh;background:#050507}
+.yt-player-top{position:absolute;z-index:2;top:0;left:0;right:0;display:flex;align-items:center;gap:15px;padding:calc(16px + env(safe-area-inset-top)) 20px 30px;background:linear-gradient(#000e,transparent)}
+.yt-player-top strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:clamp(13px,2vw,18px)}
+.yt-player-bottom{position:absolute;bottom:0;left:0;right:0;display:flex;flex-direction:column;align-items:center;gap:12px;padding:35px 16px calc(22px + env(safe-area-inset-bottom));background:linear-gradient(transparent,#000e)}
+.yt-transport{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.yt-transport button{border:1px solid #ffffff55;background:#2e2630;color:white;border-radius:12px;min-height:44px;min-width:75px;font-weight:800}
+.yt-transport button:disabled{opacity:.45;cursor:not-allowed}
+.yt-player-message{color:#f4cbd4;font-size:13px;max-width:650px;text-align:center;line-height:1.5;margin:0}
+@media(max-width:480px){.yt-page{padding-left:14px;padding-right:14px}.yt-add{padding:16px}.yt-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}.yt-card-info strong{font-size:13px}.yt-card-info small{font-size:11px}.yt-play-icon{opacity:.85;width:42px;height:33px;font-size:15px}.yt-player-top{padding-left:10px}.yt-details h1{font-size:26px}}
+@media(max-width:360px){.yt-grid{grid-template-columns:1fr}}
