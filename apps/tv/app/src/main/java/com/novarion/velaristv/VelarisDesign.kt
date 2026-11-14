@@ -8,6 +8,25 @@ import org.json.JSONObject
 object VelarisDesign {
     private var config = JSONObject()
     private var accentOverride: Int? = null
+    private var activeSection: String = "Start"
+
+    fun setCategory(section: String) { activeSection = section }
+
+    private fun categoryAccent(): Int? {
+        val key = when(activeSection) {
+            "Start" -> "home"
+            "Filme" -> "movies"
+            "Serien" -> "series"
+            "Anime" -> "anime"
+            "Anime Filme" -> "animeMovies"
+            "YouTube" -> "youtube"
+            else -> return null
+        }
+        val hex = config.optJSONObject("categoryAccents")?.optString(key).orEmpty()
+        return try { Color.parseColor(hex) } catch (_: Exception) { null }
+    }
+
+    fun darkTextOnAccent(): Boolean = activeSection == "Serien" || activeSection == "Anime Filme"
 
     // Only accent elements change: backdrops and dark gradients stay intact.
     val accents = linkedMapOf(
@@ -39,7 +58,7 @@ object VelarisDesign {
     }
 
     fun color(key: String, fallback: Int): Int = if (key == "accent" || key == "focus" || key == "accentPressed") {
-        accentOverride ?: fallback
+        categoryAccent() ?: accentOverride ?: fallback
     } else try {
         Color.parseColor(config.optJSONObject("theme")?.optString(key).orEmpty())
     } catch (_: Exception) { fallback }
