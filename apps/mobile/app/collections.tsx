@@ -5,7 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { getCollections } from '@/services/jellyfin';
 import { MediaCard } from '@/components/MediaCard';
 import type { JellyfinItem } from '@/types/jellyfin';
-import { colors } from '@/theme';
+import { colors, design } from '@/theme';
 import { VelarisHeader } from '@/components/VelarisHeader';
 import { useVelarisTheme } from '@/context/ThemeContext';
 
@@ -22,7 +22,7 @@ export default function CollectionsScreen(){
  },[session,retry]);
  if(!session)return <Redirect href="/connect"/>;
  return <View style={styles.page}>
-  <VelarisHeader scope="collections" back/><Text style={styles.title}>Sammlungen</Text>
+  <VelarisHeader scope="collections" back/><Text style={[styles.title,{color:design.categoryAccents.collections}]}>VELARIS SAMMLUNGEN</Text>
   {loading?<ActivityIndicator style={{marginTop:50}} color={accentColor}/>:<FlatList data={items} numColumns={3} contentContainerStyle={styles.content} columnWrapperStyle={styles.row}
    ListEmptyComponent={<View style={styles.emptyContainer}>
      <Text style={styles.empty}>{error?'Jellyfin konnte die Sammlungen nicht laden.':'Keine Sammlungen in Jellyfin gefunden.'}</Text>
