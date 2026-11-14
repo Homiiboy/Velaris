@@ -72,7 +72,8 @@
     "series"
   ],
   "categoryAccents": {
-    "movies": "#7C5CFC",
+    "home": "#7C5CFC",
+    "movies": "#46D369",
     "series": "#7DD3FC",
     "anime": "#FF8A00",
     "animeMovies": "#FFD43B",
