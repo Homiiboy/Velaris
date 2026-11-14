@@ -75,6 +75,23 @@ Geplant sind direktes Abspielen von YouTube-Videos sowie optionales Archivieren 
 
 Direktes Streaming **innerhalb von Jellyfin/Velaris**, Kanalabonnements, Bibliothekssynchronisierung und automatische Downloads sind noch nicht implementiert. Das Plugin übernimmt keinen fremden Quellcode. Vor der Installation müssen Jellyfin-Version, Container-Netzwerk und Zugriffsrechte verifiziert werden.
 
+### YouTube-Roadmap
+
+Die Versionsstände beschreiben geplante Entwicklungsmeilensteine und keine fertigen Releases. Ein Meilenstein gilt erst nach erfolgreichem Test auf der vorgesehenen Jellyfin-Version als abgeschlossen.
+
+| Version | Schwerpunkt | Status |
+| --- | --- | --- |
+| **V0.1.0** | Plugin-Grundstruktur (C#), yt-dlp/FFmpeg-Sidecar, Docker Compose, geschützte Metadaten- und manuelle Download-API | 🟡 Grundstruktur im [Entwicklungsbranch](https://github.com/Homiiboy/Velaris/tree/feat/velaris-youtube-scaffold), Build/Integration ungetestet |
+| **V0.2.0** | YouTube-Videos direkt über Jellyfin streamen; kompatible Videoformate, Thumbnails, Titel und Beschreibungen | ⬜ Geplant |
+| **V0.3.0** | Videos gezielt herunterladen, lokal mit Thumbnail/Metadaten ablegen und als Jellyfin-Medien einlesen | ⬜ Geplant |
+| **V0.4.0** | Kanäle und Playlists verwalten, neue Videos synchronisieren, Download-Warteschlange und automatische Aktualisierung | ⬜ Geplant |
+| **V0.5.0** | Wiedergabefortschritt/Gesehen-Status, Deduplizierung, Fehlerbehandlung und Berechtigungen | ⬜ Geplant |
+| **V1.0.0** | Stabilitäts- und Gerätetests, dokumentierte ZimaOS-Installation und Integration in Velaris Web, TV und Smartphone | ⬜ Geplant |
+
+**Nächste konkrete Schritte:** Jellyfin-Version auf ZimaOS verifizieren, Plugin-Build und Sidecar lokal testen, sichere Plugin-zu-Sidecar-Kommunikation herstellen und danach die Streaming-Integration entwickeln. Downloads sollen standardmäßig manuell ausgelöst werden, damit Speicherplatz kontrollierbar bleibt.
+
+**GitHub Actions:** Der YouTube-Build wird nur manuell über `workflow_dispatch` gestartet; keine automatischen Builds bei Push oder Pull Requests.
+
 ## GitHub Actions
 
 Die aktiven Workflows liegen zentral in `.github/workflows`:
