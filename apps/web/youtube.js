@@ -1,7 +1,7 @@
 /* Velaris YouTube – Web category, personal links, details and player UI.
  * Uses only the authenticated Jellyfin metadata API; never accesses the
  * sidecar directly or puts a Jellyfin/sidecar token into video URLs.
- * Real HTML5 playback remains gated until the secure media delivery phase.
+ * Playback uses short-lived Jellyfin playback tickets; never the user token in the media URL.
  */
 globalThis.VelarisYouTube = (() => {
   const DEMO = 'jNQXAC9IVRw';
@@ -116,7 +116,7 @@ globalThis.VelarisYouTube = (() => {
         '<div class="yt-detail-art"><img referrerpolicy="no-referrer" src="'+esc(thumb(v))+'" alt=""></div>'+
         '<div class="eyebrow">VELARIS YOUTUBE</div><h1>'+esc(v.title || id)+'</h1>'+
         '<div class="yt-meta"><span>'+esc(v.channel || v.uploader || 'YouTube')+'</span><span>'+esc(duration(v.duration))+'</span></div>'+
-        '<div class="yt-actions"><button type="button" class="primary" id="yt-play">▶ Player öffnen</button>'+
+        '<div class="yt-actions"><button type="button" class="primary" id="yt-play">▶ Abspielen</button>'+
         '<button type="button" class="secondary" id="yt-remove">Aus meiner Liste entfernen</button></div>'+
         '<p class="yt-copy">'+esc(v.description || 'Keine Beschreibung verfügbar.')+'</p></main>');
       app.querySelector('#yt-back').onclick=show;
@@ -131,28 +131,62 @@ globalThis.VelarisYouTube = (() => {
 
   function player(v=currentVideo) {
     if(!v)return show();
-    // The native player controls are ready. Do not attach a signed source URL
-    // or Jellyfin token to <video src>. Browser-safe delivery is phase 5.
     document.querySelector('#yt-player')?.remove();
+    const account=session();
+    if(!account)return auth();
     const wrap=document.createElement('div');
     wrap.className='yt-player';wrap.id='yt-player';
     wrap.innerHTML='<div class="yt-player-top"><button class="secondary" id="yt-player-close" type="button">‹ Zurück</button><strong>'+esc(v.title || 'YouTube')+'</strong></div>'+
-      '<video id="yt-video" controls playsinline preload="none" poster="'+esc(thumb(v))+'" aria-label="'+esc(v.title || 'YouTube-Video')+'"></video>'+
+      '<video id="yt-video" controls playsinline preload="metadata" referrerpolicy="no-referrer" poster="'+esc(thumb(v))+'" aria-label="'+esc(v.title || 'YouTube-Video')+'"></video>'+
       '<div class="yt-player-bottom"><div class="yt-transport"><button id="yt-rewind" type="button" aria-label="10 Sekunden zurück">↶ 10</button><button id="yt-toggle" type="button" disabled aria-label="Abspielen oder pausieren">▶ Start</button><button id="yt-forward" type="button" aria-label="10 Sekunden vor">10 ↷</button></div>'+
-      '<p class="yt-player-message" role="status">Player-Oberfläche vorbereitet. Die Browser-Wiedergabe wird erst nach sicherer Authentifizierung des Videostreams freigeschaltet.</p></div>';
+      '<p class="yt-player-message" role="status">Sichere Wiedergabe wird vorbereitet …</p></div>';
     app.append(wrap);
     const video=wrap.querySelector('video');
     const status=wrap.querySelector('.yt-player-message');
     const toggle=wrap.querySelector('#yt-toggle');
+    let closed=false;
     const update=()=>{toggle.textContent=video.paused?'▶ Start':'Ⅱ Pause'};
-    toggle.onclick=()=>{if(!video.src)return;video.paused?video.play().catch(()=>{}):video.pause()};
-    wrap.querySelector('#yt-rewind').onclick=()=>{if(Number.isFinite(video.duration))video.currentTime=Math.max(0,video.currentTime-10);else status.textContent='Spulen ist erst bei einem geladenen Videostream möglich.'};
-    wrap.querySelector('#yt-forward').onclick=()=>{if(Number.isFinite(video.duration))video.currentTime=Math.min(video.duration,video.currentTime+10);else status.textContent='Spulen ist erst bei einem geladenen Videostream möglich.'};
-    video.onplay=update;video.onpause=update;video.onloadedmetadata=()=>{toggle.disabled=false;update();status.textContent=''};
-    const close=()=>{video.pause();video.removeAttribute('src');video.load();wrap.remove();window.removeEventListener('keydown',onKey)};
     const onKey=e=>{if(e.key==='Escape')close()};
+    const close=()=>{
+      if(closed)return;
+      closed=true;
+      video.pause();
+      video.removeAttribute('src');
+      video.load();
+      wrap.remove();
+      window.removeEventListener('keydown',onKey);
+    };
+    toggle.onclick=()=>{if(!video.src)return;video.paused?video.play().catch(()=>{status.textContent='Wiedergabe konnte nicht gestartet werden.'}):video.pause()};
+    wrap.querySelector('#yt-rewind').onclick=()=>{if(Number.isFinite(video.duration))video.currentTime=Math.max(0,video.currentTime-10);else status.textContent='Spulen ist erst nach dem Laden des Videos möglich.'};
+    wrap.querySelector('#yt-forward').onclick=()=>{if(Number.isFinite(video.duration))video.currentTime=Math.min(video.duration,video.currentTime+10);else status.textContent='Spulen ist erst nach dem Laden des Videos möglich.'};
+    video.onplay=update;video.onpause=update;
+    video.onloadedmetadata=()=>{toggle.disabled=false;update();status.textContent=''};
+    video.onerror=()=>{if(!closed)status.textContent='Wiedergabe fehlgeschlagen. Prüfe Jellyfin, das Videoformat und die Streaming-Verbindung.'};
     wrap.querySelector('#yt-player-close').onclick=close;
     window.addEventListener('keydown',onKey);
+
+    // Authenticated POST creates a random, video-scoped playback ticket.
+    // Its URL is safe to pass to the native HTML5 player: no Jellyfin or
+    // sidecar API token appears in the URL or in page markup.
+    (async()=>{
+      try{
+        const result=await api('/VelarisYouTube/Videos/'+encodeURIComponent(v.id)+'/Ticket',{method:'POST'},account);
+        if(closed||session()?.userId!==account.userId||session()?.url!==account.url)return;
+        if(typeof result?.playbackPath!=='string'||!/^\/VelarisYouTube\/Playback\/[A-F0-9]{64}$/.test(result.playbackPath)){
+          throw Error('Ungültige Wiedergabe-Freigabe');
+        }
+        video.src=base(account)+result.playbackPath;
+        video.load();
+        status.textContent='Stream wird geladen …';
+        // iOS Safari may require the user to tap the native play button
+        // because the ticket request runs asynchronously.
+        try{await video.play()}catch{
+          if(!closed)status.textContent='Zum Starten bitte auf ▶ im Videoplayer tippen.';
+        }
+      }catch(err){
+        if(!closed){status.textContent='Wiedergabe konnte nicht vorbereitet werden: '+(err?.message||'Verbindung fehlgeschlagen');toggle.disabled=true}
+      }
+    })();
   }
 
   return {show,details,player};
