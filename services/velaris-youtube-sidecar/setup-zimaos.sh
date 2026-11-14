@@ -6,7 +6,7 @@ set -euo pipefail
 HERE="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 cd "$HERE"
 
-for cmd in openssl sudo docker; do
+for cmd in od tr sudo docker; do
   if ! command -v "$cmd" >/dev/null 2>&1; then
     echo "Missing prerequisite: $cmd" >&2
     exit 1
@@ -27,7 +27,11 @@ if [ -f .env ]; then
   DATA_DIR="${VELARIS_YOUTUBE_ARCHIVE_PATH:-}"
 else
   umask 077
-  TOKEN="$(openssl rand -hex 32)"
+  TOKEN="$(od -An -N32 -tx1 /dev/urandom | tr -d '[:space:]')"
+  if [ "${#TOKEN}" -ne 64 ]; then
+    echo "Could not generate a secure 32-byte token." >&2
+    exit 1
+  fi
   DATA_DIR="$HERE/data"
   printf 'VELARIS_YOUTUBE_TOKEN=%s\nVELARIS_YOUTUBE_ARCHIVE_PATH=%s\n' "$TOKEN" "$DATA_DIR" > .env
   echo "Generated private API token in $HERE/.env (not printing it)."
