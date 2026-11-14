@@ -6,11 +6,11 @@
   <img src="assets/banners/VelarisBannerTV.png" alt="Velaris TV Banner" width="320" />
 </p>
 
-Gemeinsames Repository für Velaris auf iOS, Android, Android TV / Google TV und als installierbare iPhone-Web-App.
+Gemeinsames Repository für Velaris auf iOS, Android, Android TV / Google TV und als installierbare Web-App (PWA). Jellyfin dient als Medienserver; die Plattformen werden unabhängig versioniert.
 
 ## Stand der Zusammenführung
 
-Die vollständigen Quellstände beider Apps wurden übernommen. Aktuell sind es zwei separat baubare Anwendungen in einem Repository. Gemeinsame Anwendungslogik und eine einheitliche, geräteangepasste Oberfläche sind der nächste Schritt; dieser Import stellt noch keine gemeinsame Runtime her.
+Die mobilen, TV- und Web-Anwendungen liegen in einem Monorepo, bleiben aber eigenständig baubar und versioniert. Gemeinsame Designvorgaben liegen unter `packages/velaris-design/`; es gibt derzeit keine einheitliche Runtime.
 
 | Bereich | Pfad | Technik |
 | --- | --- | --- |
@@ -42,7 +42,11 @@ Typprüfung: `npm run typecheck`.
 Android-Test-APK über EAS: `npx eas-cli build --platform android --profile preview`.
 Die vorhandene Expo-Projektzuordnung bleibt bestehen; dafür ist Zugriff auf das bestehende Expo-Projekt erforderlich.
 
-## iPhone-Web-App (PWA)\n\nDie neue [Velaris Web-App](apps/web/README.md) kann auf ZimaOS per Docker und im privaten Tailnet via Tailscale Serve (HTTPS) betrieben werden. Danach über Safari zum iPhone-Home-Bildschirm hinzufügen. Ein Apple-Developer-Account oder eine kostenpflichtige Domain ist nicht nötig. Für die Jellyfin-Verbindung sind HTTPS und korrektes CORS bzw. ein Reverse Proxy erforderlich. Web-App MVP, noch nicht auf iPhone und ZimaOS validiert.\n\n## Velaris TV 1.0.0 (UI-Polish-Pass 10)
+## Velaris Web (PWA)
+
+Die [Web-App](apps/web/README.md) läuft über Docker/Nginx auf ZimaOS und kann via Tailscale Serve im privaten Tailnet per HTTPS erreicht werden. iOS-Nutzer können sie in Safari zum Home-Bildschirm hinzufügen. Die tatsächliche Wiedergabe hängt von HTTPS, Jellyfin-Erreichbarkeit, Browser-Codecs und Transcoding ab. Versionsangaben oben sind Quellcode-Stände, keine Bestätigung für ein ausgerolltes Deployment.
+
+## Velaris TV 1.0.0 (UI-Polish-Pass 10)
 
 Die native Android-TV-App in `apps/tv` ist auf **Version 1.0.0** (`versionCode 8`) gesetzt. Sie besitzt weiter dieselbe Android-Anwendungs-ID `com.novarion.velaristv`; die Smartphone-App bleibt unabhängig versioniert.
 
@@ -59,6 +63,18 @@ gradle :app:lintDebug :app:assembleDebug
 
 APK: `apps/tv/app/build/outputs/apk/debug/app-debug.apk`.
 
+## Velaris YouTube – in Entwicklung
+
+Die experimentelle Jellyfin-YouTube-Integration wird aktuell in [Pull Request #29](https://github.com/Homiiboy/Velaris/pull/29) auf Branch `feat/velaris-youtube-scaffold` entwickelt. **Sie ist noch nicht auf `main` integriert oder auf dem ZimaOS-Server installiert.**
+
+Geplant sind direktes Abspielen von YouTube-Videos sowie optionales Archivieren mit Thumbnails und Metadaten. Die Grundstruktur umfasst:
+
+- `services/velaris-youtube-plugin/`: Jellyfin-Plugin (C#/.NET 9; Kompatibilität mit der installierten Jellyfin-Version noch zu prüfen).
+- `services/velaris-youtube-sidecar/`: Docker-basierter yt-dlp/FFmpeg-Dienst mit authentifizierter Metadaten- und Archiv-API.
+- `services/README-YOUTUBE.md`: Entwicklungs- und Installationshinweise (auf dem Feature-Branch).
+
+Direktes Streaming **innerhalb von Jellyfin/Velaris**, Kanalabonnements, Bibliothekssynchronisierung und automatische Downloads sind noch nicht implementiert. Das Plugin übernimmt keinen fremden Quellcode. Vor der Installation müssen Jellyfin-Version, Container-Netzwerk und Zugriffsrechte verifiziert werden.
+
 ## GitHub Actions
 
 Die aktiven Workflows liegen zentral in `.github/workflows`:
@@ -66,6 +82,7 @@ Die aktiven Workflows liegen zentral in `.github/workflows`:
 - **Android TV CI**: TV-Lint und Debug-APK bei TV-Änderungen oder manuell.
 - **Build unsigned iOS IPA**: manueller Build; die IPA ist unsigniert und muss vor einer Geräteinstallation signiert werden.
 - **Generate package-lock**: manuelle Aktualisierung des Smartphone-Lockfiles.
+- **Velaris YouTube scaffold** (derzeit Feature-Branch): ausschließlich manueller Start per `workflow_dispatch`, keine Push- oder Pull-Request-Builds.
 
 Arbeitsverzeichnisse, npm-Cache und Artefaktpfade sind an die neue Struktur angepasst. Ein lokaler Android-Smartphone-Workflow war im Ursprungsrepository nicht vorhanden; dafür bestehen die EAS-Buildprofile.
 
@@ -118,6 +135,6 @@ ebenfalls mit aktualisiert werden. Die CI meldet Abweichungen.
 - Geräte-eigene Einstellungen, heruntergeladene Medien und lokal gewählte
   Profilbilder werden **nicht** über Jellyfin synchronisiert.
 
-GitHub Actions prüfen die gemeinsame Gestaltung und die mobile Typprüfung;
+GitHub Actions können die gemeinsame Gestaltung und die mobile Typprüfung prüfen;
 die separate TV-CI führt Lint und den APK-Build aus. Gerätespezifische
 Funktionstests sind weiterhin notwendig.
