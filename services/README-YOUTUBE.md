@@ -81,6 +81,37 @@ legacy web instance on 8088 and Jellyfin on 8097. Do not expose port
 A later Jellyfin plugin integration will require a separate private
 container network and proper authentication.
 
+## Streaming preflight (V0.2.0, before Jellyfin integration)
+
+The live metadata test already passed on ZimaOS for `jNQXAC9IVRw`.
+Next, check that the sidecar can resolve a **real source** and read a small
+byte range from it. No video is downloaded or saved; **temporary signed
+media URLs and API tokens are never printed**.
+
+```bash
+cd ~/AppData/Velaris-v2
+git pull origin main
+bash services/velaris-youtube-sidecar/test-stream-zimaos.sh jNQXAC9IVRw
+```
+
+The streaming test invokes the existing protected
+`GET /videos/{id}/stream` API within Docker, then requests at most
+1024 bytes from its HTTPS media source. It requires no new port and no
+rebuild because this step adds only a host-side test script.
+
+**Successful preflight** means: the resolver provides a temporary source and
+the sidecar can access bytes from it. It does **not** mean the Jellyfin 10.11.11
+player can already use that source, or that all formats/codecs work. If a
+source is unavailable due to YouTube restrictions, the test exits with a
+sanitized error; troubleshoot the resolver with:
+
+```bash
+cd ~/AppData/Velaris-v2/services/velaris-youtube-sidecar
+sudo docker compose logs --tail=60
+```
+
+Do not share logs if they contain any credentials or signed source URLs.
+
 ## Protected API
 
 All endpoints below require `Authorization: Bearer <token>`.
