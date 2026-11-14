@@ -78,7 +78,7 @@ APK: `apps/tv/app/build/outputs/apk/debug/app-debug.apk`.
 
 ## Velaris YouTube – in Entwicklung
 
-Die experimentelle Jellyfin-YouTube-Integration wird aktuell in [Pull Request #29](https://github.com/Homiiboy/Velaris/pull/29) auf Branch `feat/velaris-youtube-scaffold` entwickelt. **Sie ist noch nicht auf `main` integriert oder auf dem ZimaOS-Server installiert.**
+Die experimentelle Jellyfin-YouTube-Integration wird aktuell auf Branch `feat/youtube-v0.1-integration` weiterentwickelt. Der bisherige [Pull Request #29](https://github.com/Homiiboy/Velaris/pull/29) enthält nur die ältere Grundstruktur. **Sie ist noch nicht auf `main` integriert oder auf dem ZimaOS-Server installiert.**
 
 Geplant sind direktes Abspielen von YouTube-Videos sowie optionales Archivieren mit Thumbnails und Metadaten. Die Grundstruktur umfasst:
 
@@ -86,7 +86,7 @@ Geplant sind direktes Abspielen von YouTube-Videos sowie optionales Archivieren 
 - `services/velaris-youtube-sidecar/`: Docker-basierter yt-dlp/FFmpeg-Dienst mit authentifizierter Metadaten- und Archiv-API.
 - `services/README-YOUTUBE.md`: Entwicklungs- und Installationshinweise (auf dem Feature-Branch).
 
-Direktes Streaming **innerhalb von Jellyfin/Velaris**, Kanalabonnements, Bibliothekssynchronisierung und automatische Downloads sind noch nicht implementiert. Das Plugin übernimmt keinen fremden Quellcode. Vor der Installation müssen Jellyfin-Version, Container-Netzwerk und Zugriffsrechte verifiziert werden.
+Direktes Streaming **innerhalb von Jellyfin/Velaris**, Kanalabonnements, Bibliothekssynchronisierung und automatische Downloads sind noch nicht implementiert. Der Sidecar-Dienst kann nur eine kurzlebige Video-Quelladresse ermitteln und einzelne Downloads auf ausdrückliche Anforderung starten. Das Plugin übernimmt keinen fremden Quellcode. Vor der Installation müssen Jellyfin-Version, Container-Netzwerk und Zugriffsrechte verifiziert werden.
 
 ### Kategorie-Farbkonzept (Web, TV und Smartphone)
 
@@ -153,7 +153,7 @@ Die Versionsstände beschreiben geplante Entwicklungsmeilensteine und keine fert
 
 | Version | Schwerpunkt | Status |
 | --- | --- | --- |
-| **V0.1.0** | Plugin-Grundstruktur (C#), yt-dlp/FFmpeg-Sidecar, Docker Compose, geschützte Metadaten- und manuelle Download-API | 🟡 Grundstruktur im [Entwicklungsbranch](https://github.com/Homiiboy/Velaris/tree/feat/velaris-youtube-scaffold), Build/Integration ungetestet |
+| **V0.1.0** | Plugin-Grundstruktur (C#), yt-dlp/FFmpeg-Sidecar, Docker Compose, geschützte Metadaten- und manuelle Download-API | 🟡 API für Metadaten, temporäre Stream-URL und manuelle Download-Warteschlange im [aktuellen Entwicklungsbranch](https://github.com/Homiiboy/Velaris/tree/feat/youtube-v0.1-integration), ungetestet |
 | **V0.2.0** | YouTube-Videos direkt über Jellyfin streamen; kompatible Videoformate, Thumbnails, Titel und Beschreibungen | ⬜ Geplant |
 | **V0.3.0** | Videos gezielt herunterladen, lokal mit Thumbnail/Metadaten ablegen und als Jellyfin-Medien einlesen | ⬜ Geplant |
 | **V0.4.0** | Kanäle und Playlists verwalten, neue Videos synchronisieren, Download-Warteschlange und automatische Aktualisierung | ⬜ Geplant |
