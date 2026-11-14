@@ -35,14 +35,14 @@ x-casaos:
     en_US: Your Jellyfin streaming experience
     de_DE: Deine Jellyfin-Streaming-App
   description:
-    en_US: Velaris Web 2.0.0 using the shared ZimaOS checkout.
-    de_DE: Velaris Web 2.0.0 aus dem gemeinsamen ZimaOS-Repository.
+    en_US: Velaris Web 2.1.0 with category color branding.
+    de_DE: Velaris Web 2.1.0 mit Kategorie-Farbgestaltung.
   author: Velaris
   developer: Velaris
   category: Entertainment
   architectures:
     - amd64
     - arm64
-  version: "2.0.0"
+  version: "2.1.0"
   update_at: "2026-11-14"
   repo: https://github.com/Homiiboy/Velaris
