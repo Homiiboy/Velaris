@@ -24,7 +24,7 @@ Die mobilen, TV- und Web-Anwendungen liegen in einem Monorepo, bleiben aber eige
 | --- | --- |
 | Velaris TV | **2.0.0** (`versionCode` 9) – Kategorie-Akzentpass |
 | Velaris Smartphone | **2.0.0** (Expo, Android `versionCode` 9) – Kategorie-Akzentpass |
-| Velaris Web | **2.0.0** (PWA-Version und Cachekennung; Kategorie-Akzentpass) |
+| Velaris Web | **2.0.1** (Kategorie-Akzente; Desktop-Navigation oben, iPhone unten) |
 
 Die Versionsnummern sind unabhängig von einem signierten oder ausgerollten Release. Mobile benötigt einen neuen EAS-Build, Web ein neues Deployment und TV eine signierte APK für produktive Updates.
 
