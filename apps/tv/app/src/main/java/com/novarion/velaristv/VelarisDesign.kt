@@ -19,6 +19,10 @@ object VelarisDesign {
             "Serien" -> "series"
             "Anime" -> "anime"
             "Anime Filme" -> "animeMovies"
+            "Animation" -> "animation"
+            "Cartoons" -> "cartoons"
+            "Meine Liste" -> "favorites"
+            "Sammlungen" -> "collections"
             "YouTube" -> "youtube"
             else -> return null
         }
@@ -26,7 +30,7 @@ object VelarisDesign {
         return try { Color.parseColor(hex) } catch (_: Exception) { null }
     }
 
-    fun darkTextOnAccent(): Boolean = activeSection == "Serien" || activeSection == "Anime Filme"
+    fun darkTextOnAccent(): Boolean = activeSection in setOf("Serien", "Anime Filme", "Cartoons", "Meine Liste", "Sammlungen")
 
     // Only accent elements change: backdrops and dark gradients stay intact.
     val accents = linkedMapOf(
