@@ -1,0 +1,64 @@
+name: velaris
+services:
+  velaris-web:
+    image: velaris-web:local
+    container_name: velaris-web
+    restart: unless-stopped
+    ports:
+      - target: 80
+        published: "8088"
+        protocol: tcp
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - velaris-cast-bridge
+    read_only: true
+    tmpfs:
+      - /var/cache/nginx
+      - /var/run
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+  velaris-cast-bridge:
+    image: velaris-cast-bridge:local
+    container_name: velaris-cast-bridge
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      CAST_BRIDGE_PORT: "8766"
+      JELLYFIN_LOCAL_URL: "http://127.0.0.1:8097"
+      JELLYFIN_CAST_URL: "http://192.168.0.74:8097"
+      CAST_KNOWN_HOSTS: ""
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+x-casaos:
+  id: velaris
+  main: velaris-web
+  index: /
+  port_map: "8088"
+  scheme: http
+  icon: https://raw.githubusercontent.com/Homiiboy/Velaris/main/assets/logos/NewAppIcon.png
+  title:
+    en_US: Velaris
+    de_DE: Velaris
+  tagline:
+    en_US: Your Jellyfin streaming experience
+    de_DE: Deine Jellyfin-Streaming-App
+  description:
+    en_US: Velaris 2.0.0 with category accent colors and Jellyfin playback.
+    de_DE: Velaris 2.0.0 mit Kategorie-Akzentfarben und Jellyfin-Wiedergabe.
+  author: Velaris
+  developer: Velaris
+  category: Entertainment
+  architectures:
+    - amd64
+    - arm64
+  version: "2.0.0"
+  update_at: "2026-11-14"
+  repo: https://github.com/Homiiboy/Velaris
+  release_notes:
+    en_US: Category accent colors for the Velaris 2.0.0 web app.
+    de_DE: Kategorie-Akzentfarben für Velaris Web 2.0.0.
