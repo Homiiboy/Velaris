@@ -65,7 +65,7 @@ with platform terms.
 
 ## Next phases
 
-1. **0.1.x:** Confirm exact Jellyfin server version; build plugin against it;
+1. **0.1.x:** Jellyfin server version confirmed: **10.11.11** (.NET 9); build plugin against it;
    local ZimaOS smoke test and secret-handling checks.
 2. **0.2.0:** Authenticated plugin-to-sidecar bridge; expiring stream resolver,
    proxy where needed, format compatibility and usable Jellyfin playback.
