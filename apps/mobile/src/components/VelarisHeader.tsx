@@ -41,7 +41,10 @@ export function VelarisHeader({scope='home',collectionId,home=false,overlay=fals
   const tabEnds=useRef<number[]>([]);
   const {session}=useAuth();
   const {accentColor}=useVelarisTheme();
-  const lightAccent = scope === 'series' || scope === 'animeMovies';
+  const sectionAccents = design.categoryAccents;
+  const sectionKey = scope === 'animeMovies' ? 'animeMovies' : scope;
+  const sectionAccent = sectionKey in sectionAccents ? sectionAccents[sectionKey as keyof typeof sectionAccents] : accentColor;
+  const lightAccent = ['series','animeMovies','cartoons','favorites','collections'].includes(scope);
   const [profile,setProfile]=useState<VelarisProfile | null>(null);
   const [genres,setGenres]=useState<string[]>([]);
   const [genresOpen,setGenresOpen]=useState(false);
@@ -78,7 +81,7 @@ export function VelarisHeader({scope='home',collectionId,home=false,overlay=fals
           <Text style={styles.back}>‹</Text>
         </Pressable>}
         <Pressable onPress={()=>router.push('/(tabs)/home')} accessibilityLabel="Velaris Startseite">
-          <Text style={styles.brand}><Text style={[styles.brandPurple,{color:accentColor}]}>VEL</Text>ARIS</Text>
+          <Text style={styles.brand}><Text style={[styles.brandPurple,{color:sectionAccent}]}>VELARIS</Text>{scope!=='home'&&<Text style={{color:sectionAccent,fontSize:14}}> {String(design.navigation[scope] ?? scope).toLocaleUpperCase('de-DE')}</Text>}</Text>
         </Pressable>
       </View>
       <View style={styles.actions}>
@@ -119,11 +122,11 @@ export function VelarisHeader({scope='home',collectionId,home=false,overlay=fals
           onLayout={e=>{const {x,width}=e.nativeEvent.layout;tabEnds.current[index]=x+width;}}
           accessibilityRole="button" accessibilityState={{selected:scope===item.key}}
           onPress={()=>router.push(item.href as any)}
-          style={({pressed})=>[styles.chip,scope===item.key&&[styles.activeChip,{backgroundColor:accentColor,shadowColor:accentColor}],pressed&&styles.chipPressed]}>
+          style={({pressed})=>[styles.chip,scope===item.key&&[styles.activeChip,{backgroundColor:sectionAccent,shadowColor:sectionAccent}],pressed&&styles.chipPressed]}>
           <Text style={[styles.chipText,scope===item.key&&styles.activeChipText,scope===item.key&&lightAccent&&{color:'#101016'}]}>{item.label}</Text>
         </Pressable>)}
         {home&&<Pressable accessibilityRole="button" accessibilityLabel="Genres"
-          style={({pressed})=>[styles.chip,genresOpen&&[styles.activeChip,{backgroundColor:accentColor}],pressed&&styles.chipPressed]}
+          style={({pressed})=>[styles.chip,genresOpen&&[styles.activeChip,{backgroundColor:sectionAccent}],pressed&&styles.chipPressed]}
           onLayout={e=>{const {x,width}=e.nativeEvent.layout;tabEnds.current[menu.length]=x+width;}}
           onPress={()=>setGenresOpen(v=>!v)}>
           <Text style={[styles.chipText,genresOpen&&styles.activeChipText]}>Genres</Text>
