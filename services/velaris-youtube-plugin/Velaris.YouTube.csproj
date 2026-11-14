@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>Velaris.YouTube</AssemblyName>
+    <RootNamespace>Velaris.YouTube</RootNamespace>
+    <Version>0.1.0</Version>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- Override JellyfinVersion to match the running server. -->
+    <PackageReference Include="Jellyfin.Controller" Version="$(JellyfinVersion)">
+      <ExcludeAssets>runtime</ExcludeAssets>
+    </PackageReference>
+    <PackageReference Include="Jellyfin.Model" Version="$(JellyfinVersion)">
+      <ExcludeAssets>runtime</ExcludeAssets>
+    </PackageReference>
+  </ItemGroup>
+  <PropertyGroup>
+    <JellyfinVersion Condition="'$(JellyfinVersion)' == ''">10.11.11</JellyfinVersion>
+  </PropertyGroup>
+</Project>
