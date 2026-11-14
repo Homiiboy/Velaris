@@ -75,6 +75,20 @@ Geplant sind direktes Abspielen von YouTube-Videos sowie optionales Archivieren 
 
 Direktes Streaming **innerhalb von Jellyfin/Velaris**, Kanalabonnements, Bibliothekssynchronisierung und automatische Downloads sind noch nicht implementiert. Das Plugin übernimmt keinen fremden Quellcode. Vor der Installation müssen Jellyfin-Version, Container-Netzwerk und Zugriffsrechte verifiziert werden.
 
+### Kategorie-Farbkonzept (Web, TV und Smartphone)
+
+Die Kategorie-Akzentfarben sind zentral in [`packages/velaris-design/brand.json`](packages/velaris-design/brand.json) unter `categoryAccents` definiert. Die Implementierung in allen drei App-Oberflächen erfolgt schrittweise; die Hintergründe bleiben im dunklen Velaris-Design.
+
+| Kategorie | Farbe | Hex |
+| --- | --- | --- |
+| Filme | Velaris Violet | `#7C5CFC` |
+| Serien | Eisblau | `#7DD3FC` |
+| Anime | Orange | `#FF8A00` |
+| Anime Filme | Gelb | `#FFD43B` |
+| YouTube | YouTube-Rot | `#FF0033` |
+
+Die jeweilige Akzentfarbe wird für aktive Navigation, ausgewählte Buttons, Fokusrahmen und Fortschrittsanzeigen eingesetzt. Standardtexte bleiben kontrastreich, damit besonders Gelb und Eisblau gut lesbar sind. **Bei YouTube gehört die rote UI-Akzentfarbe zur geplanten Velaris-Integration; sie bedeutet nicht, dass die YouTube-Bedienoberfläche bereits verfügbar ist.**
+
 ### YouTube-Roadmap
 
 Die Versionsstände beschreiben geplante Entwicklungsmeilensteine und keine fertigen Releases. Ein Meilenstein gilt erst nach erfolgreichem Test auf der vorgesehenen Jellyfin-Version als abgeschlossen.
@@ -86,7 +100,7 @@ Die Versionsstände beschreiben geplante Entwicklungsmeilensteine und keine fert
 | **V0.3.0** | Videos gezielt herunterladen, lokal mit Thumbnail/Metadaten ablegen und als Jellyfin-Medien einlesen | ⬜ Geplant |
 | **V0.4.0** | Kanäle und Playlists verwalten, neue Videos synchronisieren, Download-Warteschlange und automatische Aktualisierung | ⬜ Geplant |
 | **V0.5.0** | Wiedergabefortschritt/Gesehen-Status, Deduplizierung, Fehlerbehandlung und Berechtigungen | ⬜ Geplant |
-| **V1.0.0** | Stabilitäts- und Gerätetests, dokumentierte ZimaOS-Installation und Integration in Velaris Web, TV und Smartphone | ⬜ Geplant |
+| **V1.0.0** | Stabilitäts- und Gerätetests, dokumentierte ZimaOS-Installation und Integration in Velaris Web, TV und Smartphone (YouTube-Rot) | ⬜ Geplant |
 
 **Nächste konkrete Schritte:** Jellyfin-Version auf ZimaOS verifizieren, Plugin-Build und Sidecar lokal testen, sichere Plugin-zu-Sidecar-Kommunikation herstellen und danach die Streaming-Integration entwickeln. Downloads sollen standardmäßig manuell ausgelöst werden, damit Speicherplatz kontrollierbar bleibt.
 
