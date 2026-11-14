@@ -81,6 +81,33 @@ legacy web instance on 8088 and Jellyfin on 8097. Do not expose port
 A later Jellyfin plugin integration will require a separate private
 container network and proper authentication.
 
+## Streaming resolver fix – Node.js and EJS
+
+On Jellyfin/ZimaOS the metadata smoke test passed, but streaming initially
+failed with `Requested format is not available` and a missing JavaScript
+runtime warning from yt-dlp 2026.10.26.
+
+The sidecar image now includes **Node.js 24** and uses
+`yt-dlp[default]` to supply the matching EJS challenge solver. The
+Python extractor explicitly enables the Node.js runtime. See the
+[official yt-dlp EJS guide](https://github.com/yt-dlp/yt-dlp/wiki/EJS).
+
+**Rebuild required** (unlike changes to host-side test scripts):
+
+```bash
+cd ~/AppData/Velaris-v2
+git pull origin main
+cd services/velaris-youtube-sidecar
+sudo docker compose up -d --build
+sudo docker exec velaris-youtube-sidecar node --version
+bash test-stream-zimaos.sh jNQXAC9IVRw
+```
+
+The existing `.env` API token and persistent downloads are preserved.
+Do not install a runtime on the ZimaOS host; the runtime belongs only
+inside the YouTube sidecar image. If extraction still fails, capture
+redacted sidecar logs and the status code, **not** signed video URLs.
+
 ## Streaming preflight (V0.2.0, before Jellyfin integration)
 
 The live metadata test already passed on ZimaOS for `jNQXAC9IVRw`.
