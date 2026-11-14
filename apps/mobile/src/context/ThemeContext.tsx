@@ -16,7 +16,9 @@ export const accentOptions = [
 // available for generic screens (settings, profiles, etc.).
 const categoryByRoute: Record<string, keyof typeof design.categoryAccents> = {
   home: 'home', movies: 'movies', series: 'series',
-  anime: 'anime', 'anime-movies': 'animeMovies'
+  anime: 'anime', 'anime-movies': 'animeMovies',
+  animation: 'animation', cartoons: 'cartoons', collections: 'collections',
+  favorites: 'favorites', 'my-list': 'favorites'
 };
 export function categoryAccentForRoute(route: string): string | undefined {
   const category = categoryByRoute[route];
