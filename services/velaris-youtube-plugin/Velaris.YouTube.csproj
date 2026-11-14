@@ -7,6 +7,9 @@
     <RootNamespace>Velaris.YouTube</RootNamespace>
     <Version>0.1.0</Version>
   </PropertyGroup>
+  <PropertyGroup>
+    <JellyfinVersion Condition="'$(JellyfinVersion)' == ''">10.11.11</JellyfinVersion>
+  </PropertyGroup>
   <ItemGroup>
     <!-- Override JellyfinVersion to match the running server. -->
     <PackageReference Include="Jellyfin.Controller" Version="$(JellyfinVersion)">
@@ -16,7 +19,4 @@
       <ExcludeAssets>runtime</ExcludeAssets>
     </PackageReference>
   </ItemGroup>
-  <PropertyGroup>
-    <JellyfinVersion Condition="'$(JellyfinVersion)' == ''">10.11.11</JellyfinVersion>
-  </PropertyGroup>
 </Project>
