@@ -18,8 +18,8 @@ export default function TabLayout(){
   <Tabs.Screen name="home" options={{title:design.navigation.home,tabBarActiveTintColor:categoryAccentForRoute('home'),tabBarIcon:({color})=><Icon symbol="⌂" color={color} size={22}/>}}/>
   <Tabs.Screen name="anime" options={{title:design.navigation.anime,tabBarActiveTintColor:categoryAccentForRoute('anime'),tabBarIcon:({color})=><Icon symbol="✦" color={color}/>}}/>
   <Tabs.Screen name="anime-movies" options={{title:design.navigation.animeMovies,tabBarActiveTintColor:categoryAccentForRoute('anime-movies'),tabBarIcon:({color})=><Icon symbol="◆" color={color}/>}}/>
-  <Tabs.Screen name="animation" options={{title:design.navigation.animation,href:null}}/>
-  <Tabs.Screen name="cartoons" options={{title:design.navigation.cartoons,href:null}}/>
+  <Tabs.Screen name="animation" options={{title:design.navigation.animation,tabBarActiveTintColor:design.categoryAccents.animation,href:null}}/>
+  <Tabs.Screen name="cartoons" options={{title:design.navigation.cartoons,tabBarActiveTintColor:design.categoryAccents.cartoons,href:null}}/>
   <Tabs.Screen name="search" options={{title:'Suche',href:null}}/>
   <Tabs.Screen name="profile" options={{title:'Profil',href:null}}/>
  </Tabs>
