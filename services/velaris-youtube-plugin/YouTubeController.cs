@@ -176,11 +176,11 @@ public sealed class YouTubeController : ControllerBase
 
             if (upstream.Content.Headers.ContentRange is { } contentRange)
             {
-                Response.Headers.ContentRange = contentRange.ToString();
+                Response.Headers["Content-Range"] = contentRange.ToString();
             }
 
-            Response.Headers.AcceptRanges = "bytes";
-            Response.Headers.CacheControl = "private, no-store";
+            Response.Headers["Accept-Ranges"] = "bytes";
+            Response.Headers["Cache-Control"] = "private, no-store";
             await using var source = await upstream.Content.ReadAsStreamAsync(cancellationToken);
             await source.CopyToAsync(Response.Body, 65536, cancellationToken);
         }
