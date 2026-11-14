@@ -46,6 +46,19 @@ Die vorhandene Expo-Projektzuordnung bleibt bestehen; dafür ist Zugriff auf das
 
 Die [Web-App](apps/web/README.md) läuft über Docker/Nginx auf ZimaOS und kann via Tailscale Serve im privaten Tailnet per HTTPS erreicht werden. iOS-Nutzer können sie in Safari zum Home-Bildschirm hinzufügen. Die tatsächliche Wiedergabe hängt von HTTPS, Jellyfin-Erreichbarkeit, Browser-Codecs und Transcoding ab. Versionsangaben oben sind Quellcode-Stände, keine Bestätigung für ein ausgerolltes Deployment.
 
+## Velaris als ZimaOS-App
+
+Für die App-Kachel mit Start/Stopp/Neustart in ZimaOS liegt eine eigene
+[`x-casaos`-App-Definition](zimaos/velaris-compose.yaml) vor.
+Die [Installations- und Migrationsanleitung](zimaos/README.md) erklärt, wie die
+bestehende Web-2.0.0-Docker-Installation in die ZimaOS-App-Verwaltung
+übernommen werden kann, ohne eine zweite Instanz auf Port 8088 zu starten.
+
+**Hinweis:** Das Manifest setzt bereits lokal gebaute Docker-Images voraus.
+Je nach ZimaOS-Installer kann stattdessen die Veröffentlichung versionierter
+Registry-Images notwendig sein. Die App ist nicht automatisch auf ZimaOS
+registriert und ein Git-Pull installiert keine App-Kachel.
+
 ## Velaris TV 2.0.0 (Kategorie-Farbpass)
 
 Die native Android-TV-App in `apps/tv` ist auf **Version 2.0.0** (`versionCode 9`) gesetzt. Sie besitzt weiter dieselbe Android-Anwendungs-ID `com.novarion.velaristv`; die Smartphone-App bleibt unabhängig versioniert.
