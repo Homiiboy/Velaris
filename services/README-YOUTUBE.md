@@ -17,21 +17,69 @@ required HTTP headers**, not a Jellyfin MediaSource or browser-safe streaming
 proxy. URL expiry, codec negotiation and Jellyfin player integration are still
 future milestones. Never log or display the raw stream URL publicly.
 
-## Safe ZimaOS test deployment
+## Safe ZimaOS deployment from `main`
 
-1. Verify that the chosen host archive directory has adequate free disk space.
-2. `cd services/velaris-youtube-sidecar`
-3. `cp .env.example .env`
-4. Generate a unique token with `openssl rand -hex 32`, then place it in
-   `VELARIS_YOUTUBE_TOKEN` inside `.env`.
-5. Set `VELARIS_YOUTUBE_ARCHIVE_PATH` to the absolute persistent directory.
-6. `sudo docker compose up -d --build`
-7. `curl http://127.0.0.1:8787/health`
+Jellyfin on the target server: **10.11.11**. The plugin is not yet
+built or installed. Deploy **only** the standalone sidecar first.
 
-The sidecar is bound **only to localhost**. Do not expose port 8787 to
-the internet, a public reverse proxy, or untrusted applications.
-When Jellyfin is later connected from a separate container, configure a
-private Docker network and keep the bearer token secret.
+Run on the ZimaOS host (no second Git clone needed):
+
+```bash
+cd ~/AppData/Velaris-v2
+git pull origin main
+bash services/velaris-youtube-sidecar/setup-zimaos.sh
+```
+
+The setup script:
+- Generates a **random 64-character API token** with `openssl` in a private
+  `.env` (only on first setup; updates preserve it).
+- Creates `services/velaris-youtube-sidecar/data` with Docker uid/gid
+  **10001** only if it does not already exist. Existing archive ownership
+  is never changed automatically.
+- Uses Docker Compose to build and start `velaris-youtube-sidecar`.
+- Publishes **only** `127.0.0.1:8787`, not a LAN/public port.
+
+Do not commit or share the private `.env` file. Keep your usual
+`~/AppData/Velaris-v2` checkout; updates remain `git pull origin main`.
+If the host has another process on 8787, stop and resolve the conflict
+before changing port mappings.
+
+After the service starts:
+
+```bash
+cd ~/AppData/Velaris-v2
+bash services/velaris-youtube-sidecar/test-zimaos.sh
+sudo docker compose -f services/velaris-youtube-sidecar/compose.yaml ps
+```
+
+Expected smoke-test results: health JSON with `status: ok`, anonymous
+`/library` returns HTTP 401, authorized `/library` returns a JSON array,
+and an invalid video ID returns HTTP 422.
+
+To check metadata for a real publicly accessible video, use only its
+**11-character video ID** as the optional first argument:
+
+```bash
+bash services/velaris-youtube-sidecar/test-zimaos.sh VIDEO_ID_HERE
+```
+
+This contacts YouTube and may fail owing to network restrictions,
+rate limiting or extractor changes. **No video is downloaded** by the
+smoke test.
+
+For troubleshooting:
+
+```bash
+cd ~/AppData/Velaris-v2/services/velaris-youtube-sidecar
+sudo docker compose ps
+sudo docker compose logs --tail=60
+```
+
+The service remains isolated from the existing web app on 8089, the
+legacy web instance on 8088 and Jellyfin on 8097. Do not expose port
+8787 to a public reverse proxy or place the bearer token in browser code.
+A later Jellyfin plugin integration will require a separate private
+container network and proper authentication.
 
 ## Protected API
 
