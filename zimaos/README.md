@@ -1,4 +1,4 @@
-# Velaris 2.0 als ZimaOS-App
+# Velaris 2.1 als ZimaOS-App
 
 Die App-Definition `velaris-compose.yaml` bindet die **bereits vorhandene**
 Velaris-Web-App im Repository als eigene, von ZimaOS verwaltete App ein. Sie
@@ -43,7 +43,7 @@ bereitgestellt wird.
    curl -s http://127.0.0.1:8089/ | grep application-version
    sudo docker ps --format 'table {{.Names}}\t{{.Ports}}'
    ```
-   Erwartet: `2.0.0` und Container `velaris-zimaos-web`.
+   Erwartet: `2.1.0` und Container `velaris-zimaos-web`.
 
 Die alte Cast Bridge bleibt auf Host-Port 8766 aktiv und wird weiter
 über die bestehende `nginx.conf` verwendet. Falls die Bridge später
