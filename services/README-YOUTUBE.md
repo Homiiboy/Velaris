@@ -5,13 +5,13 @@ This remains a **development service**, not an installed or tested Jellyfin plug
 
 ## Architecture
 
-- `velaris-youtube-plugin/`: C# Jellyfin plugin registration/configuration only.
+- `velaris-youtube-plugin/`: C# Jellyfin 10.11.11 plugin with authenticated metadata/stream bridge (source; installation untested).
 - `velaris-youtube-sidecar/`: FastAPI/yt-dlp service for resolving YouTube
   video metadata and temporary stream URLs, and archiving selected videos.
 - Persistent archive: one directory per 11-character YouTube video ID, holding
   the downloaded media, thumbnail and `metadata.info.json`.
 
-The sidecar **does not currently expose media inside Jellyfin**, but now has a private HTTP Range streaming proxy.
+The sidecar has a private HTTP Range proxy. The Jellyfin plugin adds authenticated bridge endpoints in source code, but has **not yet been installed or tested in the running Jellyfin server**.
 `GET /videos/{id}/stream` returns a **temporary direct source URL and its
 required HTTP headers**. Prefer the private `GET /videos/{id}/proxy` endpoint for
 streaming through the sidecar instead of exposing signed source URLs. URL expiry, codec negotiation and Jellyfin player integration are still
@@ -138,6 +138,57 @@ sudo docker compose logs --tail=60
 ```
 
 Do not share logs if they contain any credentials or signed source URLs.
+
+## Jellyfin 10.11.11 server-side bridge (source code V0.2.0)
+
+A Jellyfin plugin controller has been added with the following routes.
+All are protected with Jellyfin's standard `[Authorize]` mechanism:
+
+| Jellyfin endpoint | Purpose |
+| --- | --- |
+| `GET /VelarisYouTube/Health` | Check Jellyfin can reach the private sidecar |
+| `GET /VelarisYouTube/Videos/{id}` | Server-side metadata, without revealing the sidecar token |
+| `GET /VelarisYouTube/Videos/{id}/Stream` | Jellyfin-authenticated HTTP Range forwarding to the private MP4 proxy |
+
+The plugin requires these **server-side** configuration fields:
+`SidecarBaseUrl` (default `http://velaris-youtube-sidecar:8787`) and
+`SidecarApiToken` (the value from the sidecar `.env` file). Do **not**
+store this sidecar token in Web/TV/Smartphone app files, JS, public URLs
+or Git.
+
+The Jellyfin container must be attached to the **same private Docker
+network** as the YouTube sidecar and be able to resolve the sidecar
+hostname. This network bridge is **not configured automatically** because
+we do not yet know the name/network settings of the running ZimaOS
+Jellyfin container.
+
+### First: compile safely, without installing
+
+```bash
+cd ~/AppData/Velaris-v2
+git pull origin main
+bash services/velaris-youtube-plugin/build-zimaos.sh
+```
+
+The build runs a .NET 9 SDK container and targets Jellyfin 10.11.11.
+It does not stop Jellyfin, install DLLs or trigger GitHub Actions.
+A successful build creates `services/velaris-youtube-plugin/build/Velaris.YouTube.dll`.
+
+Next inspect your local Jellyfin container and Docker network **without
+modifying anything**:
+
+```bash
+sudo docker ps --format 'table {{.Names}}\t{{.Image}}\t{{.Ports}}'
+sudo docker network ls --format 'table {{.Name}}\t{{.Driver}}'
+```
+
+Then we can set up private sidecar connectivity and plugin configuration,
+install against the correct ZimaOS Jellyfin plugin directory, and test the
+three routes. **Do not install the DLL manually into an unknown Jellyfin
+path yet.** The API stream requires Jellyfin auth headers; a native
+`<video>` tag cannot provide those headers, so the HTML5/player ticket
+bridge remains the *next* milestone. Do not circumvent Jellyfin auth by
+publishing the sidecar port.
 
 ## Private streaming proxy – V0.2.0
 
