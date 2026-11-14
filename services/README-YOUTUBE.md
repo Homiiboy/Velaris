@@ -31,7 +31,7 @@ bash services/velaris-youtube-sidecar/setup-zimaos.sh
 ```
 
 The setup script:
-- Generates a **random 64-character API token** with `openssl` in a private
+- Generates a **random 64-character API token** from `/dev/urandom` (using `od`) in a private
   `.env` (only on first setup; updates preserve it).
 - Creates `services/velaris-youtube-sidecar/data` with Docker uid/gid
   **10001** only if it does not already exist. Existing archive ownership
