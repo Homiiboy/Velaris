@@ -1,0 +1,12 @@
+services:
+  velaris-youtube-sidecar:
+    build: .
+    container_name: velaris-youtube-sidecar
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      ARCHIVE_DIR: /downloads
+    ports:
+      - "127.0.0.1:8787:8787"
+    volumes:
+      - ${VELARIS_YOUTUBE_ARCHIVE_PATH:-./data}:/downloads

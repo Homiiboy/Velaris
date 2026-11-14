@@ -1,0 +1,27 @@
+name: Velaris YouTube scaffold
+# Manual only: no automatic runs on push or pull requests.
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: velaris-youtube-manual
+  cancel-in-progress: true
+
+jobs:
+  plugin:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+      - name: Build Jellyfin plugin scaffold
+        run: dotnet build services/velaris-youtube-plugin/Velaris.YouTube.csproj -c Release
+  sidecar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Python syntax check
+        run: python -m py_compile services/velaris-youtube-sidecar/main.py
+      - name: Docker image build
+        run: docker build services/velaris-youtube-sidecar
