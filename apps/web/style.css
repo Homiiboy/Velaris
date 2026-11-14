@@ -285,3 +285,24 @@ button:disabled{cursor:wait;opacity:.65}
 #velaris-cast-controls[hidden]{display:none}
 #velaris-cast-controls button{min-height:44px}
 #velaris-cast-position{flex-basis:100%;margin:0}
+
+/* Web 2.0.1 – desktop category navigation above content; iPhone stays bottom. */
+@media (min-width:850px){
+  .shell>.tabs{position:sticky;top:75px;bottom:auto;z-index:19;order:0;
+    border-top:0;border-bottom:1px solid var(--edge);box-shadow:0 8px 28px #0007;
+    background:rgba(12,11,20,.96)}
+  .shell>.tabs button.selected:before{top:auto;bottom:0}
+}
+/* Keep iPhone bottom tab bar even when landscape viewport exceeds 850px. */
+@supports (-webkit-touch-callout:none){
+  @media (pointer:coarse){
+    .shell>.tabs{position:fixed;top:auto;bottom:0;left:0;right:0;z-index:20;
+      border-bottom:0;border-top:1px solid var(--edge);box-shadow:0 -8px 40px #0008;
+      padding:12px 3px calc(12px + env(safe-area-inset-bottom));gap:3px}
+    .shell>.tabs button{flex:1;max-width:110px;min-height:47px}
+    .shell>.tabs button b{display:block}
+    .shell>.tabs button span{font-size:clamp(9px,2.4vw,11px)}
+    .shell>.tabs button.selected:before{top:-12px;bottom:auto}
+    .shell{padding-bottom:calc(97px + env(safe-area-inset-bottom))}
+  }
+}
