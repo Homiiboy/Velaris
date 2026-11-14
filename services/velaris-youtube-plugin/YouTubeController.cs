@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Concurrent;
+using System.Security.Cryptography;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -25,6 +27,11 @@ public sealed class YouTubeController : ControllerBase
     {
         Timeout = TimeSpan.FromSeconds(90)
     };
+
+    private static readonly ConcurrentDictionary<string, PlaybackTicket> Tickets = new();
+    private static readonly TimeSpan TicketIdleTimeout = TimeSpan.FromMinutes(20);
+    private static readonly TimeSpan TicketMaximumLifetime = TimeSpan.FromHours(4);
+    private sealed record PlaybackTicket(string VideoId, DateTimeOffset Created, DateTimeOffset LastUsed);
 
     private static readonly Regex VideoIdPattern = new(
         "^[A-Za-z0-9_-]{11}$", RegexOptions.Compiled | RegexOptions.CultureInvariant);
@@ -124,6 +131,81 @@ public sealed class YouTubeController : ControllerBase
     }
 
     /// <summary>
+    /// Issue a random, limited-use playback capability to an authenticated Jellyfin user.
+    /// The URL contains neither the Jellyfin user token nor the sidecar API token.
+    /// This short-lived capability grants playback only for the requested video.
+    /// </summary>
+    [HttpPost("Videos/{videoId}/Ticket")]
+    public IActionResult CreatePlaybackTicket(string videoId)
+    {
+        if (!VideoIdPattern.IsMatch(videoId))
+        {
+            return BadRequest(new { error = "Invalid YouTube video ID" });
+        }
+        if (!TryConfigure(out _, out _))
+        {
+            return StatusCode(503, new { error = "Velaris YouTube sidecar not configured" });
+        }
+
+        var now = DateTimeOffset.UtcNow;
+        foreach (var item in Tickets)
+        {
+            if (now - item.Value.LastUsed > TicketIdleTimeout ||
+                now - item.Value.Created > TicketMaximumLifetime)
+            {
+                Tickets.TryRemove(item.Key, out _);
+            }
+        }
+
+        // Bound memory even when the server receives repeated requests.
+        if (Tickets.Count >= 256)
+        {
+            return StatusCode(429, new { error = "Too many active playback sessions" });
+        }
+
+        var ticket = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
+        Tickets[ticket] = new PlaybackTicket(videoId, now, now);
+        Response.Headers["Cache-Control"] = "no-store";
+        return Ok(new {
+            playbackPath = "/VelarisYouTube/Playback/" + ticket,
+            expiresAfterIdleSeconds = (int)TicketIdleTimeout.TotalSeconds
+        });
+    }
+
+    /// <summary>
+    /// Public to Jellyfin's auth middleware only: requires a cryptographically
+    /// random ticket issued by the authenticated endpoint above.
+    /// </summary>
+    [AllowAnonymous]
+    [HttpGet("Playback/{ticket}")]
+    public async Task TicketPlayback(string ticket, CancellationToken cancellationToken)
+    {
+        Response.Headers["Cache-Control"] = "private, no-store";
+        Response.Headers["Referrer-Policy"] = "no-referrer";
+        Response.Headers["X-Content-Type-Options"] = "nosniff";
+
+        if (ticket.Length != 64 || !Regex.IsMatch(ticket, "^[A-F0-9]{64}$") ||
+            !Tickets.TryGetValue(ticket, out var current))
+        {
+            Response.StatusCode = 404;
+            return;
+        }
+
+        var now = DateTimeOffset.UtcNow;
+        if (now - current.LastUsed > TicketIdleTimeout ||
+            now - current.Created > TicketMaximumLifetime)
+        {
+            Tickets.TryRemove(ticket, out _);
+            Response.StatusCode = 410;
+            return;
+        }
+
+        // Refresh only idle lifetime; absolute 4-hour cap remains in effect.
+        Tickets.TryUpdate(ticket, current with { LastUsed = now }, current);
+        await ForwardStream(current.VideoId, cancellationToken);
+    }
+
+    /// <summary>
     /// Authenticated streaming probe/transport. HTML5 video elements cannot
     /// attach Jellyfin auth headers; this route is NOT yet a public player URL.
     /// </summary>
@@ -136,6 +218,11 @@ public sealed class YouTubeController : ControllerBase
             return;
         }
 
+        await ForwardStream(videoId, cancellationToken);
+    }
+
+    private async Task ForwardStream(string videoId, CancellationToken cancellationToken)
+    {
         if (!TryConfigure(out var baseUrl, out var token))
         {
             Response.StatusCode = 503;
