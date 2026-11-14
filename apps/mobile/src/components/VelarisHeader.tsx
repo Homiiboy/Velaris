@@ -41,6 +41,7 @@ export function VelarisHeader({scope='home',collectionId,home=false,overlay=fals
   const tabEnds=useRef<number[]>([]);
   const {session}=useAuth();
   const {accentColor}=useVelarisTheme();
+  const lightAccent = scope === 'series' || scope === 'animeMovies';
   const [profile,setProfile]=useState<VelarisProfile | null>(null);
   const [genres,setGenres]=useState<string[]>([]);
   const [genresOpen,setGenresOpen]=useState(false);
@@ -119,7 +120,7 @@ export function VelarisHeader({scope='home',collectionId,home=false,overlay=fals
           accessibilityRole="button" accessibilityState={{selected:scope===item.key}}
           onPress={()=>router.push(item.href as any)}
           style={({pressed})=>[styles.chip,scope===item.key&&[styles.activeChip,{backgroundColor:accentColor,shadowColor:accentColor}],pressed&&styles.chipPressed]}>
-          <Text style={[styles.chipText,scope===item.key&&styles.activeChipText]}>{item.label}</Text>
+          <Text style={[styles.chipText,scope===item.key&&styles.activeChipText,scope===item.key&&lightAccent&&{color:'#101016'}]}>{item.label}</Text>
         </Pressable>)}
         {home&&<Pressable accessibilityRole="button" accessibilityLabel="Genres"
           style={({pressed})=>[styles.chip,genresOpen&&[styles.activeChip,{backgroundColor:accentColor}],pressed&&styles.chipPressed]}

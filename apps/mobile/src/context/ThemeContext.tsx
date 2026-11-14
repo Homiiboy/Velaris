@@ -1,3 +1,5 @@
+import { useSegments } from 'expo-router';
+import { design } from '@/theme';
 import { createContext, useContext, useEffect, useMemo, useState, type PropsWithChildren } from 'react';
 import * as SecureStore from 'expo-secure-store';
 
@@ -9,6 +11,17 @@ export const accentOptions = [
   { key: 'orange', label: 'Orange', color: '#FA923C' },
   { key: 'blue', label: 'Blau', color: '#399FFF' }
 ] as const;
+
+// Category color always wins on library routes. User accent preferences remain
+// available for generic screens (settings, profiles, etc.).
+const categoryByRoute: Record<string, keyof typeof design.categoryAccents> = {
+  home: 'home', movies: 'movies', series: 'series',
+  anime: 'anime', 'anime-movies': 'animeMovies'
+};
+export function categoryAccentForRoute(route: string): string | undefined {
+  const category = categoryByRoute[route];
+  return category ? design.categoryAccents[category] : undefined;
+}
 
 export type AccentKey = (typeof accentOptions)[number]['key'];
 const ACCENT_KEY = 'velaris.theme.accent.v1';
@@ -26,6 +39,8 @@ type ThemeValue = {
 const ThemeContext = createContext<ThemeValue | null>(null);
 
 export function ThemeProvider({ children }: PropsWithChildren) {
+  const segments = useSegments();
+  const activeRoute = segments.find(segment => Object.prototype.hasOwnProperty.call(categoryByRoute, segment)) ?? '';
   const [accent, changeAccent] = useState<AccentKey>('purple');
   const [display, changeDisplay] = useState<DisplayPreferences>(defaults);
   useEffect(() => {
@@ -48,7 +63,7 @@ export function ThemeProvider({ children }: PropsWithChildren) {
   }, []);
   const value = useMemo<ThemeValue>(() => ({
     accent,
-    accentColor: accentOptions.find(option => option.key === accent)?.color ?? accentOptions[0].color,
+    accentColor: categoryAccentForRoute(activeRoute) ?? accentOptions.find(option => option.key === accent)?.color ?? accentOptions[0].color,
     display,
     setAccent: async next => {
       if (!accentOptions.some(option => option.key === next)) return;
@@ -59,7 +74,7 @@ export function ThemeProvider({ children }: PropsWithChildren) {
       changeDisplay(next);
       await SecureStore.setItemAsync(DISPLAY_KEY, JSON.stringify(next));
     }
-  }), [accent, display]);
+  }), [accent, display, activeRoute]);
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
 

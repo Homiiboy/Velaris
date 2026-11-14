@@ -22,9 +22,9 @@ Die mobilen, TV- und Web-Anwendungen liegen in einem Monorepo, bleiben aber eige
 
 | Plattform | Versionsstand im Quellcode |
 | --- | --- |
-| Velaris TV | **1.0.0** (`versionCode` 8) |
-| Velaris Smartphone | **1.0.0** (Expo, Android `versionCode` 8) |
-| Velaris Web | **1.2.14** (PWA-Version und Cachekennung; dauerhafte Jellyfin-Anmeldung) |
+| Velaris TV | **2.0.0** (`versionCode` 9) – Kategorie-Akzentpass |
+| Velaris Smartphone | **2.0.0** (Expo, Android `versionCode` 9) – Kategorie-Akzentpass |
+| Velaris Web | **2.0.0** (PWA-Version und Cachekennung; Kategorie-Akzentpass) |
 
 Die Versionsnummern sind unabhängig von einem signierten oder ausgerollten Release. Mobile benötigt einen neuen EAS-Build, Web ein neues Deployment und TV eine signierte APK für produktive Updates.
 
@@ -46,9 +46,9 @@ Die vorhandene Expo-Projektzuordnung bleibt bestehen; dafür ist Zugriff auf das
 
 Die [Web-App](apps/web/README.md) läuft über Docker/Nginx auf ZimaOS und kann via Tailscale Serve im privaten Tailnet per HTTPS erreicht werden. iOS-Nutzer können sie in Safari zum Home-Bildschirm hinzufügen. Die tatsächliche Wiedergabe hängt von HTTPS, Jellyfin-Erreichbarkeit, Browser-Codecs und Transcoding ab. Versionsangaben oben sind Quellcode-Stände, keine Bestätigung für ein ausgerolltes Deployment.
 
-## Velaris TV 1.0.0 (UI-Polish-Pass 10)
+## Velaris TV 2.0.0 (Kategorie-Farbpass)
 
-Die native Android-TV-App in `apps/tv` ist auf **Version 1.0.0** (`versionCode 8`) gesetzt. Sie besitzt weiter dieselbe Android-Anwendungs-ID `com.novarion.velaristv`; die Smartphone-App bleibt unabhängig versioniert.
+Die native Android-TV-App in `apps/tv` ist auf **Version 2.0.0** (`versionCode 9`) gesetzt. Sie besitzt weiter dieselbe Android-Anwendungs-ID `com.novarion.velaristv`; die Smartphone-App bleibt unabhängig versioniert.
 
 Release-Härtung und Abnahmetests: [UI-Pass 10](docs/UI_POLISH_PASS_10.md). Eine offizielle Veröffentlichung setzt grüne CI-Läufe, eine auf dem Google TV getestete APK und die Signierung mit dem passenden Schlüssel voraus.
 
@@ -77,7 +77,7 @@ Direktes Streaming **innerhalb von Jellyfin/Velaris**, Kanalabonnements, Bibliot
 
 ### Kategorie-Farbkonzept (Web, TV und Smartphone)
 
-Die Startseite behält Velaris Violet, während die Film-Kategorie Grün erhält. Die Kategorie-Akzentfarben sind zentral in [`packages/velaris-design/brand.json`](packages/velaris-design/brand.json) unter `categoryAccents` definiert. Die Implementierung in allen drei App-Oberflächen erfolgt schrittweise; die Hintergründe bleiben im dunklen Velaris-Design.
+Die Startseite behält Velaris Violet, während die Film-Kategorie Grün erhält. Die Kategorie-Akzentfarben sind zentral in [`packages/velaris-design/brand.json`](packages/velaris-design/brand.json) unter `categoryAccents` definiert. Mit UI-Pass V2.0.0 sind die Kategorie-Akzente in den Navigations-/Theme-Grundlagen der drei Apps umgesetzt; die Hintergründe bleiben im dunklen Velaris-Design.
 
 | Kategorie | Farbe | Hex |
 | --- | --- | --- |
@@ -89,6 +89,17 @@ Die Startseite behält Velaris Violet, während die Film-Kategorie Grün erhält
 | YouTube | YouTube-Rot | `#FF0033` |
 
 Die jeweilige Akzentfarbe wird für aktive Navigation, ausgewählte Buttons, Fokusrahmen und Fortschrittsanzeigen eingesetzt. Standardtexte bleiben kontrastreich, damit besonders Gelb und Eisblau gut lesbar sind. **Bei YouTube gehört die rote UI-Akzentfarbe zur geplanten Velaris-Integration; sie bedeutet nicht, dass die YouTube-Bedienoberfläche bereits verfügbar ist.**
+
+### UI-Pass V2.0.0 – kategorieabhängige Akzente
+
+- **Startseite:** Violett (`#7C5CFC`), **Filme:** Grün (`#46D369`), **Serien:** Eisblau (`#7DD3FC`), **Anime:** Orange (`#FF8A00`), **Anime Filme:** Gelb (`#FFD43B`).
+- **YouTube:** Rot (`#FF0033`) als vorbereiteter Token; eine YouTube-Kategorie ist noch nicht veröffentlicht.
+- **Schwarz bleibt die Grundfarbe** (`#08080D`), auch bei Kategorie-Wechseln.
+- Web: aktiver Menübereich steuert `--accent`; PWA-Cache und Versionskennung 2.0.0.
+- Smartphone: Kategorie-Akzent aus dem aktuellen Expo-Router-Pfad, inklusive Tab-Leiste und Bibliothekskopf.
+- TV: Kategorie-Akzent aus gemeinsamem `brand.json`, inklusive Navigationsfokus. Helle Akzente bekommen dunklere Beschriftung für Kontrast.
+- Nicht zugeordnete Bereiche behalten das vorhandene neutrale/profilbezogene Theme. Der Pass ändert keine Jellyfin-Daten oder Medien.
+- **Build-Status:** Quellcodeänderungen sind noch nicht per Android/TV/Browser-Gerätetests abgenommen; kein Deployment. Die Plattformversionen werden unabhängig weitergeführt.
 
 ### YouTube-Roadmap
 

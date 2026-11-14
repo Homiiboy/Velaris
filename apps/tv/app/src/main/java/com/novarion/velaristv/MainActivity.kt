@@ -39,6 +39,7 @@ class MainActivity : Activity() {
     private var userId = ""
     private var homeRoot: LinearLayout? = null
     private var activeSection = "Start"
+        set(value) { field = value; VelarisDesign.setCategory(value) }
     private var activeCollectionId = ""
     private var searchMode = "Alle"
     private var editProfilesMode = false
@@ -50,6 +51,7 @@ class MainActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         VelarisDesign.load(this)
+        VelarisDesign.setCategory(activeSection)
         // Keep the on-screen keyboard hidden until the user chooses a text field.
         window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN or
             WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
@@ -2776,7 +2778,7 @@ class MainActivity : Activity() {
             cornerRadius=dp(24).toFloat()
             if(focused)setStroke(dp(2),VelarisDesign.color("focus",0xFFDCCFFF.toInt()))
         }
-        button.setTextColor(if(selected||focused)Color.WHITE else 0xCCDCDCE4.toInt())
+        button.setTextColor(if(selected && VelarisDesign.darkTextOnAccent()) 0xFF101016.toInt() else if(selected||focused)Color.WHITE else 0xCCDCDCE4.toInt())
         button.typeface=if(selected)Typeface.DEFAULT_BOLD else Typeface.DEFAULT
     }
 
