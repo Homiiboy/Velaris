@@ -12,7 +12,7 @@ import { EmptyState } from '@/components/EmptyState';
 
 export function LibraryCategoryScreen({kind,title,description}:{kind:MediaLibraryKind;title:string;description:string}) {
  const {session}=useAuth();
- const accentKey = kind === 'movies' || kind === 'series' || kind === 'anime' || kind === 'animeMovies' ? kind : 'home';
+ const accentKey = kind;
  const accent = design.categoryAccents[accentKey];
  const {width:screenWidth}=useWindowDimensions();
  const cardWidth=Math.floor((screenWidth-42)/3);
@@ -36,7 +36,7 @@ export function LibraryCategoryScreen({kind,title,description}:{kind:MediaLibrar
    data={items} numColumns={3} columnWrapperStyle={styles.row}
    ListHeaderComponent={<View style={styles.header}><Text style={[styles.eyebrow,{color:accent}]}>VELARIS</Text>
       <View style={styles.titleRow}><Text style={styles.title}>{title}</Text><Text style={styles.count}>{items.length}</Text></View>
-      <Text style={styles.sub}>{description}</Text></View>}
+      <Text style={styles.sub}>{description}</Text><View style={{width:72,height:3,marginTop:13,borderRadius:3,backgroundColor:accent}}/></View>}
    ListEmptyComponent={<EmptyState
       title={loadError?'Mediathek nicht erreichbar':'Noch keine Titel'}
       message={loadError?'Prüfe die Verbindung zu Jellyfin und versuche es erneut.':`Prüfe, ob in Jellyfin eine Bibliothek namens „${title}“ vorhanden ist.`}
