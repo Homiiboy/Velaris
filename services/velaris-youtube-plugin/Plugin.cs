@@ -4,7 +4,7 @@ using MediaBrowser.Model.Serialization;
 
 namespace Velaris.YouTube;
 
-/// <summary>Jellyfin plugin entry point. Playback integration is not implemented yet.</summary>
+/// <summary>Jellyfin plugin entry point. Authenticated sidecar bridge; native HTML5 playback is not integrated yet.</summary>
 public sealed class Plugin : BasePlugin<PluginConfiguration>
 {
     public Plugin(IApplicationPaths applicationPaths, IXmlSerializer xmlSerializer)
@@ -19,5 +19,5 @@ public sealed class Plugin : BasePlugin<PluginConfiguration>
 
     public override Guid Id => Guid.Parse("ed22f091-42c2-48e5-9f24-c3c608371fac");
 
-    public override string Description => "YouTube integration groundwork for Velaris and Jellyfin.";
+    public override string Description => "Authenticated YouTube sidecar bridge for Jellyfin 10.11.11.";
 }
