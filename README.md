@@ -22,9 +22,9 @@ Die mobilen, TV- und Web-Anwendungen liegen in einem Monorepo, bleiben aber eige
 
 | Plattform | Versionsstand im Quellcode |
 | --- | --- |
-| Velaris TV | **2.0.0** (`versionCode` 9) – Kategorie-Akzentpass |
-| Velaris Smartphone | **2.0.0** (Expo, Android `versionCode` 9) – Kategorie-Akzentpass |
-| Velaris Web | **2.0.1** (Kategorie-Akzente; Desktop-Navigation oben, iPhone unten) |
+| Velaris TV | **2.1.0** (`versionCode` 10) – UI-Color-Pass |
+| Velaris Smartphone | **2.1.0** (Expo, Android `versionCode` 10) – UI-Color-Pass |
+| Velaris Web und iPhone-PWA | **2.1.0** (Kategorie-Branding; Desktop-Navigation oben, iPhone unten) |
 
 Die Versionsnummern sind unabhängig von einem signierten oder ausgerollten Release. Mobile benötigt einen neuen EAS-Build, Web ein neues Deployment und TV eine signierte APK für produktive Updates.
 
@@ -59,9 +59,9 @@ Je nach ZimaOS-Installer kann stattdessen die Veröffentlichung versionierter
 Registry-Images notwendig sein. Die App ist nicht automatisch auf ZimaOS
 registriert und ein Git-Pull installiert keine App-Kachel.
 
-## Velaris TV 2.0.0 (Kategorie-Farbpass)
+## Velaris TV 2.1.0 (UI-Color-Pass)
 
-Die native Android-TV-App in `apps/tv` ist auf **Version 2.0.0** (`versionCode 9`) gesetzt. Sie besitzt weiter dieselbe Android-Anwendungs-ID `com.novarion.velaristv`; die Smartphone-App bleibt unabhängig versioniert.
+Die native Android-TV-App in `apps/tv` ist auf **Version 2.1.0** (`versionCode 10`) gesetzt. Sie besitzt weiter dieselbe Android-Anwendungs-ID `com.novarion.velaristv`; die Smartphone-App bleibt unabhängig versioniert.
 
 Release-Härtung und Abnahmetests: [UI-Pass 10](docs/UI_POLISH_PASS_10.md). Eine offizielle Veröffentlichung setzt grüne CI-Läufe, eine auf dem Google TV getestete APK und die Signierung mit dem passenden Schlüssel voraus.
 
@@ -99,9 +99,42 @@ Die Startseite behält Velaris Violet, während die Film-Kategorie Grün erhält
 | Serien | Eisblau | `#7DD3FC` |
 | Anime | Orange | `#FF8A00` |
 | Anime Filme | Gelb | `#FFD43B` |
-| YouTube | YouTube-Rot | `#FF0033` |
+| Animation | Coral Pink | `#FF6FAE` |
+| Cartoons | Electric Mint | `#00D9C0` |
+| Meine Liste | Soft Lavender | `#E8A0FF` |
+| Sammlungen | Champagne Gold | `#D9A86C` |
+| YouTube (vorbereitet) | YouTube-Rot | `#FF0033` |
 
 Die jeweilige Akzentfarbe wird für aktive Navigation, ausgewählte Buttons, Fokusrahmen und Fortschrittsanzeigen eingesetzt. Standardtexte bleiben kontrastreich, damit besonders Gelb und Eisblau gut lesbar sind. **Bei YouTube gehört die rote UI-Akzentfarbe zur geplanten Velaris-Integration; sie bedeutet nicht, dass die YouTube-Bedienoberfläche bereits verfügbar ist.**
+
+### UI-Color-Pass V2.1.0 – alle Anwendungen
+
+**Alle Kategorien verwenden einen schwarzen Grundhintergrund (`#08080D`).**
+Die Farben ändern sich ausschließlich bei Akzenten, aktiven Menüpunkten,
+Überschriften, ausgewählten Buttons, Fokusrahmen, Fortschrittsbalken und
+dezenten Lichtakzenten.
+
+**Bereichsschriftzüge:** `VELARIS FILME` (grün), `VELARIS SERIEN`
+(eisblau), `VELARIS ANIME` (orange), `VELARIS ANIME FILME` (gelb),
+`VELARIS ANIMATION` (pink), `VELARIS CARTOONS` (mint),
+`VELARIS MEINE LISTE` (lavendel) und `VELARIS SAMMLUNGEN` (gold).
+Die Startseite behält `VELARIS` in Violett. YouTube-Rot ist ein Token,
+aber noch keine veröffentlichte Benutzeroberfläche.
+
+- **Web/ZimaOS und iPhone-PWA:** Gemeinsame responsive Web-App 2.1.0. Desktop-Navigation
+  oben, iPhone-Navigation weiterhin unten; Kategorieüberschriften und
+  kategorieabhängige Fokusränder/Progressbars im selben Code.
+- **Android/iOS-Smartphone:** Expo 2.1.0 mit dynamischen Akzentfarben je Route,
+  Branding in Bibliotheksansichten und farbiger Tab-/Poster-Navigation.
+- **Android TV/Google TV:** 2.1.0 mit Kategorie-Branding im Header,
+  Bibliotheksüberschriften und Kategorie-Fokusfarben.
+- **YouTube:** Rot als Vorbereitung für das separate Jellyfin-Plugin.
+  Keine funktionierende YouTube-Kategorie vorgetäuscht.
+
+**Status:** Quellcode integriert; Build-, Geräte- und iPhone-PWA-Tests noch
+ausständig. Diese Version ist nicht automatisch auf ZimaOS, iPhone oder TV
+installiert. GitHub Actions nicht manuell auslösen, außer für gezielte
+Test- oder Release-Builds.
 
 ### UI-Pass V2.0.0 – kategorieabhängige Akzente
 
