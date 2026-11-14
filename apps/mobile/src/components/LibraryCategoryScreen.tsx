@@ -34,8 +34,8 @@ export function LibraryCategoryScreen({kind,title,description}:{kind:MediaLibrar
  return <View style={{flex:1,backgroundColor:colors.background}}><VelarisHeader scope={kind}/>
  {loading?<LoadingSkeleton variant="library" columns={3}/>:<FlatList style={styles.page} contentContainerStyle={styles.content}
    data={items} numColumns={3} columnWrapperStyle={styles.row}
-   ListHeaderComponent={<View style={styles.header}><Text style={[styles.eyebrow,{color:accent}]}>VELARIS</Text>
-      <View style={styles.titleRow}><Text style={styles.title}>{title}</Text><Text style={styles.count}>{items.length}</Text></View>
+   ListHeaderComponent={<View style={styles.header}><Text style={[styles.eyebrow,{color:accent}]}>DEINE STREAMING-WELT</Text>
+      <View style={styles.titleRow}><Text style={[styles.title,{color:accent}]}>VELARIS {title.toLocaleUpperCase("de-DE")}</Text><Text style={styles.count}>{items.length}</Text></View>
       <Text style={styles.sub}>{description}</Text><View style={{width:72,height:3,marginTop:13,borderRadius:3,backgroundColor:accent}}/></View>}
    ListEmptyComponent={<EmptyState
       title={loadError?'Mediathek nicht erreichbar':'Noch keine Titel'}
