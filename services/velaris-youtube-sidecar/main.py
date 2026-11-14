@@ -58,7 +58,7 @@ class VideoRequest(BaseModel):
 
 
 def extract_metadata(video_id: str) -> dict[str, Any]:
-    with YoutubeDL({"quiet": True, "no_warnings": True, "skip_download": True,
+    with YoutubeDL({"quiet": True, "no_warnings": True, "js_runtimes": {"node": {}}, "skip_download": True,
                     "noplaylist": True, "socket_timeout": 15}) as ydl:
         info = ydl.extract_info(video_url(video_id), download=False)
     if not info:
@@ -91,7 +91,7 @@ def stream_source(video_id: str):
     """Resolve a short-lived source URL; not a Jellyfin playback endpoint yet."""
     try:
         with YoutubeDL({"quiet": True, "skip_download": True, "noplaylist": True,
-                        "format": "best[ext=mp4]/best", "socket_timeout": 15}) as ydl:
+                        "format": "best[ext=mp4]/best", "js_runtimes": {"node": {}}, "socket_timeout": 15}) as ydl:
             info = ydl.extract_info(video_url(video_id), download=False)
     except DownloadError as exc:
         raise HTTPException(status_code=502, detail="YouTube stream unavailable") from exc
@@ -110,6 +110,7 @@ def archive_video(video_id: str) -> None:
         dest.mkdir(parents=True, exist_ok=True)
         with YoutubeDL({
             "quiet": True, "noplaylist": True, "restrictfilenames": True,
+            "js_runtimes": {"node": {}},
             "paths": {"home": str(dest)},
             "outtmpl": {"default": "video.%(ext)s", "thumbnail": "poster.%(ext)s"},
             "format": "bv*+ba/b", "merge_output_format": "mp4",
