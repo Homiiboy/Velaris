@@ -74,7 +74,7 @@ export function MediaCard({ item, session, width = 128, showMeta = false, showFa
           }).start()}
           onError={()=>setImageFailed(true)}
           style={[styles.poster,{opacity:artworkOpacity}]} resizeMode="contain" /> :
-        <View style={[styles.poster, styles.placeholder]}><Text style={styles.logo}>VELARIS</Text></View>}
+        <View style={[styles.poster, styles.placeholder]}><Text style={[styles.logo,{color:accentColor}]}>VELARIS</Text></View>}
        <Animated.View pointerEvents="none" style={[styles.focusMeta,{opacity:detailOpacity}]}>
         <Text numberOfLines={1} style={styles.focusMetaText}>{meta}</Text>
        </Animated.View>
@@ -84,7 +84,7 @@ export function MediaCard({ item, session, width = 128, showMeta = false, showFa
          </Text>
        </View>}
        {progress>0&&<View pointerEvents="none" style={styles.progressTrack}>
-        <View style={[styles.progressFill,{width:`${progress}%`}]}/>
+        <View style={[styles.progressFill,{width:`${progress}%`,backgroundColor:accentColor}]}/>
        </View>}
        {showFavorite&&item.Type!=='BoxSet'&&<Pressable hitSlop={8} onPress={(e)=>{e.stopPropagation();toggleFavorite()}} accessibilityRole="button" accessibilityLabel={favorite?'Aus Meine Liste entfernen':'Zu Meine Liste hinzufügen'} style={styles.heart}><Text style={[styles.heartText,favorite&&styles.heartActive]}>{favorite?'♥':'♡'}</Text></Pressable>}
       </View></Animated.View>
