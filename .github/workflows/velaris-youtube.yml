@@ -1,16 +1,11 @@
 name: Velaris YouTube scaffold
+# Manual only: no automatic runs on push or pull requests.
 on:
-  push:
-    paths:
-      - 'services/velaris-youtube-plugin/**'
-      - 'services/velaris-youtube-sidecar/**'
-      - '.github/workflows/velaris-youtube.yml'
-  pull_request:
-    paths:
-      - 'services/velaris-youtube-plugin/**'
-      - 'services/velaris-youtube-sidecar/**'
-      - '.github/workflows/velaris-youtube.yml'
   workflow_dispatch:
+
+concurrency:
+  group: velaris-youtube-manual
+  cancel-in-progress: true
 
 jobs:
   plugin:
