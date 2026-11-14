@@ -1,6 +1,6 @@
-# Velaris YouTube – V0.1.0 (development)
+# Velaris YouTube – V0.2.0 streaming proxy (development)
 
-The existing scaffold has been moved onto a fresh branch based on Velaris 2.1.0.
+The YouTube sidecar is developed directly on `main`, alongside Velaris 2.1.0.
 This remains a **development service**, not an installed or tested Jellyfin plugin.
 
 ## Architecture
@@ -11,10 +11,10 @@ This remains a **development service**, not an installed or tested Jellyfin plug
 - Persistent archive: one directory per 11-character YouTube video ID, holding
   the downloaded media, thumbnail and `metadata.info.json`.
 
-The sidecar **does not currently expose media inside Jellyfin**.
+The sidecar **does not currently expose media inside Jellyfin**, but now has a private HTTP Range streaming proxy.
 `GET /videos/{id}/stream` returns a **temporary direct source URL and its
-required HTTP headers**, not a Jellyfin MediaSource or browser-safe streaming
-proxy. URL expiry, codec negotiation and Jellyfin player integration are still
+required HTTP headers**. Prefer the private `GET /videos/{id}/proxy` endpoint for
+streaming through the sidecar instead of exposing signed source URLs. URL expiry, codec negotiation and Jellyfin player integration are still
 future milestones. Never log or display the raw stream URL publicly.
 
 ## Safe ZimaOS deployment from `main`
@@ -139,6 +139,45 @@ sudo docker compose logs --tail=60
 
 Do not share logs if they contain any credentials or signed source URLs.
 
+## Private streaming proxy – V0.2.0
+
+The sidecar provides **`GET /videos/{11-character-id}/proxy`**.
+It is restricted to the existing bearer-token API and Docker loopback
+(`127.0.0.1:8787`). It resolves a compatible MP4 source via yt-dlp,
+allows only HTTPS `googlevideo.com` media hosts, preserves required
+User-Agent/Referer headers, forwards single HTTP `Range` requests and
+streams the upstream bytes to the caller without saving them on disk.
+
+The response includes `Content-Range`, `Content-Length` and `Accept-Ranges`
+when available. URL resolution is briefly cached and refreshed after
+selected upstream failures (401, 403 and 410). Unsupported multi-range
+requests are rejected with HTTP 416. The API bearer token and signed
+YouTube URLs must **never be placed in web/iPhone client code**.
+
+**Update and rebuild only the YouTube sidecar**:
+
+```bash
+cd ~/AppData/Velaris-v2
+git pull origin main
+cd services/velaris-youtube-sidecar
+sudo docker compose up -d --build
+bash test-proxy-zimaos.sh jNQXAC9IVRw
+```
+
+Expected success: HTTP 401 for unauthenticated access, HTTP 416 for
+malformed/multi-range requests, then HTTP 206 with a valid
+`Content-Range` and 1024 bytes of `video/mp4`. The test uses only
+the local sidecar and does not download or save a full video.
+The existing private `.env` and archive volume remain untouched.
+
+**Scope:** This establishes a server-side media transport for the upcoming
+Jellyfin bridge. It is **not yet browser-playable from the Velaris website**
+because HTML5 video elements cannot safely hold a server API token,
+the service is not exposed to browsers, and Jellyfin has not been
+connected to the proxy. Next: a Jellyfin 10.11.11 authenticated server-side
+bridge and player integration. Browser playback is tested at that point.
+Do not publish port 8787 or add a public reverse-proxy route.
+
 ## Protected API
 
 All endpoints below require `Authorization: Bearer <token>`.
@@ -146,7 +185,8 @@ All endpoints below require `Authorization: Bearer <token>`.
 | Endpoint | Result |
 | --- | --- |
 | `GET /videos/{id}` | YouTube title, description, channel, thumbnail, duration |
-| `GET /videos/{id}/stream` | Temporary direct playback URL + required headers |
+| `GET /videos/{id}/stream` | Private temporary playback URL + required headers (do not expose to browser) |
+| `GET /videos/{id}/proxy` | Authenticated MP4 stream (supports single HTTP byte Range; response 206) |
 | `POST /archive` (`{"video_id":"..."}`) | Queue a download; returns HTTP 202 |
 | `GET /archive/{id}` | Queue state: queued/running/completed/failed/not_found |
 | `GET /library` | List archived metadata and thumbnails |
