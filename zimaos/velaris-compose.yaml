@@ -1,17 +1,15 @@
-name: velaris
+name: velaris-zimaos
 services:
   velaris-web:
     image: velaris-web:local
-    container_name: velaris-web
+    container_name: velaris-zimaos-web
     restart: unless-stopped
     ports:
       - target: 80
-        published: "8088"
+        published: "8089"
         protocol: tcp
     extra_hosts:
       - "host.docker.internal:host-gateway"
-    depends_on:
-      - velaris-cast-bridge
     read_only: true
     tmpfs:
       - /var/cache/nginx
@@ -19,31 +17,16 @@ services:
       - /tmp
     security_opt:
       - no-new-privileges:true
-  velaris-cast-bridge:
-    image: velaris-cast-bridge:local
-    container_name: velaris-cast-bridge
-    restart: unless-stopped
-    network_mode: host
-    environment:
-      CAST_BRIDGE_PORT: "8766"
-      JELLYFIN_LOCAL_URL: "http://127.0.0.1:8097"
-      JELLYFIN_CAST_URL: "http://192.168.0.74:8097"
-      CAST_KNOWN_HOSTS: ""
-    read_only: true
-    tmpfs:
-      - /tmp
-    security_opt:
-      - no-new-privileges:true
 x-casaos:
   id: velaris
   main: velaris-web
   index: /
-  port_map: "8088"
+  port_map: "8089"
   scheme: http
   icon: https://raw.githubusercontent.com/Homiiboy/Velaris/main/assets/logos/NewAppIcon.png
   title:
-    en_US: Velaris
-    de_DE: Velaris
+    en_US: Velaris 2.0
+    de_DE: Velaris 2.0
   tagline:
     en_US: Your Jellyfin streaming experience
     de_DE: Deine Jellyfin-Streaming-App
