@@ -7,11 +7,14 @@ mkdir -p "$HERE/build"
 echo "Building Velaris YouTube plugin against Jellyfin 10.11.11 ..."
 sudo docker run --rm \
   --user "$(id -u):$(id -g)" \
+  --tmpfs /tmp:rw,nosuid,mode=1777,size=1g \
   --mount "type=bind,source=$HERE,target=/src" \
   -w /src \
-  -e DOTNET_CLI_HOME=/tmp/dotnet-cli \
+  -e HOME=/tmp \
+  -e DOTNET_CLI_HOME=/tmp \
   -e NUGET_PACKAGES=/tmp/nuget \
   -e DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1 \
+  -e DOTNET_CLI_TELEMETRY_OPTOUT=1 \
   mcr.microsoft.com/dotnet/sdk:9.0 \
   dotnet publish Velaris.YouTube.csproj --configuration Release \
   --property:JellyfinVersion=10.11.11 \
