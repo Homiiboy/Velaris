@@ -44,7 +44,7 @@ export function VelarisHeader({scope='home',collectionId,home=false,overlay=fals
   const sectionAccents = design.categoryAccents;
   const sectionKey = scope === 'animeMovies' ? 'animeMovies' : scope;
   const sectionAccent = sectionKey in sectionAccents ? sectionAccents[sectionKey as keyof typeof sectionAccents] : accentColor;
-  const lightAccent = ['series','animeMovies','cartoons','favorites','collections'].includes(scope);
+  const lightAccent = !['home'].includes(scope);
   const [profile,setProfile]=useState<VelarisProfile | null>(null);
   const [genres,setGenres]=useState<string[]>([]);
   const [genresOpen,setGenresOpen]=useState(false);
