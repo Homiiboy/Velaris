@@ -1,85 +1,77 @@
-# Velaris als verwaltete ZimaOS-App installieren (2.0.0)
+# Velaris 2.0 als ZimaOS-App
 
-Diese Anleitung richtet die **bereits vorhandenen Velaris-Web- und Cast-Bridge-Images**
-als **ZimaOS-verwaltete Docker-App mit eigener Kachel** ein. Es handelt sich um
-dieselbe Webanwendung, die ZimaOS als App verwaltet – nicht um ein natives
-ZimaOS-Desktopprogramm oder einen neuen Jellyfin-Server.
+Die App-Definition `velaris-compose.yaml` bindet die **bereits vorhandene**
+Velaris-Web-App im Repository als eigene, von ZimaOS verwaltete App ein. Sie
+verwendet das öffentliche Docker-Image `nginx:1.27-alpine` und startet
+einen eigenen Container `velaris-zimaos-web` auf Port **8089**.
 
-App-Manifest: [velaris-compose.yaml](velaris-compose.yaml).
+Es ist keine zweite selbst gebaute Velaris-Image-Registry erforderlich.
+Die ursprüngliche Web-Installation auf Port **8088** bleibt erhalten.
 
-## Voraussetzungen
+## Warum nicht `velaris-web:local`?
 
-Die bereits bestehende Installation unter
-`~/AppData/Velaris-v2/apps/web` muss zuvor **einmal erfolgreich gebaut**
-worden sein. Das ist beim aktuellen Velaris Web 2.0.0 bereits erfolgt.
+ZimaOS versucht beim Installieren häufig, jedes angegebene Image aus einer
+Registry zu ziehen. Ein nur lokal auf dem Server erstelltes
+`velaris-web:local` ist dort nicht vorhanden und führt zur Meldung
+"Repository existiert nicht". Das öffentliche Nginx-Image löst dieses
+Problem, während die eigentliche Velaris-App aus dem Git-Checkout
+bereitgestellt wird.
 
-Prüfen:
-```bash
-sudo docker image inspect velaris-web:local velaris-cast-bridge:local >/dev/null && echo "Images vorhanden"
-sudo docker ps --format 'table {{.Names}}\t{{.Ports}}'
-```
+## Einmalige Einrichtung auf ZimaOS
 
-Der ZimaOS-App-Importer soll die **lokal gebauten Docker-Images** verwenden.
-Je nach ZimaOS-Version akzeptiert der Installer keine nur lokal vorhandenen
-Images oder versucht, sie aus einer Registry herunterzuladen. In diesem Fall
-**nicht** weitere Container starten, sondern zunächst ein pullbares Registry-
-Image bereitstellen oder den bestehenden Compose-Stack als App importieren.
-
-## Parallele Installation ohne Portkonflikte
-
-Die bestehende Velaris-Web-Installation auf Port `8088` bleibt **unangetastet**.
-Die ZimaOS-App nutzt Port `8089` und den eigenen Container
-`velaris-zimaos-web`. Die separate Cast Bridge wird **nicht noch einmal**
-gestartet: Die bestehende Bridge auf Host-Port `8766` wird über das
-vorhandene Nginx-Proxy-Setup mitverwendet. Deshalb sollte die alte Bridge für
-Cast-Funktionen weiterlaufen.
-
-1. Das Repository aktualisieren:
+1. Das Git-Checkout aktualisieren:
    ```bash
    cd ~/AppData/Velaris-v2
    git pull origin main
    ```
-2. In ZimaOS **App Store → Install a customized app → Import** öffnen und
-   `zimaos/velaris-compose.yaml` importieren.
-3. Namen, Icon und Port `8089` prüfen und installieren. Die alten Container
-   **nicht** stoppen.
-4. Über `http://<ZIMAOS-LAN-IP>:8089` testen. Im Terminal:
+2. Die lokale ZimaOS-App-Konfiguration mit **echtem absolutem Host-Pfad** erzeugen:
+   ```bash
+   cd ~/AppData/Velaris-v2
+   WEB_DIR="$(realpath apps/web)"
+   sed "s|__VELARIS_WEB_DIR__|$WEB_DIR|g" zimaos/velaris-compose.yaml > zimaos/velaris-zimaos-install.yaml
+   cat zimaos/velaris-zimaos-install.yaml
+   ```
+3. Die so erzeugte Datei `zimaos/velaris-zimaos-install.yaml` in
+   **ZimaOS → App Store → Install a customized app → Import** einfügen.
+   Nicht die unverarbeitete Vorlage mit `__VELARIS_WEB_DIR__` importieren.
+4. Prüfen, dass **8089:80** und die beiden Bind-Mounts mit absoluten Pfaden
+   angezeigt werden. Wenn ZimaOS noch einen fehlgeschlagenen Velaris-2.0-
+   Eintrag führt, diesen vor einem Neuversuch in der App-Verwaltung entfernen.
+   **Nicht** die bisherige Installation auf Port 8088 löschen.
+5. Installieren und kontrollieren:
    ```bash
    curl -s http://127.0.0.1:8089/ | grep application-version
    sudo docker ps --format 'table {{.Names}}\t{{.Ports}}'
    ```
-   Erwartet: Versionskennung 2.0.0 und ein neuer Container
-   `velaris-zimaos-web`.
+   Erwartet: `2.0.0` und Container `velaris-zimaos-web`.
 
-**Hinweis:** Der neue Port `8089` ist im LAN erreichbar, solange Firewall
-und ZimaOS-Netzwerk das erlauben. Die bisherige Tailscale-HTTPS-Adresse
-zeigt weiter auf `8088`; sie wird **nicht automatisch** auf `8089`
-umgestellt. Für iPhone-/HTTPS-Tests muss der neue Port separat über HTTPS
-zugänglich gemacht werden. Die alte Web-App bleibt als Rückfalloption.
-
-Wenn ZimaOS lokal erstellte Images nicht unterstützt und versucht,
-`velaris-web:local` aus einer Registry zu laden, bricht die Installation ab.
-Dann müssen wir das Image in einer erreichbaren Registry versioniert
-veröffentlichen oder einen kompatiblen Importweg verwenden.
+Die alte Cast Bridge bleibt auf Host-Port 8766 aktiv und wird weiter
+über die bestehende `nginx.conf` verwendet. Falls die Bridge später
+entfernt wird, funktionieren Cast-Aufrufe nicht mehr.
 
 ## Updates
 
-Die ZimaOS-App verwendet derzeit `velaris-web:local` und nutzt die vorhandene
-Cast Bridge auf dem Host. Git Pull allein aktualisiert **keine laufenden
-Container**. Neue Versionen erfordern neue lokale Images, danach ein
-kontrolliertes **Recreate/Update über ZimaOS**, damit die App-Verwaltung Besitzer
-der Container bleibt. Nicht gleichzeitig denselben Compose-Stack per Terminal
-starten, da das zu Konflikten bei Containernamen und Ports führt.
+Die ZimaOS-App verwendet **Bind-Mounts** auf `apps/web` des neuen Repos.
+Deshalb erhält sie nach einem `git pull origin main` aktuelle Webdateien
+ohne einen neuen Docker-Image-Build. Für Änderungen an Konfiguration,
+Caching oder App-Metadaten kann ein Neustart über ZimaOS nötig sein.
+Bei einer neuen PWA-Version muss auch der Service-Worker-Cache aktualisiert
+werden.
 
-Wenn ZimaOS die lokalen Images nicht akzeptiert, wäre die dauerhafte Lösung,
-Images versioniert (z. B. GHCR) zu veröffentlichen und im Manifest zu referenzieren.
-Bis dahin bleibt der bisherige, funktionierende Compose-Stack als Rückfalloption
-verfügbar.
+```bash
+cd ~/AppData/Velaris-v2
+git pull origin main
+```
 
-## Sicherheit und Abgrenzung
+Die App-Kachel ist ein von ZimaOS verwalteter Docker-Dienst mit der
+Velaris-Weboberfläche; sie ist keine native Android-TV- oder Smartphone-App.
+Die Jellyfin-Mediathek wird nicht verändert.
 
-- Velaris nutzt weiterhin den bestehenden Jellyfin-Server; Jellyfin bleibt unberührt.
-- Die Tailscale-Adresse kann weiter auf Port 8088 zeigen.
-- Das ZimaOS-Icon kommt aus `assets/logos/NewAppIcon.png` im Repository.
-- Es wird kein zusätzlicher Download- oder YouTube-Dienst installiert.
-- Es wurden keine GitHub Actions gestartet.
+## Netzwerk und Sicherheit
+
+- Neue App: `http://<ZimaOS-LAN-IP>:8089` (LAN, falls Firewall es erlaubt).
+- Alte App: Port 8088 und die bestehende Tailscale-HTTPS-Route bleiben unverändert.
+- `8089:80` veröffentlicht den neuen Webserver auf allen Host-Interfaces;
+  bei ausschließlicher Tailnet-Nutzung auf `127.0.0.1:8089:80` begrenzen.
+- Die beiden Host-Mounts sind schreibgeschützt.
+- Keine GitHub Actions nötig.
