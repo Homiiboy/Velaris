@@ -70,5 +70,12 @@
     "movies",
     "collections",
     "series"
-  ]
+  ],
+  "categoryAccents": {
+    "movies": "#7C5CFC",
+    "series": "#7DD3FC",
+    "anime": "#FF8A00",
+    "animeMovies": "#FFD43B",
+    "youtube": "#FF0033"
+  }
 }
