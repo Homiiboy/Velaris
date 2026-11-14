@@ -183,6 +183,78 @@ Do not confuse route registration with a successful sidecar connection:
 an authenticated health request and actual streaming still require a
 separate test. The plugin contains no HTML settings page yet.
 
+## Web 2.1.2 – ticketed YouTube playback (Phase 5)
+
+The browser's ordinary Jellyfin session now requests a **video-scoped ticket**:
+
+1. `POST /VelarisYouTube/Videos/{id}/Ticket` with Jellyfin user
+   authentication headers (HTTP 200: `playbackPath`).
+2. The HTML5 player uses that temporary path as its video source,
+   supporting native play/pause/seek and HTTP Range playback.
+3. `GET /VelarisYouTube/Playback/{ticket}` uses a random 256-bit
+   capability to forward media from the private sidecar. The browser
+   never receives the private sidecar API token or a Jellyfin access
+   token in a video URL.
+
+**Security:** This ticket is itself a bearer capability for that one video.
+It expires after **20 minutes of inactivity**, with a **4-hour absolute
+limit**, and is stored only in Jellyfin server memory (server restarts
+invalidate tickets). Do not share, bookmark or log playback URLs.
+The playback endpoint includes no-store and no-referrer response headers.
+The browser video uses `referrerpolicy="no-referrer"`. No untrusted
+origin receives the sidecar token. Browser autoplay may need a second tap,
+especially on iOS.
+
+**Deploy in two stages to avoid breaking Jellyfin:**
+
+```bash
+cd ~/AppData/Velaris-v2
+git pull origin main
+bash services/velaris-youtube-plugin/build-zimaos.sh
+```
+
+Only if the build succeeds, replace the **Velaris YouTube plugin DLL** in
+its already installed plugin directory, preserving existing user-owned
+configuration and all other plugins. Stop Jellyfin first and make a
+backup **outside the plugins scan directory**:
+
+```bash
+sudo docker stop jellyfin
+sudo cp -a /DATA/AppData/jellyfin/config/data/plugins/VelarisYouTube_0.2.0.0 \
+  /DATA/AppData/jellyfin/config/VelarisYouTube_0.2.0.0.backup
+sudo cp ~/AppData/Velaris-v2/services/velaris-youtube-plugin/build/Velaris.YouTube.dll \
+  /DATA/AppData/jellyfin/config/data/plugins/VelarisYouTube_0.2.0.0/Velaris.YouTube.dll
+sudo chown 1000:1000 /DATA/AppData/jellyfin/config/data/plugins/VelarisYouTube_0.2.0.0/Velaris.YouTube.dll
+sudo chmod 644 /DATA/AppData/jellyfin/config/data/plugins/VelarisYouTube_0.2.0.0/Velaris.YouTube.dll
+sudo docker start jellyfin
+sudo docker logs jellyfin --tail=90 2>&1 | grep -i -E 'Velaris|error|exception'
+```
+
+The existing installation folder name remains at 0.2.0.0 for this
+in-place upgrade; the **assembly version** in the log should be 0.2.1.0.
+The private `Velaris.YouTube.xml` in `configurations/` is untouched.
+If Jellyfin does not start, stop it, restore the backed-up directory
+from outside the plugins folder, and start Jellyfin again.
+
+With a valid **32-character Jellyfin API key** already in the local
+shell variable `JF_TOKEN` (never paste it into chat):
+
+```bash
+bash services/velaris-youtube-plugin/test-ticket-zimaos.sh
+```
+
+Expected: HTTP 401 when unauthenticated, a new authenticated ticket,
+then HTTP 206 with 1024 bytes of `video/mp4`. The test does not
+expose the ticket or secret credentials.
+
+For Web **2.1.2** on port 8089, the source files are bind-mounted:
+`sudo docker restart velaris-zimaos-web` is sufficient if updates
+are not visible. Refresh the browser/PWA cache. Open YouTube →
+Me at the zoo → Abspielen. Playback starts after ticket issuance;
+on Safari/iOS, tap the native play button if autoplay is blocked.
+This release is **not yet verified end-to-end on ZimaOS** until the
+new plugin build and browser playback tests pass.
+
 ## Jellyfin 10.11.11 server-side bridge (source code V0.2.0)
 
 A Jellyfin plugin controller has been added with the following routes.
