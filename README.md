@@ -77,11 +77,12 @@ Direktes Streaming **innerhalb von Jellyfin/Velaris**, Kanalabonnements, Bibliot
 
 ### Kategorie-Farbkonzept (Web, TV und Smartphone)
 
-Die Kategorie-Akzentfarben sind zentral in [`packages/velaris-design/brand.json`](packages/velaris-design/brand.json) unter `categoryAccents` definiert. Die Implementierung in allen drei App-Oberflächen erfolgt schrittweise; die Hintergründe bleiben im dunklen Velaris-Design.
+Die Startseite behält Velaris Violet, während die Film-Kategorie Grün erhält. Die Kategorie-Akzentfarben sind zentral in [`packages/velaris-design/brand.json`](packages/velaris-design/brand.json) unter `categoryAccents` definiert. Die Implementierung in allen drei App-Oberflächen erfolgt schrittweise; die Hintergründe bleiben im dunklen Velaris-Design.
 
 | Kategorie | Farbe | Hex |
 | --- | --- | --- |
-| Filme | Velaris Violet | `#7C5CFC` |
+| Startseite | Velaris Violet | `#7C5CFC` |
+| Filme | Grün | `#46D369` |
 | Serien | Eisblau | `#7DD3FC` |
 | Anime | Orange | `#FF8A00` |
 | Anime Filme | Gelb | `#FFD43B` |
