@@ -219,7 +219,7 @@ class MainActivity : Activity() {
             )
         }
         top.addView(TextView(this).apply {
-            text="VELARIS"; textSize=26f; typeface=Typeface.DEFAULT_BOLD
+            text=if(activeSection=="Start") "VELARIS" else "VELARIS ${activeSection.uppercase(java.util.Locale.ROOT)}"; textSize=if(activeSection=="Start")26f else 21f; typeface=Typeface.DEFAULT_BOLD
             letterSpacing=0.12f
             setTextColor(VelarisDesign.color("accent",0xFF7C5CFC.toInt()))
             gravity=Gravity.CENTER_VERTICAL
@@ -230,7 +230,7 @@ class MainActivity : Activity() {
                     android.graphics.Shader.TileMode.CLAMP)
                 invalidate()
             }
-        },LinearLayout.LayoutParams(dp(152),dp(50)).apply{marginEnd=dp(18)})
+        },LinearLayout.LayoutParams(if(activeSection=="Start")dp(152) else dp(258),dp(50)).apply{marginEnd=dp(18)})
         // Keep all destinations reachable with the D-pad, even on smaller/overscanned TVs.
         val nav=LinearLayout(this).apply {
             orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL
@@ -1130,8 +1130,18 @@ class MainActivity : Activity() {
         },LinearLayout.LayoutParams(-1,dp(320)))
     }
 
+    /** Category heading with the current brand accent; backgrounds stay near black. */
+    private fun brandedHeading(title:String)=TextView(this).apply {
+        text="VELARIS ${title.uppercase(java.util.Locale.ROOT)}"
+        textSize=32f
+        typeface=Typeface.DEFAULT_BOLD
+        setTextColor(VelarisDesign.color("accent",0xFF7C5CFC.toInt()))
+        setPadding(0,0,0,dp(14))
+        maxLines=2
+    }
+
     private fun sectionTitle(label:String)=TextView(this).apply {
-        text=label; setTextColor(Color.WHITE); textSize=26f; typeface=Typeface.DEFAULT_BOLD
+        text=label; setTextColor(VelarisDesign.color("accent",0xFF7C5CFC.toInt())); textSize=26f; typeface=Typeface.DEFAULT_BOLD
         setPadding(dp(52),dp(18),0,dp(12))
     }
 
@@ -1261,7 +1271,7 @@ class MainActivity : Activity() {
         activeSection=title;activeCollectionId=""
         rememberBack { showHome() }
         val root=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; setPadding(dp(48),dp(28),dp(48),dp(28)); setBackgroundColor(VelarisDesign.color("background",0xFF08080D.toInt())) }
-        root.addView(TextView(this).apply { text=title; textSize=32f; setTextColor(Color.WHITE); typeface=Typeface.DEFAULT_BOLD })
+        root.addView(brandedHeading(title))
         root.addView(premiumLoadingScene(),LinearLayout.LayoutParams(-1,-2))
         showAppPage(ScrollView(this).apply { addView(root) })
         io.execute {
@@ -1295,7 +1305,7 @@ class MainActivity : Activity() {
         activeSection=title;activeCollectionId=""
         rememberBack { showHome() }
         val root=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; setPadding(dp(48),dp(28),dp(48),dp(28)); setBackgroundColor(VelarisDesign.color("background",0xFF08080D.toInt())) }
-        root.addView(TextView(this).apply { text=title; textSize=32f; setTextColor(Color.WHITE) })
+        root.addView(brandedHeading(title))
         root.addView(premiumLoadingScene(),LinearLayout.LayoutParams(-1,-2))
         showAppPage(ScrollView(this).apply { addView(root) })
         io.execute {
@@ -1428,7 +1438,7 @@ class MainActivity : Activity() {
         activeSection="Meine Liste";activeCollectionId=""
         rememberBack { showHome() }
         val root=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; setPadding(dp(48),dp(28),dp(48),dp(28)); setBackgroundColor(VelarisDesign.color("background",0xFF08080D.toInt())) }
-        root.addView(TextView(this).apply { text="Meine Liste"; textSize=32f; setTextColor(Color.WHITE) })
+        root.addView(brandedHeading("Meine Liste"))
         root.addView(premiumLoadingScene(),LinearLayout.LayoutParams(-1,-2))
         showAppPage(ScrollView(this).apply { addView(root) })
         io.execute {
