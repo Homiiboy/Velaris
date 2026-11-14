@@ -139,6 +139,50 @@ sudo docker compose logs --tail=60
 
 Do not share logs if they contain any credentials or signed source URLs.
 
+### Configure the installed Jellyfin plugin without exposing secrets
+
+On ZimaOS the plugin was compiled, installed into
+`/DATA/AppData/jellyfin/config/data/plugins/VelarisYouTube_0.2.0.0`,
+and confirmed as **Loaded plugin: Velaris YouTube 0.2.0.0** after
+correcting the plugin folder's ownership to Jellyfin uid 1000.
+
+Jellyfin's `BasePlugin<T>` uses the assembly name to determine its
+configuration filename: `Velaris.YouTube.xml`. Because configuration
+is lazily created, no Velaris XML is initially present in
+`/DATA/AppData/jellyfin/config/data/plugins/configurations`.
+
+Create a private XML config from the existing sidecar `.env` **without
+printing the token**:
+
+```bash
+cd ~/AppData/Velaris-v2
+git pull origin main
+bash services/velaris-youtube-plugin/configure-zimaos.sh
+sudo docker restart jellyfin
+sudo docker logs jellyfin --tail=80 2>&1 | grep -i -E 'Velaris|error|exception'
+```
+
+The script creates `Velaris.YouTube.xml` with permissions `0600`
+owned by uid/gid 1000. It refuses to overwrite an existing configuration.
+Keep this file private; never paste it into chat or Git, and do not run
+`cat` on it for diagnostic output. The Docker network connection to
+`velaris-youtube-sidecar_default` must still be present. Check
+`sudo docker exec jellyfin getent hosts velaris-youtube-sidecar`
+after any Jellyfin container recreation.
+
+To confirm Jellyfin registered the **protected** API route without
+disclosing a Jellyfin access token, an unauthenticated request should
+normally return HTTP 401 (not 404):
+
+```bash
+curl -s -o /dev/null -w 'Jellyfin bridge HTTP %{http_code}\\n' \
+  http://127.0.0.1:8097/VelarisYouTube/Health
+```
+
+Do not confuse route registration with a successful sidecar connection:
+an authenticated health request and actual streaming still require a
+separate test. The plugin contains no HTML settings page yet.
+
 ## Jellyfin 10.11.11 server-side bridge (source code V0.2.0)
 
 A Jellyfin plugin controller has been added with the following routes.
