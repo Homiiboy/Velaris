@@ -12,6 +12,8 @@ import { EmptyState } from '@/components/EmptyState';
 
 export function LibraryCategoryScreen({kind,title,description}:{kind:MediaLibraryKind;title:string;description:string}) {
  const {session}=useAuth();
+ const accentKey = kind === 'movies' || kind === 'series' || kind === 'anime' || kind === 'animeMovies' ? kind : 'home';
+ const accent = design.categoryAccents[accentKey];
  const {width:screenWidth}=useWindowDimensions();
  const cardWidth=Math.floor((screenWidth-42)/3);
  const [items,setItems]=useState<JellyfinItem[]>([]);
