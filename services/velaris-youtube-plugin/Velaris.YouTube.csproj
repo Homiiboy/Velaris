@@ -5,7 +5,7 @@
     <Nullable>enable</Nullable>
     <AssemblyName>Velaris.YouTube</AssemblyName>
     <RootNamespace>Velaris.YouTube</RootNamespace>
-    <Version>0.2.0</Version>
+    <Version>0.2.1</Version>
   </PropertyGroup>
   <PropertyGroup>
     <JellyfinVersion Condition="'$(JellyfinVersion)' == ''">10.11.11</JellyfinVersion>
