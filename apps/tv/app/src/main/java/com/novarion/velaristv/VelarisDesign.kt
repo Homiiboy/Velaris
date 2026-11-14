@@ -30,7 +30,7 @@ object VelarisDesign {
         return try { Color.parseColor(hex) } catch (_: Exception) { null }
     }
 
-    fun darkTextOnAccent(): Boolean = activeSection in setOf("Serien", "Anime Filme", "Cartoons", "Meine Liste", "Sammlungen")
+    fun darkTextOnAccent(): Boolean = activeSection !in setOf("Start", "YouTube")
 
     // Only accent elements change: backdrops and dark gradients stay intact.
     val accents = linkedMapOf(
