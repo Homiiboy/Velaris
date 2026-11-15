@@ -7,3 +7,8 @@ Thumbs.db
 *.keystore
 *.p12
 *.mobileprovision
+
+# Local Google OAuth credentials and service secrets
+/secrets/
+**/google-oauth.json
+**/client_secret*.json
