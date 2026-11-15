@@ -13,6 +13,9 @@ fi
 mkdir -p "$HERE/data"
 sudo chown 10002:10002 "$HERE/data"
 sudo chmod 700 "$HERE/data"
+sudo cp "$ROOT/secrets/google-oauth.json" "$HERE/data/oauth-client.json"
+sudo chown 10002:10002 "$HERE/data/oauth-client.json"
+sudo chmod 400 "$HERE/data/oauth-client.json"
 sudo docker compose -f "$HERE/compose.yaml" up -d --build
 if ! sudo docker inspect velaris-zimaos-web --format '{{json .NetworkSettings.Networks}}' | grep -q 'velaris-google-oauth_default'; then
   sudo docker network connect velaris-google-oauth_default velaris-zimaos-web
