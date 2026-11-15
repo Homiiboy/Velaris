@@ -7,7 +7,7 @@ services:
     ports:
       - "127.0.0.1:8791:8791"
     volumes:
-      - ../../secrets/google-oauth.json:/run/secrets/google-oauth.json:ro
+      - ./data/oauth-client.json:/run/secrets/google-oauth.json:ro
       - ./data:/data
     environment:
       GOOGLE_OAUTH_FILE: /run/secrets/google-oauth.json
