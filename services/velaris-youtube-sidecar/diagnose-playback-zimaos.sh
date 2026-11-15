@@ -21,6 +21,7 @@ import os
 import re
 import urllib.error
 import urllib.request
+from urllib.parse import urlsplit
 from pathlib import Path
 
 video_id=os.environ["DIAG_VIDEO_ID"]
@@ -62,6 +63,28 @@ if source["status"]==200:
     print("Container:",data.get("ext","?"))
     # Never print signed URLs or source headers.
     print("Direkt-URL verfügbar:",bool(data.get("url")))
+    signed=data.get("url")
+    if signed:
+        host=(urlsplit(signed).hostname or "").lower()
+        if urlsplit(signed).scheme!="https" or not (host=="googlevideo.com" or host.endswith(".googlevideo.com")):
+            print("CDN-Test: Übersprungen (Quelle außerhalb der erlaubten Google-Video-Domain)")
+        else:
+            # Use the same safelisted source headers as the sidecar. Do not
+            # print credentials, response bodies or signed media URLs.
+            safe_headers={str(k):str(v) for k,v in (data.get("http_headers") or {}).items()
+                          if str(k).lower() in ("user-agent","referer","origin","accept","accept-language")}
+            safe_headers["Range"]="bytes=0-1023"
+            try:
+                with urllib.request.urlopen(urllib.request.Request(signed,headers=safe_headers),timeout=30) as direct:
+                    print("CDN HTTP-Status:",direct.status)
+                    print("CDN Content-Type:",direct.headers.get("Content-Type","unbekannt").split(";")[0])
+                    print("CDN Accept-Ranges:",direct.headers.get("Accept-Ranges","nicht angegeben"))
+                    direct.read(64)
+            except urllib.error.HTTPError as exc:
+                print("CDN HTTP-Status:",exc.code)
+                exc.close()
+            except (urllib.error.URLError,TimeoutError,OSError):
+                print("CDN-Status: Netzwerkfehler/Timeout")
 print("Prüfe erste 1024 Bytes (HTTP Range) …")
 r=call("/proxy","bytes=0-1023")
 print("Proxy Status:",r["status"])
