@@ -1,0 +1,22 @@
+services:
+  velaris-google-oauth:
+    build: .
+    image: velaris-google-oauth:local
+    container_name: velaris-google-oauth
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8791:8791"
+    volumes:
+      - ../../secrets/google-oauth.json:/run/secrets/google-oauth.json:ro
+      - ./data:/data
+    environment:
+      GOOGLE_OAUTH_FILE: /run/secrets/google-oauth.json
+      STATE_DIR: /data
+      JELLYFIN_URL: http://host.docker.internal:8097
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
