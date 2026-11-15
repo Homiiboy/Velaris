@@ -60,7 +60,8 @@ def save_tokens(user_id: str, value: dict) -> None:
         os.chmod(temp, 0o600)
         fp.write(CRYPT.encrypt(json.dumps(value).encode()))
     os.replace(temp, target)
-    CACHE.pop(user_id, None)
+    CACHE.pop((user_id, "feed"), None)
+    CACHE.pop((user_id, "subs"), None)
 
 
 async def authorized_user(token: str | None) -> str:
@@ -135,7 +136,7 @@ def done_page(message: str, ok: bool) -> HTMLResponse:
 async def callback(state: str = Query(default=""), code: str = Query(default=""), error: str = Query(default="")):
     record = STATES.pop(state, None)
     if not record or time.time() - record["created"] > 600:
-        return RedirectResponse(url="/oauth/done?result=expired", status_code=303,
+        return RedirectResponse(url="/api/youtube/oauth/done?result=expired", status_code=303,
                                 headers={"Cache-Control": "no-store", "Referrer-Policy": "no-referrer"})
     if error or not code:
         return RedirectResponse(url="/oauth/done?result=denied", status_code=303,
@@ -208,7 +209,8 @@ async def account(x_velaris_jellyfin_token: str | None = Header(default=None)):
 async def disconnect(x_velaris_jellyfin_token: str | None = Header(default=None)):
     uid = await authorized_user(x_velaris_jellyfin_token)
     user_path(uid).unlink(missing_ok=True)
-    CACHE.pop(uid, None)
+    CACHE.pop((uid, "feed"), None)
+    CACHE.pop((uid, "subs"), None)
     return {"connected": False}
 
 
