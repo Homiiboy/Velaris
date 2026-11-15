@@ -9,6 +9,125 @@ globalThis.VelarisYouTube = (() => {
   const cache = new Map();
   let generation = 0;
   let currentVideo = null;
+  let currentPanel = 'for-you';
+  function googleHeaders() {
+    return {'X-Velaris-Jellyfin-Token': session().token};
+  }
+  async function googleApi(route, opts={}) {
+    const response=await fetch('/api/youtube/'+route,{
+      ...opts,
+      cache:'no-store',
+      headers:{...googleHeaders(),...(opts.headers||{})}
+    });
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok)throw Error(data.detail || 'Google OAuth HTTP '+response.status);
+    return data;
+  }
+  function feedCard(v){
+    const img=(v.thumbnail && /^https:\/\//.test(v.thumbnail))
+      ?v.thumbnail:'https://i.ytimg.com/vi/'+encodeURIComponent(v.id)+'/hqdefault.jpg';
+    return '<button class="yt-card" data-yt-feed="'+esc(v.id)+'" type="button" aria-label="'+esc(v.title)+' ansehen">'+
+      '<span class="yt-card-art"><img src="'+esc(img)+'" loading="lazy" referrerpolicy="no-referrer" alt=""><span class="yt-play-icon">▶</span></span>'+
+      '<span class="yt-card-info"><strong>'+esc(v.title)+'</strong><small>'+esc(v.channel)+'</small></span></button>';
+  }
+  function googleHub(account,n){
+    const heading=app.querySelector('.yt-page .category-heading');
+    if(!heading)return;
+    heading.insertAdjacentHTML('afterend','<nav class="yt-subtabs" aria-label="YouTube-Ansichten">'+
+      '<button data-yt-panel="for-you" type="button">For You</button>'+
+      '<button data-yt-panel="subscriptions" type="button">Meine Abos</button>'+
+      '<button data-yt-panel="my-videos" type="button">Meine Videos</button></nav>'+
+      '<section class="yt-google" id="yt-google"><p class="hint">Google-Verbindung wird geprüft …</p></section>');
+    const manual=app.querySelector('.yt-add');
+    const library=app.querySelector('.yt-library');
+    const hub=app.querySelector('#yt-google');
+    function activate(panel){
+      currentPanel=panel;
+      app.querySelectorAll('[data-yt-panel]').forEach(el=>{
+        const selected=el.dataset.ytPanel===panel;
+        el.classList.toggle('selected',selected);
+        el.setAttribute('aria-current',selected?'page':'false');
+      });
+      if(manual)manual.hidden=panel!=='my-videos';
+      if(library)library.hidden=panel!=='my-videos';
+      if(hub)hub.hidden=panel==='my-videos';
+    }
+    app.querySelectorAll('[data-yt-panel]').forEach(el=>el.onclick=()=>{
+      activate(el.dataset.ytPanel);
+      if(el.dataset.ytPanel!=='my-videos')loadGoogle();
+    });
+    activate(currentPanel);
+    let fetchGeneration=0;
+    async function loadGoogle(){
+      if(currentPanel==='my-videos'||!owns(n,account))return;
+      const epoch=++fetchGeneration;
+      hub.innerHTML='<p class="hint">YouTube-Konto wird geladen …</p>';
+      try{
+        const status=await googleApi('account');
+        if(epoch!==fetchGeneration||!owns(n,account))return;
+        if(!status.connected){
+          hub.innerHTML='<h2>Dein persönliches YouTube</h2>'+
+            '<p class="hint">Verbinde dein Google-Konto, um deine Abonnements und neue Videos hier anzuzeigen.</p>'+
+            '<button id="yt-google-connect" class="primary" type="button">Mit Google anmelden</button>'+
+            '<p class="yt-feedback" id="yt-google-feedback" role="status"></p>';
+          hub.querySelector('#yt-google-connect').onclick=async()=>{
+            // Opening the window synchronously keeps popup blockers from blocking it.
+            const popup=window.open('about:blank','velaris-google-login','width=620,height=750');
+            const output=hub.querySelector('#yt-google-feedback');
+            try{
+              const result=await googleApi('oauth/start',{method:'POST'});
+              if(!/^https:\/\/accounts\.google\.com\//.test(result.authorizationUrl))throw Error('Ungültige Google-Anmeldeadresse');
+              if(popup&&!popup.closed)popup.location.href=result.authorizationUrl;
+              else output.textContent='Pop-up blockiert. Erlaube Pop-ups für Velaris und versuche es erneut.';
+              if(popup){
+                output.textContent='Schließe die Google-Anmeldung im neuen Fenster ab und klicke danach auf „Aktualisieren“.';
+                const refresh=document.createElement('button');
+                refresh.className='secondary';refresh.textContent='Aktualisieren';
+                refresh.onclick=loadGoogle;
+                output.after(refresh);
+              }
+            }catch(e){
+              if(popup&&!popup.closed)popup.close();
+              output.textContent='Google-Anmeldung konnte nicht gestartet werden: '+e.message;
+            }
+          };
+          return;
+        }
+        hub.innerHTML='<div class="yt-google-top"><h2>'+(currentPanel==='for-you'?'Neue Videos aus deinen Abos':'Meine abonnierten Kanäle')+'</h2>'+
+          '<div><button id="yt-google-refresh" class="secondary" type="button">Aktualisieren</button> '+
+          '<button id="yt-google-disconnect" class="secondary" type="button">Konto trennen</button></div></div>'+
+          '<p class="hint" id="yt-google-hint">Inhalte werden über die offizielle YouTube Data API geladen.</p>'+
+          '<div id="yt-google-results" class="yt-grid"></div>';
+        hub.querySelector('#yt-google-refresh').onclick=loadGoogle;
+        hub.querySelector('#yt-google-disconnect').onclick=async()=>{
+          if(!confirm('Google-Konto von diesem Velaris-Profil trennen?'))return;
+          try{await googleApi('account',{method:'DELETE'});loadGoogle()}
+          catch(e){hub.querySelector('#yt-google-hint').textContent=e.message}
+        };
+        const data=await googleApi(currentPanel==='for-you'?'for-you':'subscriptions');
+        if(epoch!==fetchGeneration||!owns(n,account))return;
+        const results=hub.querySelector('#yt-google-results');
+        if(!results)return;
+        if(currentPanel==='for-you'){
+          const videos=data.videos||[];
+          results.innerHTML=videos.length?videos.map(feedCard).join(''):'<p class="hint">Aktuell wurden keine neuen Videos gefunden.</p>';
+          results.querySelectorAll('[data-yt-feed]').forEach(el=>el.onclick=()=>details(el.dataset.ytFeed));
+        }else{
+          const channels=data.channels||[];
+          results.innerHTML=channels.length?channels.map(c=>
+            '<div class="yt-channel"><img loading="lazy" referrerpolicy="no-referrer" src="'+esc(c.thumbnail)+'" alt=""><strong>'+esc(c.title)+'</strong></div>'
+          ).join(''):'<p class="hint">Keine Abonnements gefunden.</p>';
+        }
+      }catch(e){
+        if(epoch!==fetchGeneration||!owns(n,account))return;
+        hub.innerHTML='<h2>Google-Verbindung nicht verfügbar</h2><p class="hint">'+esc(e.message)+
+          '</p><button class="secondary" id="yt-google-retry">Erneut versuchen</button>';
+        hub.querySelector('#yt-google-retry').onclick=loadGoogle;
+      }
+    }
+    if(currentPanel!=='my-videos')loadGoogle();
+  }
+
 
   const key = () => 'velaris-youtube-ids-v1:' + encodeURIComponent(session().url) + ':' + encodeURIComponent(session().userId);
   function ids() {
@@ -73,6 +192,7 @@ globalThis.VelarisYouTube = (() => {
       '<section class="yt-add"><div><h2>YouTube-Video hinzufügen</h2><p class="hint">Füge einen öffentlichen YouTube-Link oder eine Video-ID hinzu. Videos werden nicht heruntergeladen.</p></div>'+
       '<form id="yt-add-form" class="yt-add-form"><input id="yt-input" type="text" required maxlength="512" placeholder="YouTube-Link oder Video-ID" aria-label="YouTube-Link oder Video-ID"><button class="primary" type="submit">Hinzufügen</button></form><p class="yt-feedback" id="yt-feedback" role="status"></p></section>'+
       '<section class="yt-library"><h2>Meine YouTube-Videos</h2><div class="yt-grid" id="yt-grid"><p class="hint">Videoinformationen werden geladen …</p></div></section></main>');
+    googleHub(account,n);
     const grid = app.querySelector('#yt-grid');
     const input = app.querySelector('#yt-input');
     const message = app.querySelector('#yt-feedback');
