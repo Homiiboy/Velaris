@@ -22,9 +22,11 @@ Die mobilen, TV- und Web-Anwendungen liegen in einem Monorepo, bleiben aber eige
 
 | Plattform | Versionsstand im Quellcode |
 | --- | --- |
-| Velaris TV | **2.1.0** (`versionCode` 10) – UI-Color-Pass |
-| Velaris Smartphone | **2.1.0** (Expo, Android `versionCode` 10) – UI-Color-Pass |
-| Velaris Web und iPhone-PWA | **2.1.0** (Kategorie-Branding; Desktop-Navigation oben, iPhone unten) |
+| Velaris TV | **2.2.1** (`versionCode` 11) – Design-Synchronisierung |
+| Velaris Smartphone | **2.2.1** (Expo, Android `versionCode` 11) – Design-Synchronisierung |
+| Velaris Web und iPhone-PWA | **2.2.1** (responsive Handy- und Desktop-Layout) |
+
+**Layout-Familien (2.2.1):** Smartphone-App und iPhone-PWA haben oben eine scrollbare Kategorienleiste und unten fünf Haupt-Tabs. Desktop-Web und Android TV verwenden eine horizontale Navigation mit derselben Kategorienreihenfolge. Der gemeinsame Vertrag liegt in [`brand.json`](packages/velaris-design/brand.json), der Umsetzungs- und Teststatus in [Design-Synchronisierung 2.2.1](docs/DESIGN_SYNC_2_2_1.md). Pixelgenaue Gerätevergleiche und native Builds stehen noch aus.
 
 Die Versionsnummern sind unabhängig von einem signierten oder ausgerollten Release. Mobile benötigt einen neuen EAS-Build, Web ein neues Deployment und TV eine signierte APK für produktive Updates.
 
