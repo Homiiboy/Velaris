@@ -51,6 +51,14 @@ Velaris verwendet eine einheitliche Markenidentität, aber zwei für ihre Gerät
 
 **Status:** Navigations- und Header-Änderungen im Repository eingetragen; Expo-Typecheck, reale Android-/iPhone-Tests und PWA-Deployment sowie visuelle Abnahme stehen noch aus. Die Versionsnummern wurden durch diesen Layoutschritt nicht automatisch erhöht.
 
+### TV/Web UI-Pass 2 – Header und Kategorienavigation (Quellcode)
+
+**Umgesetzt am 16.11.2026:** Desktop-Web integriert nun den VELARIS-Schriftzug, die horizontal scrollbare Kategoriennavigation und die Aktionen in **einer gemeinsamen Kopfzeile**, passend zur TV-Struktur. Die Kategorien behalten ihre bestehende Reihenfolge und individuelle Akzentfarbe; der gesamte Bereichsschriftzug hat dieselbe Kategorie-Akzentfarbe. Der aktive Navigationspunkt erhält eine farbige Pill-Fläche. TV verwendet keinen Weiß-Akzent-Verlauf mehr im Bereichsschriftzug, reduziert den Abstand zwischen Navigationselementen und scrollt bei Seitenwechsel zur aktiven Kategorie. Profil und Einstellungen bleiben auf dem TV auch außerhalb der Startseite erreichbar.
+
+**Unverändert:** Mobile PWA (vier Bottom-Tabs und Kategorien-Overlay), alle Player-/Cast-/Jellyfin-Funktionen sowie die Funktionalität der TV-Medienansichten. Die bisherige YouTube-Unterstützung ist je Plattform unterschiedlich; kein funktionierender TV-YouTube-Reiter wurde ergänzt.
+
+**Prüfstatus:** Quellcode eingetragen; echte TV-/Browser-Tests auf 1080p, 4K, kleineren Desktopfenstern und D-Pad-Fokus noch offen. Die Scroll-Leiste und der Header müssen dabei auf abgeschnittene Texte und Fokusränder überprüft werden. Als nächstes folgt UI-Pass 3 (Hero).
+
 ### TV/Web UI-Pass 1 – Postergrößen und Medienreihen (Quellcode)
 
 **Umgesetzt am 16.11.2026:** Die normalen TV-Startseitenreihen berechnen ihre Posterbreite aus der aktuellen verfügbaren Bildschirmbreite und zielen auf vier vollständig sichtbare Cover im Verhältnis 2:3. Titel stehen lesbar unter dem Poster; Abstände und Fokuseffekte bleiben berücksichtigt. Desktop-Web verwendet bei mindestens 1200 CSS-Pixel Fensterbreite vier Poster pro normaler Startseitenreihe, von 850 bis 1199 CSS-Pixeln drei. Für schmalere Ansichten gilt unverändert das mobile Design. Top 10, Weiterschauen, Bibliotheksraster und Player bleiben eigenständig.
@@ -72,7 +80,7 @@ Velaris verwendet eine einheitliche Markenidentität, aber zwei für ihre Gerät
 5. **Plattformgerechte Bedienung:** TV benötigt sichtbare, nicht abgeschnittene D-Pad-Fokusrahmen und Fernbedienungsnavigation; Web benötigt sinnvolle Maus-, Hover- und Tastaturzustände. Visuelle Gleichheit darf die jeweilige Bedienbarkeit nicht verschlechtern.
 6. **Abnahme:** Desktop-Web und Google TV anhand gleicher Testansichten/Screenshots vergleichen; vorhandenen Player, Cast und Jellyfin-Funktionen mit Regressionstests absichern. Erst danach den Pass als abgeschlossen markieren.
 
-**Status:** UI-Pass 1 (Postergrößen) im Quellcode umgesetzt, aber noch nicht getestet oder deployed. UI-Pässe 2–6 (Header, Hero, Fokus, Details und Geräteabnahme) stehen aus.
+**Status:** UI-Pass 1 (Postergrößen) im Quellcode umgesetzt, aber noch nicht getestet oder deployed. UI-Pass 2 (Header und Navigation) ebenfalls im Quellcode umgesetzt; UI-Pässe 3–6 (Hero, Fokus, Details und Geräteabnahme) stehen aus.
 
 ### Gemeinsame Designregeln und Farben
 
