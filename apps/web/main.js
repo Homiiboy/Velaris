@@ -134,7 +134,9 @@ const showHeroError=error=>{
 };
 const showHero=()=>{
  const item=featured[heroIndex],src=image(item,'Backdrop',1400);
- mount.innerHTML='<div class="hero" style="--hero:url(&quot;'+esc(src)+'&quot;)"><div class="hero-copy"><div class="eyebrow">✦ IM RAMPENLICHT</div>'+p8Logo(item)+'<p>'+esc((item.Overview||'Entdecke deine Mediathek.').slice(0,170))+'</p><div class="actions"><button type="button" class="primary" data-hero-action="play">▶ Abspielen</button><button type="button" class="secondary" data-hero-action="details">ⓘ Mehr Infos</button></div><p id="hero-action-error" class="hero-action-error" role="alert"></p></div></div>';
+ const heroMeta=[item.ProductionYear,Number(item.CommunityRating)>0?'★ '+Number(item.CommunityRating).toFixed(1):'',item.Type==='Series'?'SERIE':item.Type==='Movie'?'FILM':''].filter(Boolean).join(' · ');
+ const heroGenres=Array.isArray(item.Genres)?item.Genres.slice(0,3).join(' · '):'';
+ mount.innerHTML='<div class="hero" style="--hero:url(&quot;'+esc(src)+'&quot;)"><div class="hero-copy"><div class="eyebrow">✦ IM RAMPENLICHT</div>'+p8Logo(item)+(heroMeta?'<div class="velaris-hero-meta">'+esc(heroMeta)+'</div>':'')+(heroGenres?'<div class="velaris-hero-genres">'+esc(heroGenres)+'</div>':'')+'<p>'+esc((item.Overview||'Entdecke deine Mediathek.').slice(0,260))+'</p><div class="actions"><button type="button" class="primary" data-hero-action="play">▶ Abspielen</button><button type="button" class="secondary" data-hero-action="details">ⓘ Mehr Infos</button></div><p id="hero-action-error" class="hero-action-error" role="alert"></p></div></div>';
  dots.innerHTML=featured.map((x,i)=>'<button type="button" class="hero-dot '+(i===heroIndex?'active':'')+'" data-slide="'+i+'" aria-label="Highlight '+(i+1)+': '+esc(x.Name)+'" aria-pressed="'+(i===heroIndex)+'"></button>').join('');
 };
 mount.onclick=event=>{
