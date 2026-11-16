@@ -87,13 +87,12 @@
   },
   "layouts": {
     "mobile": {
-      "navigation": "top-category-scroll-and-five-bottom-tabs",
+      "navigation": "category-modal-and-four-bottom-tabs",
       "bottomTabs": [
-        "movies",
-        "series",
         "home",
-        "anime",
-        "animeMovies"
+        "categories",
+        "favorites",
+        "profile"
       ],
       "categoryOrder": [
         "home",
