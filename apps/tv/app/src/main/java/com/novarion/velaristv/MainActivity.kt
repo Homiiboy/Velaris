@@ -1160,7 +1160,7 @@ class MainActivity : Activity() {
                 poster.foreground=if(focused)GradientDrawable().apply{
                     setColor(Color.TRANSPARENT)
                     cornerRadius=dp(10).toFloat()
-                    setStroke(dp(2),VelarisDesign.color("focus",0xFFDCCFFF.toInt()))
+                    setStroke(dp(3),VelarisDesign.color("focus",0xFFDCCFFF.toInt()))
                 } else null
                 val caption=poster.findViewWithTag<TextView>("velaris_poster_focus_caption")
                 if(caption!=null) {
@@ -1195,14 +1195,15 @@ class MainActivity : Activity() {
                     if(focused)setStroke(dp(2),VelarisDesign.color("focus",0xFFDCCFFF.toInt()))
                 }
             }
-            // A restrained 2% cinematic focus lift. Existing poster rows
-            // provide safe-area padding and disable child clipping.
+            // UI-Pass 4: a matching 3.5% focus lift for TV and desktop Web.
+            // Raise the focused card above adjacent cards; no size/layout jump.
+            if(focused)v.bringToFront()
             target.animate().cancel()
             target.animate()
-                .scaleX(if(focused)1.02f else 1f)
-                .scaleY(if(focused)1.02f else 1f)
-                .translationZ(if(focused)dp(10).toFloat() else 0f)
-                .setDuration(if(prefs.getBoolean("ui_animations",true)) { if(focused)170 else 130 } else 0).start()
+                .scaleX(if(focused)1.035f else 1f)
+                .scaleY(if(focused)1.035f else 1f)
+                .translationZ(if(focused)dp(12).toFloat() else 0f)
+                .setDuration(if(prefs.getBoolean("ui_animations",true)) { if(focused)180 else 140 } else 0).start()
         }
     }
 
