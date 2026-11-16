@@ -434,3 +434,16 @@ button:disabled{cursor:wait;opacity:.65}
 .velaris-category-grid button.selected{border-color:var(--category-color)}
 .velaris-category-grid .category-symbol{font-size:23px;color:var(--category-color)}
 @media(min-width:850px){.velaris-category-overlay{align-items:center}.velaris-category-panel{border-radius:22px;max-height:85dvh}}
+
+/* TV/Web UI-Pass 1: four complete 2:3 posters per normal desktop home rail.
+   Top 10/ranked and Continue Watching keep their dedicated card formats. */
+@media(min-width:1200px) {
+ .shell .rows .media-section>.rail {--desktop-rail-gap:18px;gap:var(--desktop-rail-gap);padding-left:6vw;padding-right:6vw;scroll-padding-left:6vw;scroll-padding-right:6vw}
+ .shell .rows .media-section>.rail>.poster {flex:0 0 calc((100% - 3 * var(--desktop-rail-gap)) / 4);width:calc((100% - 3 * var(--desktop-rail-gap)) / 4);min-width:0}
+ .shell .rows .media-section>.rail>.poster img {aspect-ratio:2/3;object-fit:contain}
+ .shell .rows .media-section>.rail>.poster .poster-title {font-size:15px;font-weight:700;line-height:1.35}
+}
+@media(min-width:850px) and (max-width:1199px) {
+ .shell .rows .media-section>.rail {--desktop-rail-gap:16px;gap:var(--desktop-rail-gap);padding-left:6vw;padding-right:6vw}
+ .shell .rows .media-section>.rail>.poster {flex:0 0 calc((100% - 2 * var(--desktop-rail-gap)) / 3);width:calc((100% - 2 * var(--desktop-rail-gap)) / 3);min-width:0}
+}
