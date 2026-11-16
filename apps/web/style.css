@@ -526,3 +526,40 @@ button:disabled{cursor:wait;opacity:.65}
  .shell .hero-stage .hero-copy{width:min(590px,72vw)}
 }
 @media(prefers-reduced-motion:reduce){.shell .hero-stage .hero-copy{animation:none}}
+
+/* TV/Web UI-Pass 4 – focus parity for desktop poster rows and library grids.
+   No hover/focus scale changes for the mobile iPhone PWA. */
+.poster-art{position:relative;display:block;min-width:0;border-radius:9px}
+.poster-focus-meta{display:none}
+@media(min-width:850px){
+ .shell .poster{transform-origin:center center}
+ .shell .poster .poster-art{overflow:hidden;background:#202027;border-radius:9px}
+ .shell .poster .poster-art img{display:block;width:100%;border-radius:9px}
+ .shell .poster .poster-focus-meta{
+   display:block;position:absolute;inset:auto 0 0;z-index:2;
+   padding:19px 11px 10px;
+   background:linear-gradient(transparent,rgba(8,8,13,.94));
+   color:#fff;font-size:12px;font-weight:800;letter-spacing:.025em;
+   opacity:0;transform:translateY(5px);
+   transition:opacity .18s ease,transform .18s ease;
+   pointer-events:none
+ }
+ .shell .poster:hover,.shell .poster:focus-visible{
+   transform:scale(1.035);filter:none;z-index:3;
+ }
+ .shell .poster:hover .poster-art,.shell .poster:focus-visible .poster-art{
+   outline:3px solid var(--accent);outline-offset:-3px;
+   box-shadow:0 8px 26px color-mix(in srgb,var(--accent) 28%,transparent)
+ }
+ .shell .poster:hover .poster-focus-meta,.shell .poster:focus-visible .poster-focus-meta{
+   opacity:1;transform:translateY(0)
+ }
+ .shell .poster:focus-visible{outline:0}
+ .shell .rows .media-section>.rail,
+ .shell .category-page .grid{isolation:isolate}
+ .shell .rows .media-section>.rail{padding-top:16px;padding-bottom:34px;scroll-padding-left:6vw;scroll-padding-right:6vw}
+ .shell .rows .media-section>.rail>.poster{scroll-snap-align:start}
+}
+@media(prefers-reduced-motion:reduce){
+ .shell .poster,.shell .poster .poster-focus-meta{transition:none!important}
+}
