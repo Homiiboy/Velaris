@@ -80,8 +80,8 @@ check(webStyles.includes('.shell .details-screen .detail-hero{height:500px'),
   'Desktop detail hero height changed');
 check(webStyles.includes('@media(prefers-reduced-motion:reduce)'),
   'Reduced-motion support missing');
-const webCssVersion=webIndex.match(/style\\.css\\?v=(\\d+)/)?.[1];
-const webJsVersion=webIndex.match(/main\\.js\\?v=(\\d+)/)?.[1];
+const webCssVersion=webIndex.match(new RegExp('style[.]css[?]v=([0-9]+)'))?.[1];
+const webJsVersion=webIndex.match(new RegExp('main[.]js[?]v=([0-9]+)'))?.[1];
 check(Boolean(webCssVersion) && webCssVersion===webJsVersion,'Desktop assets use different cache-busting revisions');
 
 if(errors.length){console.error(errors.join('\n'));process.exit(1)}
