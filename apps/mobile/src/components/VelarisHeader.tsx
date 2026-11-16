@@ -64,9 +64,8 @@ export function VelarisHeader({scope='home',collectionId,home=false,overlay=fals
   };
   const sectionName=scope==='home'?'Velaris':design.navigation[scope];
   useEffect(()=>{
-    if(!home)return;
     getActiveProfile().then(p=>setProfile(p??null));
-    if(session)getGenres(session).then(setGenres).catch(()=>setGenres([]));
+    if(home&&session)getGenres(session).then(setGenres).catch(()=>setGenres([]));
   },[home,session]);
   const search=useCallback(()=>{
     router.push({pathname:'/(tabs)/search',params:{
@@ -90,12 +89,11 @@ export function VelarisHeader({scope='home',collectionId,home=false,overlay=fals
           style={({pressed})=>[styles.actionTouch,pressed&&styles.actionTouchPressed]} onPress={search}>
           <SearchGlyph/>
         </Pressable>
-        {home&&<>
-          <Pressable accessibilityRole="button" accessibilityLabel="Downloads"
+        {home&&<Pressable accessibilityRole="button" accessibilityLabel="Downloads"
             style={({pressed})=>[styles.actionTouch,pressed&&styles.actionTouchPressed]}
             onPress={()=>router.push('/downloads')}>
             <Text style={styles.smallAction}>⇩</Text>
-          </Pressable>
+          </Pressable>}
           <Pressable accessibilityRole="button" accessibilityLabel="Einstellungen"
             style={({pressed})=>[styles.actionTouch,pressed&&styles.actionTouchPressed]}
             onPress={()=>router.push('/(tabs)/profile')}>
@@ -108,7 +106,6 @@ export function VelarisHeader({scope='home',collectionId,home=false,overlay=fals
               <Image source={profile?.photoUri?{uri:profile.photoUri}:AVATARS[(profile?.avatar??0)%AVATARS.length]} style={styles.avatarImage}/>
             </View>
           </Pressable>
-        </>}
       </View>
     </View>
     <View style={styles.strip}>
