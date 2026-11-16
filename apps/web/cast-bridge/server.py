@@ -35,6 +35,24 @@ def jellyfin_get(path, token):
         return json.load(response)
 
 
+def check_cast_jellyfin_url():
+    """The Chromecast must reach this LAN endpoint independently of the iPhone/Tailscale."""
+    url = JELLYFIN_CAST + "/System/Info/Public"
+    try:
+        with urlopen(Request(url, headers={"Accept": "application/json"}), timeout=5) as response:
+            if response.status != 200:
+                raise RuntimeError("Der Jellyfin-Server antwortet unter der Chromecast-Adresse nicht korrekt.")
+            data = json.load(response)
+            if not isinstance(data, dict) or not (data.get("ServerName") or data.get("Version")):
+                raise RuntimeError("Die Chromecast-Adresse liefert keine gültigen Jellyfin-Serverdaten.")
+    except (HTTPError, URLError, OSError, ValueError) as exc:
+        LOG.warning("Cast Jellyfin LAN endpoint unavailable: %s", type(exc).__name__)
+        raise RuntimeError(
+            "Jellyfin ist über die für Chromecast eingestellte LAN-Adresse nicht erreichbar ("
+            + JELLYFIN_CAST + "). Bitte JELLYFIN_CAST_URL in apps/web/.env prüfen."
+        ) from exc
+
+
 def discover(force=False):
     global _LAST_SCAN
     with _LOCK:
@@ -111,6 +129,7 @@ class Handler(BaseHTTPRequestHandler):
                     status = cast.media_controller.status
                     results.append({"deviceId": device_id, "name": cast.name,
                                     "state": status.player_state or "UNKNOWN",
+                                    "idleReason": getattr(status, "idle_reason", None),
                                     "position": status.current_time or 0,
                                     "duration": status.duration or 0})
                 return self.answer(200, {"sessions": results})
@@ -126,6 +145,7 @@ class Handler(BaseHTTPRequestHandler):
                 item = jellyfin_get("/Users/" + quote(user_id) + "/Items/" + quote(item_id), token)
                 if item.get("Type") not in ("Movie", "Episode"):
                     raise ValueError("Nur Filme und Episoden können abgespielt werden.")
+                check_cast_jellyfin_url()
                 cast.wait(timeout=12)
                 # Chromecast itself retrieves this URL from the LAN. The Jellyfin token
                 # is needed by the receiver; it never appears in bridge responses/logs.
@@ -136,7 +156,7 @@ class Handler(BaseHTTPRequestHandler):
                                                  stream_type="BUFFERED")
                 with _LOCK:
                     _ACTIVE[device_id] = user_id
-                return self.answer(200, {"ok": True, "device": cast.name})
+                return self.answer(200, {"ok": True, "device": cast.name, "state": "STARTING"})
             if self.path == "/control":
                 cast = device_for(device_id, user_id)
                 action = data.get("action")
@@ -157,6 +177,8 @@ class Handler(BaseHTTPRequestHandler):
                     raise ValueError("Unbekannter Wiedergabebefehl.")
                 return self.answer(200, {"ok": True})
             return self.answer(404, {"error": "Nicht gefunden."})
+        except RuntimeError as exc:
+            return self.answer(502, {"error": str(exc)})
         except (ValueError, TypeError) as exc:
             return self.answer(400, {"error": str(exc)})
         except PermissionError as exc:
