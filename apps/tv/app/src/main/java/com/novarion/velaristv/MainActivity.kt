@@ -1198,7 +1198,7 @@ class MainActivity : Activity() {
             }
             // UI-Pass 4: a matching 3.5% focus lift for TV and desktop Web.
             // Raise the focused card above adjacent cards; no size/layout jump.
-            if(focused)v.bringToFront()
+            // Preserve D-pad navigation order; elevation alone draws the focused card above siblings.
             target.animate().cancel()
             target.animate()
                 .scaleX(if(focused)1.035f else 1f)
@@ -1217,7 +1217,7 @@ class MainActivity : Activity() {
         val horizontalInset=52+56
         val cardGap=16
         val cardWidth=((screenWidthDp-horizontalInset-cardGap*4)/4).coerceAtLeast(120)
-        val posterWidth=(cardWidth-8).coerceAtLeast(112)
+        val posterWidth=cardWidth-8
         val posterHeight=(posterWidth*3)/2
         val rowHeight=posterHeight+84
         val row=LinearLayout(this).apply {
