@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { colors, design } from '@/theme';
 import { useAuth } from '@/context/AuthContext';
@@ -49,6 +49,7 @@ export function VelarisHeader({scope='home',collectionId,home=false,overlay=fals
   const [profile,setProfile]=useState<VelarisProfile | null>(null);
   const [genres,setGenres]=useState<string[]>([]);
   const [genresOpen,setGenresOpen]=useState(false);
+  const [categoriesOpen,setCategoriesOpen]=useState(false);
   const [contentWidth,setContentWidth]=useState(0);
   const [viewportWidth,setViewportWidth]=useState(0);
   const [scrollX,setScrollX]=useState(0);
@@ -81,7 +82,7 @@ export function VelarisHeader({scope='home',collectionId,home=false,overlay=fals
           <Text style={styles.back}>‹</Text>
         </Pressable>}
         <Pressable onPress={()=>router.push('/(tabs)/home')} accessibilityLabel="Velaris Startseite">
-          <Text style={styles.brand}><Text style={[styles.brandPurple,{color:sectionAccent}]}>VELARIS</Text>{scope!=='home'&&<Text style={{color:sectionAccent,fontSize:14}}> {String(design.navigation[scope] ?? scope).toLocaleUpperCase('de-DE')}</Text>}</Text>
+          <Text numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.7} style={[styles.brand,{color:sectionAccent}]}>VELARIS{scope!=='home'?' '+String(design.navigation[scope] ?? scope).toLocaleUpperCase('de-DE'):''}</Text>
         </Pressable>
       </View>
       <View style={styles.actions}>
@@ -108,39 +109,22 @@ export function VelarisHeader({scope='home',collectionId,home=false,overlay=fals
           </Pressable>
       </View>
     </View>
-    <View style={styles.strip}>
-      <ScrollView ref={scroller} style={styles.stripScroll} horizontal showsHorizontalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-        onLayout={e=>setViewportWidth(e.nativeEvent.layout.width)}
-        onContentSizeChange={(w)=>setContentWidth(w)}
-        onScroll={e=>setScrollX(e.nativeEvent.contentOffset.x)}
-        scrollEventThrottle={40}
-        contentContainerStyle={styles.stripContent}>
-        {menu.map((item,index)=><Pressable key={item.key}
-          onLayout={e=>{const {x,width}=e.nativeEvent.layout;tabEnds.current[index]=x+width;}}
-          accessibilityRole="button" accessibilityState={{selected:scope===item.key}}
-          onPress={()=>router.push(item.href as any)}
-          style={({pressed})=>[styles.chip,scope===item.key&&[styles.activeChip,{backgroundColor:sectionAccent,shadowColor:sectionAccent}],pressed&&styles.chipPressed]}>
-          <Text style={[styles.chipText,scope===item.key&&styles.activeChipText,scope===item.key&&lightAccent&&{color:'#101016'}]}>{item.label}</Text>
-        </Pressable>)}
-        {home&&<Pressable accessibilityRole="button" accessibilityLabel="Genres"
-          style={({pressed})=>[styles.chip,genresOpen&&[styles.activeChip,{backgroundColor:sectionAccent}],pressed&&styles.chipPressed]}
-          onLayout={e=>{const {x,width}=e.nativeEvent.layout;tabEnds.current[menu.length]=x+width;}}
-          onPress={()=>setGenresOpen(v=>!v)}>
-          <Text style={[styles.chipText,genresOpen&&styles.activeChipText]}>Genres</Text>
-        </Pressable>}
-        <View style={styles.trailingGap} accessible={false}/>
-      </ScrollView>
-      <Pressable accessibilityLabel="Weitere Kategorien" accessibilityRole="button"
-        disabled={!rightAvailable}
-        style={[styles.more,{opacity:rightAvailable?1:0}]}
-        onPress={scrollToNextTab}>
-        <View style={styles.chevron} pointerEvents="none">
-          <View style={[styles.chevronArm,styles.chevronTop]}/>
-          <View style={[styles.chevronArm,styles.chevronBottom]}/>
+    <Pressable style={styles.categoryTrigger} accessibilityRole="button" accessibilityLabel="Alle Kategorien öffnen" onPress={()=>setCategoriesOpen(true)}>
+      <View style={[styles.categoryDot,{backgroundColor:sectionAccent}]}/><Text style={styles.categoryTriggerText}>Alle Kategorien</Text><Text style={styles.categoryChevron}>⌄</Text>
+    </Pressable>
+    <Modal visible={categoriesOpen} transparent animationType="slide" onRequestClose={()=>setCategoriesOpen(false)}>
+      <View style={styles.modalBackdrop}>
+        <View style={styles.modalPanel}>
+          <View style={styles.modalHead}><Text style={styles.modalTitle}>Kategorien</Text><Pressable onPress={()=>setCategoriesOpen(false)} accessibilityLabel="Kategorien schließen" accessibilityRole="button" style={styles.modalClose}><Text style={styles.modalCloseText}>✕</Text></Pressable></View>
+          <ScrollView contentContainerStyle={styles.categoryGrid} nestedScrollEnabled>
+            {menu.map(item=><Pressable key={item.key} accessibilityRole="button" accessibilityLabel={item.label} onPress={()=>{setCategoriesOpen(false);router.push(item.href as any)}} style={[styles.categoryTile,scope===item.key&&{borderColor:design.categoryAccents[item.key as keyof typeof design.categoryAccents]}]}>
+              <View style={[styles.categoryTileMarker,{backgroundColor:design.categoryAccents[item.key as keyof typeof design.categoryAccents]}]}/>
+              <Text style={styles.categoryTileText}>{item.label}</Text>
+            </Pressable>)}
+          </ScrollView>
         </View>
-      </Pressable>
-    </View>
+      </View>
+    </Modal>
     {home&&genresOpen&&<View style={styles.genreDropdown}>
       <Text style={styles.genreHeading}>Genres</Text>
       <ScrollView style={styles.genreScroll} nestedScrollEnabled>
@@ -156,11 +140,11 @@ const styles=StyleSheet.create({
   header:{backgroundColor:colors.background,paddingTop:46,paddingBottom:12,zIndex:20},
   overlay:{position:'absolute',top:0,left:0,right:0,backgroundColor:'rgba(8,8,13,.89)'},
   top:{height:40,paddingHorizontal:16,flexDirection:'row',alignItems:'center',justifyContent:'space-between'},
-  wordmarkArea:{flexDirection:'row',alignItems:'center',gap:13},
+  wordmarkArea:{flexDirection:'row',alignItems:'center',gap:8,flex:1,minWidth:0},
   back:{fontSize:31,color:colors.text,fontWeight:'600',lineHeight:36,textAlign:'center',includeFontPadding:false},
-  brand:{fontSize:20,color:colors.text,fontWeight:'900',letterSpacing:2.2},
+  brand:{fontSize:18,color:colors.text,fontWeight:'900',letterSpacing:1.0,flexShrink:1},
   brandPurple:{color:colors.accent},
-  actions:{flexDirection:'row',alignItems:'center',gap:3},
+  actions:{flexDirection:'row',alignItems:'center',gap:1,flexShrink:0},
   actionTouch:{width:37,height:40,borderRadius:12,alignItems:'center',justifyContent:'center'},
   actionTouchPressed:{backgroundColor:'rgba(124,92,252,.22)',transform:[{scale:0.96}]},
   smallAction:{fontSize:23,color:colors.text,fontWeight:'700',lineHeight:28,textAlign:'center',includeFontPadding:false},
@@ -169,6 +153,20 @@ const styles=StyleSheet.create({
   searchHandle:{position:'absolute',left:17,top:18,width:10,height:2,backgroundColor:colors.text,borderRadius:1,transform:[{rotate:'45deg'}]},
   avatar:{width:31,height:31,borderRadius:7,overflow:'hidden',borderWidth:1,borderColor:colors.border},
   avatarImage:{width:'100%',height:'100%'},
+  categoryTrigger:{marginHorizontal:16,marginTop:14,minHeight:46,paddingHorizontal:14,borderRadius:13,backgroundColor:'#1C1E29',borderWidth:1,borderColor:'#343645',flexDirection:'row',alignItems:'center',gap:10},
+  categoryDot:{width:8,height:8,borderRadius:4},
+  categoryTriggerText:{color:colors.text,fontWeight:'800',fontSize:14,flex:1},
+  categoryChevron:{color:colors.text,fontSize:22},
+  modalBackdrop:{flex:1,justifyContent:'flex-end',backgroundColor:'rgba(5,5,9,0.88)'},
+  modalPanel:{maxHeight:'90%',backgroundColor:'#11121B',borderTopLeftRadius:22,borderTopRightRadius:22,paddingHorizontal:16,paddingTop:16,paddingBottom:35},
+  modalHead:{flexDirection:'row',alignItems:'center',justifyContent:'space-between',marginBottom:12},
+  modalTitle:{fontSize:22,color:colors.text,fontWeight:'900'},
+  modalClose:{width:44,height:44,alignItems:'center',justifyContent:'center',backgroundColor:'#292B37',borderRadius:10},
+  modalCloseText:{fontSize:20,color:colors.text},
+  categoryGrid:{flexDirection:'row',flexWrap:'wrap',gap:10,paddingBottom:14},
+  categoryTile:{width:'48%',minHeight:88,padding:14,backgroundColor:'#20222E',borderColor:'#343442',borderWidth:1,borderRadius:13,justifyContent:'space-between'},
+  categoryTileMarker:{width:24,height:4,borderRadius:3},
+  categoryTileText:{color:colors.text,fontWeight:'800',fontSize:13},
   strip:{marginTop:14,height:46,flexDirection:'row',alignItems:'center',paddingRight:14},
   stripScroll:{flex:1},
   stripContent:{paddingLeft:18,paddingRight:12,gap:16,alignItems:'center'},
