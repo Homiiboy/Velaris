@@ -51,6 +51,49 @@ Velaris verwendet eine einheitliche Markenidentität, aber zwei für ihre Gerät
 
 **Status:** Navigations- und Header-Änderungen im Repository eingetragen; Expo-Typecheck, reale Android-/iPhone-Tests und PWA-Deployment sowie visuelle Abnahme stehen noch aus. Die Versionsnummern wurden durch diesen Layoutschritt nicht automatisch erhöht.
 
+### TV/Web UI-Pass 6 – Responsive Polish und Qualitätsprüfung
+
+**Quellcode-Pass am 16.11.2026 umgesetzt, Geräteabnahme weiterhin offen.** Folgende Probleme wurden gezielt korrigiert:
+
+- **TV-Fokus:** Ein fokussiertes Poster darf seine Position in der D-Pad-Navigationsreihenfolge nicht ändern. Die frühere Änderung der Kind-Ansichtsreihenfolge beim Fokus wurde entfernt; die Hervorhebung erfolgt weiter über Skalierung, Fokusrahmen und Z-/Elevationseffekt.
+- **TV-Poster:** Die Breite bleibt an die verfügbare Bildschirmbreite gekoppelt; normale Reihen sind für vier komplett sichtbare Poster bei typischen TV-Viewport-Größen ausgelegt. Bei ungewöhnlich kleinen Viewports ist die reale Abnahme weiterhin notwendig.
+- **Desktop-Navigation:** Die ausgewählte Kategorie wird beim Ansichtswechsel automatisch in den sichtbaren Bereich der horizontalen Navigation gebracht.
+- **Responsives Web:** Kleinere Desktop-Fenster erhalten kompaktere Header-Abstände. Bei geringer Fensterhöhe werden Hero und Details angepasst, um Aktionen und weitere Reihen besser erreichbar zu halten.
+- **Fokus/Safe-Areas:** Scrolleisten und Poster erhalten klarere Fokus-Zustände; reduzierte Bewegung wird berücksichtigt. Die Smartphone- und iPhone-PWA-Ansichten bleiben von den Desktop-Regeln getrennt.
+- **Regressionstest:** `scripts/check-unified.cjs` wurde auf die aktuelle Vier-Tab-Mobile-Navigation aktualisiert und prüft jetzt zentrale TV/Web-Verträge für Navigation, vier Cover, Weiterschauen, Detailansichten und Asset-Versionierung.
+- **PWA-Cache:** HTML-Asset-Versionen und Service-Worker-Cachekennung erhöht, um veraltete Desktop-CSS-/JS-Dateien nach einem Deployment abzulösen.
+
+**Lokale automatisierte Prüfung nach dem Pull:**
+
+```bash
+node --check apps/web/main.js
+node --check scripts/check-unified.cjs
+node scripts/check-unified.cjs
+```
+
+**TV-Build (JDK 17, passendes Android SDK und Gradle erforderlich):**
+
+```bash
+cd apps/tv
+gradle :app:lintDebug :app:assembleDebug
+```
+
+**Abnahmematrix – noch auf echten Geräten / in Browsern durchzuführen:**
+
+| Plattform | Prüfansicht | Erwartung |
+| --- | --- | --- |
+| Google TV 1080p | Startseite / normale Medienreihe | 4 vollständig sichtbare Poster, kein Abschneiden am rechten Rand |
+| Google TV 1080p | Header und D-Pad | Aktive Kategorie erreichbar, sichtbarer Fokus, kein Fokus-Sprung |
+| Google TV 4K | Hero / Top 10 / Weiterschauen | Saubere Abstände, große Cover und korrektes 16:9-Format |
+| Desktop-Web 1920 × 1080 | Startseite | 4 normale Poster, einzeiliger Header, Hero und Reihen ohne Überdeckung |
+| Desktop-Web 1280 × 720 | Header / Hero / Details | Scrollbare Kategorien und vollständig erreichbare Aktionen |
+| Desktop-Web 1024 × 768 | Kategorie / Episoden | 3 normale Poster, gut lesbare Staffel-/Episodenkarten |
+| iPhone-PWA / Smartphone | Startseite / Kategorien | Mobile Navigation und Layout durch Desktop-Änderungen unverändert |
+| TV und Web | Film / Episode / Fortsetzen | Wiedergabestart, Fortschritt und Staffelwechsel funktionieren |
+| Desktop-Web | Cast-Fenster | Separates Overlay, aufrufbar und ohne Scroll-zum-Seitenende-Probleme |
+
+**Freigabestatus: NICHT gerätegetestet / kein Release.** Quelltext- und Vertragsprüfungen ersetzen keine Bildschirmfotos oder einen echten TV-/Player-Test. Eine produktive Freigabe darf erst nach erfolgreichen Builds, Browser- und Gerätetests erfolgen.
+
 ### TV/Web UI-Pass 5 – Detailseiten und Weiterschauen (Quellcode)
 
 **Umgesetzt am 16.11.2026:** Die TV-Seriendetails verwenden nun eine 500 dp hohe Hero-Fläche, einen größeren Titel und 270 × 152 dp breite Episodenbilder mit besser lesbaren Texten. Bei einer bereits begonnenen Folge erscheint am TV der Aktionsname **Fortsetzen**; die Wiedergabe selbst wurde nicht verändert. Die TV-Weiterschauen-Karten bleiben im 16:9-Format und besitzen besser lesbare Titel. Desktop-Web zeigt in der Startseitenreihe **Weiterschauen** nun eigenständige 16:9-Karten mit Play-Symbol, Titel, Episoden-/Restzeitangabe und Fortschrittsleiste; die mobile PWA behält ihre bisherigen Karten. Desktop-Detailseiten erhalten eine 500-Pixel-Herofläche, abgestimmte Typografie, größere Buttons sowie übersichtlichere Staffel- und Episodenkarten.
@@ -104,7 +147,7 @@ Velaris verwendet eine einheitliche Markenidentität, aber zwei für ihre Gerät
 5. **Plattformgerechte Bedienung:** TV benötigt sichtbare, nicht abgeschnittene D-Pad-Fokusrahmen und Fernbedienungsnavigation; Web benötigt sinnvolle Maus-, Hover- und Tastaturzustände. Visuelle Gleichheit darf die jeweilige Bedienbarkeit nicht verschlechtern.
 6. **Abnahme:** Desktop-Web und Google TV anhand gleicher Testansichten/Screenshots vergleichen; vorhandenen Player, Cast und Jellyfin-Funktionen mit Regressionstests absichern. Erst danach den Pass als abgeschlossen markieren.
 
-**Status:** UI-Pass 1 (Postergrößen) im Quellcode umgesetzt, aber noch nicht getestet oder deployed. UI-Pass 2 (Header und Navigation) ebenfalls im Quellcode umgesetzt; UI-Pass 3 (Hero-Banner) ebenfalls im Quellcode umgesetzt; UI-Pass 4 (Fokus/Animationen) ebenfalls im Quellcode umgesetzt; UI-Pass 5 (Detailseiten und Weiterschauen) ebenfalls im Quellcode umgesetzt; UI-Pass 6 (Responsive Polish und Geräteabnahme) steht aus.
+**Status:** UI-Pass 1 (Postergrößen) im Quellcode umgesetzt, aber noch nicht getestet oder deployed. UI-Pass 2 (Header und Navigation) ebenfalls im Quellcode umgesetzt; UI-Pass 3 (Hero-Banner) ebenfalls im Quellcode umgesetzt; UI-Pass 4 (Fokus/Animationen) ebenfalls im Quellcode umgesetzt; UI-Pass 5 (Detailseiten und Weiterschauen) und der Quellcode-Teil von UI-Pass 6 (Responsive Polish/Regressionstests) sind umgesetzt. **Offen bleibt die praktische Abnahme auf Google TV, Desktop-Web und iPhone-PWA; keine Release-Freigabe.**
 
 ### Gemeinsame Designregeln und Farben
 
