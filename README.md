@@ -51,6 +51,14 @@ Velaris verwendet eine einheitliche Markenidentität, aber zwei für ihre Gerät
 
 **Status:** Navigations- und Header-Änderungen im Repository eingetragen; Expo-Typecheck, reale Android-/iPhone-Tests und PWA-Deployment sowie visuelle Abnahme stehen noch aus. Die Versionsnummern wurden durch diesen Layoutschritt nicht automatisch erhöht.
 
+### TV/Web UI-Pass 5 – Detailseiten und Weiterschauen (Quellcode)
+
+**Umgesetzt am 16.11.2026:** Die TV-Seriendetails verwenden nun eine 500 dp hohe Hero-Fläche, einen größeren Titel und 270 × 152 dp breite Episodenbilder mit besser lesbaren Texten. Bei einer bereits begonnenen Folge erscheint am TV der Aktionsname **Fortsetzen**; die Wiedergabe selbst wurde nicht verändert. Die TV-Weiterschauen-Karten bleiben im 16:9-Format und besitzen besser lesbare Titel. Desktop-Web zeigt in der Startseitenreihe **Weiterschauen** nun eigenständige 16:9-Karten mit Play-Symbol, Titel, Episoden-/Restzeitangabe und Fortschrittsleiste; die mobile PWA behält ihre bisherigen Karten. Desktop-Detailseiten erhalten eine 500-Pixel-Herofläche, abgestimmte Typografie, größere Buttons sowie übersichtlichere Staffel- und Episodenkarten.
+
+**Unverändert:** Jellyfin-Anfragen, Player, Fortsetzungslogik, Favoriten und Chromecast/Cast Bridge. Die Mobile-PWA-Navigation und mobile Detailgrößen bleiben bestehen; fehlende Funktionen werden nicht als umgesetzt dargestellt.
+
+**Prüfstatus:** Quellcode eingetragen. Kotlin-Build, Desktop-Browser, echter Google TV, Safari-PWA sowie Staffelwechsel und Wiedergabestart sind noch zu testen. Danach folgt UI-Pass 6 (Responsive Polish und Geräteabnahme).
+
 ### TV/Web UI-Pass 4 – Poster-Fokus und Animationen (Quellcode)
 
 **Umgesetzt am 16.11.2026:** TV und Desktop-Web verwenden für fokussierte bzw. per Maus hervorgehobene Poster eine dezente Skalierung um 3,5 %. Die TV-Karten behalten ihre D-Pad-Bedienung; der Fokusrahmen ist nun 3 dp breit und erhält die Kategorienfarbe. Die Karte wird beim Fokus nach vorne gehoben, damit benachbarte Cover den Effekt nicht überdecken. Desktop-Web erhält denselben farbigen Fokusrahmen, eine sanfte Animation sowie ein direkt im Poster eingeblendetes Band mit Medientyp und Erscheinungsjahr, sofern verfügbar. Die vier großen Poster aus Pass 1 bleiben erhalten. Animationen berücksichtigen die vorhandene TV-Einstellung und im Web `prefers-reduced-motion`.
@@ -96,7 +104,7 @@ Velaris verwendet eine einheitliche Markenidentität, aber zwei für ihre Gerät
 5. **Plattformgerechte Bedienung:** TV benötigt sichtbare, nicht abgeschnittene D-Pad-Fokusrahmen und Fernbedienungsnavigation; Web benötigt sinnvolle Maus-, Hover- und Tastaturzustände. Visuelle Gleichheit darf die jeweilige Bedienbarkeit nicht verschlechtern.
 6. **Abnahme:** Desktop-Web und Google TV anhand gleicher Testansichten/Screenshots vergleichen; vorhandenen Player, Cast und Jellyfin-Funktionen mit Regressionstests absichern. Erst danach den Pass als abgeschlossen markieren.
 
-**Status:** UI-Pass 1 (Postergrößen) im Quellcode umgesetzt, aber noch nicht getestet oder deployed. UI-Pass 2 (Header und Navigation) ebenfalls im Quellcode umgesetzt; UI-Pass 3 (Hero-Banner) ebenfalls im Quellcode umgesetzt; UI-Pass 4 (Fokus/Animationen) ebenfalls im Quellcode umgesetzt; UI-Pässe 5–6 (Detailseiten/Weiterschauen und Geräteabnahme) stehen aus.
+**Status:** UI-Pass 1 (Postergrößen) im Quellcode umgesetzt, aber noch nicht getestet oder deployed. UI-Pass 2 (Header und Navigation) ebenfalls im Quellcode umgesetzt; UI-Pass 3 (Hero-Banner) ebenfalls im Quellcode umgesetzt; UI-Pass 4 (Fokus/Animationen) ebenfalls im Quellcode umgesetzt; UI-Pass 5 (Detailseiten und Weiterschauen) ebenfalls im Quellcode umgesetzt; UI-Pass 6 (Responsive Polish und Geräteabnahme) steht aus.
 
 ### Gemeinsame Designregeln und Farben
 
