@@ -33,7 +33,8 @@
     "collections": "Sammlungen",
     "animation": "Animation",
     "cartoons": "Cartoons",
-    "youtube": "YouTube"
+    "youtube": "YouTube",
+    "favorites": "Meine Liste"
   },
   "homeRows": {
     "topTen": "Top 10 für dich",
@@ -83,5 +84,47 @@
     "favorites": "#E8A0FF",
     "collections": "#D9A86C",
     "youtube": "#FF0033"
+  },
+  "layouts": {
+    "mobile": {
+      "navigation": "top-category-scroll-and-five-bottom-tabs",
+      "bottomTabs": [
+        "movies",
+        "series",
+        "home",
+        "anime",
+        "animeMovies"
+      ],
+      "categoryOrder": [
+        "home",
+        "movies",
+        "series",
+        "anime",
+        "animeMovies",
+        "animation",
+        "cartoons",
+        "favorites",
+        "collections"
+      ],
+      "heroAlignment": "left",
+      "posterAspectRatio": "2:3"
+    },
+    "tvDesktop": {
+      "navigation": "horizontal-top-category-strip",
+      "categoryOrder": [
+        "home",
+        "movies",
+        "series",
+        "anime",
+        "animeMovies",
+        "animation",
+        "cartoons",
+        "favorites",
+        "collections"
+      ],
+      "heroAlignment": "left",
+      "posterAspectRatio": "2:3"
+    },
+    "note": "YouTube is displayed only when supported by the individual platform."
   }
 }
