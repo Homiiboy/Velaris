@@ -51,6 +51,33 @@ Velaris verwendet eine einheitliche Markenidentität, aber zwei für ihre Gerät
 
 **Status:** Navigations- und Header-Änderungen im Repository eingetragen; Expo-Typecheck, reale Android-/iPhone-Tests und PWA-Deployment sowie visuelle Abnahme stehen noch aus. Die Versionsnummern wurden durch diesen Layoutschritt nicht automatisch erhöht.
 
+### iPhone-PWA Chromecast – Wiedergabediagnose (16.11.2026)
+
+Die iPhone-PWA verwendet die **ZimaOS Cast Bridge** (kein auf iOS nicht unterstütztes Google Cast Web Sender SDK). Dass Chromecast-Geräte gefunden werden, beweist noch nicht, dass der Fernseher die Jellyfin-Stream-URL erreichen und abspielen kann.
+
+**Verbessert:** Der Cast-Server prüft vor dem Start `JELLYFIN_CAST_URL/System/Info/Public` und meldet eine falsch konfigurierte oder unerreichbare Jellyfin-LAN-Adresse verständlich. Der PWA-Dialog unterscheidet nun zwischen einem lediglich gesendeten Startbefehl und den Chromecast-Statuswerten `PLAYING`, `PAUSED`, `BUFFERING`, `IDLE` bzw. `idleReason`. Fehler im Receiver werden dadurch sichtbar. Das Cast-Dialog-Skript hat eine neue Asset-Version und der Service Worker einen neuen Cache.
+
+**ZimaOS-Deployment:**
+
+```bash
+cd ~/AppData/Velaris
+git pull origin main
+cd apps/web
+sudo docker compose up -d --build
+sudo docker compose ps
+sudo docker logs --tail 50 velaris-cast-bridge
+```
+
+**Chromecast-LAN-Adresse prüfen (kein Jellyfin-Token nötig):**
+
+```bash
+curl -i --max-time 8 http://192.168.0.74:8097/System/Info/Public
+```
+
+`192.168.0.74` ist aktuell lediglich der **Standardwert**. Ist die wirkliche ZimaOS-/Jellyfin-LAN-Adresse anders, in `apps/web/.env` z. B. `JELLYFIN_CAST_URL=http://<ZIMAOS-LAN-IP>:8097` eintragen. Der Chromecast selbst muss die angegebene Adresse erreichen können. Tailscale-Verbindungen auf dem iPhone werden nicht automatisch auf den Chromecast übertragen. Nicht den Jellyfin-API-Schlüssel, Transcoding-URLs oder Tokens aus Logs veröffentlichen.
+
+**Status:** Die Änderungen verbessern Prüfung und Fehlerrückmeldung; ein erfolgreicher Filmstart auf einem echten Chromecast ist noch **nicht bestätigt**. Bei einem fortbestehenden Fehler bitte die exakte Meldung im Cast-Dialog und die Cast-Bridge-Logs **ohne Tokens** auswerten. Danach lassen sich Jellyfin-Transcoding, HLS-Codec, Firewall oder Chromecast-Erreichbarkeit gezielt prüfen.
+
 ### TV/Web UI-Pass 6 – Responsive Polish und Qualitätsprüfung
 
 **Quellcode-Pass am 16.11.2026 umgesetzt, Geräteabnahme weiterhin offen.** Folgende Probleme wurden gezielt korrigiert:
