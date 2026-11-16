@@ -6,6 +6,8 @@
   <img src="branding/VelarisBannerTV.png" alt="Velaris TV Banner" width="320">
 </p>
 
+**Aktueller Quellcode: 2.2.1** (`versionCode` 11). UI-Synchronisierung mit Desktop-Web: gleiche Kategorienreihenfolge, gemeinsame Akzentfarben und direkter Zugang zu „Meine Liste“. Die älteren Phasenbeschreibungen unten dokumentieren historische Meilensteine, keine aktuelle Geräteabnahme. Siehe [Design-Synchronisierung 2.2.1](../../docs/DESIGN_SYNC_2_2_1.md).
+
 Velaris TV is a native Android TV / Google TV client with a custom Velaris interface. It connects directly to a Jellyfin server and uses Jellyfin for authentication, libraries, metadata, images and playback progress.
 
 ## Phase 2 — Complete
