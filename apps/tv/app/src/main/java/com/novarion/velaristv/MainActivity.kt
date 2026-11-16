@@ -569,7 +569,7 @@ class MainActivity : Activity() {
         }
         val wrapper=FrameLayout(this).apply { clipChildren=false;clipToPadding=false }
         wrapper.addView(holder,FrameLayout.LayoutParams(-1,-1))
-        homeRoot?.addView(wrapper,LinearLayout.LayoutParams(-1,dp(525)).apply{bottomMargin=dp(-12)})
+        homeRoot?.addView(wrapper,LinearLayout.LayoutParams(-1,dp(515)).apply{bottomMargin=dp(-8)})
         val indicators=mutableListOf<View>()
         var currentIndex=-1
         fun render(index:Int) {
@@ -633,7 +633,7 @@ class MainActivity : Activity() {
                 })
             }
             wrapper.addView(pagination,FrameLayout.LayoutParams(-2,dp(35),Gravity.END or Gravity.BOTTOM).apply {
-                marginEnd=dp(62);bottomMargin=dp(32)
+                marginEnd=dp(58);bottomMargin=dp(23)
             })
         }
         if(items.size>1 && prefs.getBoolean("auto_hero",true)) holder.postDelayed(object:Runnable {
@@ -713,11 +713,11 @@ class MainActivity : Activity() {
         val info=LinearLayout(this).apply {
             orientation=LinearLayout.VERTICAL
             gravity=Gravity.BOTTOM
-            setPadding(dp(64),0,dp(58),dp(50))
+            setPadding(dp(52),0,dp(52),dp(54))
         }
         info.addView(heroEyebrow(VelarisDesign.themeText("heroLabel","IM RAMPENLICHT")))
         val logo=ImageView(this).apply{scaleType=ImageView.ScaleType.FIT_START;visibility=View.INVISIBLE}
-        info.addView(logo,LinearLayout.LayoutParams(dp(430),dp(120)))
+        info.addView(logo,LinearLayout.LayoutParams(dp(430),dp(112)))
         loadImageWithFallback(logo,id,"Logo",700) {
             logo.visibility=View.GONE
             info.addView(TextView(this).apply { text=title; textSize=48f; setTextColor(Color.WHITE); typeface=Typeface.DEFAULT_BOLD;maxLines=2 },1)
@@ -740,13 +740,13 @@ class MainActivity : Activity() {
         }
         if(overview.isNotBlank()) info.addView(TextView(this).apply {
             text=overview;textSize=16f;setTextColor(0xFFE6E3ED.toInt())
-            maxLines=3;setLineSpacing(dp(2).toFloat(),1.06f)
+            maxLines=3;ellipsize=android.text.TextUtils.TruncateAt.END;setLineSpacing(dp(2).toFloat(),1.06f)
             setPadding(0,dp(12),0,0)
         },LinearLayout.LayoutParams(dp(650),-2))
 
         val actions=LinearLayout(this).apply {
             orientation=LinearLayout.HORIZONTAL
-            setPadding(0,dp(20),0,0)
+            setPadding(0,dp(18),0,0)
         }
         actions.addView(actionButton(if(ticks>0) "▶  Fortsetzen" else "▶  Abspielen",true) {
             playNative(id,ticks)
