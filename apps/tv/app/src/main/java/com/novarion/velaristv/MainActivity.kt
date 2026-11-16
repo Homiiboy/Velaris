@@ -223,13 +223,10 @@ class MainActivity : Activity() {
             letterSpacing=0.12f
             setTextColor(VelarisDesign.color("accent",0xFF7C5CFC.toInt()))
             gravity=Gravity.CENTER_VERTICAL
-            post {
-                val width=paint.measureText(text.toString())
-                paint.shader=android.graphics.LinearGradient(0f,0f,width,0f,
-                    intArrayOf(Color.WHITE,VelarisDesign.color("accent",0xFF7C5CFC.toInt()),Color.WHITE),null,
-                    android.graphics.Shader.TileMode.CLAMP)
-                invalidate()
-            }
+            // Full VELARIS + category title shares one solid section accent.
+            paint.shader=null
+            ellipsize=android.text.TextUtils.TruncateAt.END
+            maxLines=1
         },LinearLayout.LayoutParams(if(activeSection=="Start")dp(152) else dp(258),dp(50)).apply{marginEnd=dp(18)})
         // Keep all destinations reachable with the D-pad, even on smaller/overscanned TVs.
         val nav=LinearLayout(this).apply {
@@ -250,8 +247,8 @@ class MainActivity : Activity() {
             button.isSelected=(label==activeSection)
             styleNavButton(button,false)
             // Measure the real text rather than forcing category names into fixed boxes.
-            val width=(((button.paint.measureText(label)/resources.displayMetrics.density).toInt()+36).coerceAtLeast(76))
-            nav.addView(button,LinearLayout.LayoutParams(dp(width),dp(42)).apply{marginEnd=dp(14)})
+            val width=(((button.paint.measureText(label)/resources.displayMetrics.density).toInt()+32).coerceAtLeast(76))
+            nav.addView(button,LinearLayout.LayoutParams(dp(width),dp(42)).apply{marginEnd=dp(8)})
         }
         // Reserve real space after the last tab so its pill and focus outline
         // are completely visible at the scroll limit (also on overscanned TVs).
@@ -336,13 +333,22 @@ class MainActivity : Activity() {
             moreArrow.isFocusable=hasMore
         }
         navScroll.setOnScrollChangeListener { _,_,_,_,_->updateArrow() }
-        navScroll.post { updateArrow() }
+        navScroll.post {
+            // Keep the selected category visible immediately after navigation.
+            val selected=(0 until nav.childCount).map { nav.getChildAt(it) }
+                .firstOrNull { it is Button && it.isSelected }
+            if(selected!=null) {
+                val centered=(selected.left+selected.width/2-navScroll.width/2)
+                    .coerceIn(0,(nav.width+navScroll.paddingLeft+navScroll.paddingRight-navScroll.width).coerceAtLeast(0))
+                navScroll.scrollTo(centered,0)
+            }
+            updateArrow()
+        }
         top.addView(navBox,LinearLayout.LayoutParams(0,dp(54),1f))
         top.addView(navButton("⌕"){showSearch()},LinearLayout.LayoutParams(dp(54),dp(46)).apply{marginEnd=dp(4)})
-        if(home) {
-            top.addView(navButton("Profil"){showProfiles()},LinearLayout.LayoutParams(dp(78),dp(46)).apply{marginEnd=dp(4)})
-            top.addView(navButton("⚙"){showSettingsDialog()},LinearLayout.LayoutParams(dp(54),dp(46)))
-        }
+        // Profile/settings stay reachable from library screens too, as on desktop Web.
+        top.addView(navButton("Profil"){showProfiles()},LinearLayout.LayoutParams(dp(78),dp(46)).apply{marginEnd=dp(4)})
+        top.addView(navButton("⚙"){showSettingsDialog()},LinearLayout.LayoutParams(dp(54),dp(46)))
         return top
     }
 
