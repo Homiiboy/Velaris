@@ -98,7 +98,7 @@ function layout(inner){viewRevision++;const sectionNames={home:'',movies:'FILME'
  if(window.matchMedia('(min-width:850px)').matches){
   const nav=app.querySelector('.top .desktop-navigation');
   const active=nav?.querySelector('button.selected');
-  if(nav&&active)active.scrollIntoView({block:'nearest',inline:'nearest',behavior:'instant'});
+  if(nav&&active)active.scrollIntoView({block:'nearest',inline:'nearest',behavior:'auto'});
  }
 }
 function post(item){const src=image(item);const progress=item.UserData?.PlayedPercentage;const kind=item.Type==='Series'?'SERIE':item.Type==='Episode'?'EPISODE':item.Type==='BoxSet'?'SAMMLUNG':'FILM';const meta=[kind,item.ProductionYear>0?item.ProductionYear:''].filter(Boolean).join(' · ');return '<button class="poster" type="button" data-item="'+esc(item.Id)+'"><div class="poster-art">'+(src?'<img loading="lazy" src="'+esc(src)+'" alt="'+esc(item.Name)+'">':'<div class="placeholder">✦</div>')+(progress>0&&progress<100?'<div class="progress"><i style="width:'+Math.min(100,Math.max(0,progress))+'%"></i></div>':'')+'<div class="poster-focus-meta" aria-hidden="true">'+esc(meta)+'</div></div><span class="poster-title">'+esc(item.Name)+'</span></button>'}
