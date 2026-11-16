@@ -11,13 +11,13 @@ export type SearchScope = MediaLibraryKind | 'collections' | 'home';
 type Props = { scope?: SearchScope; collectionId?: string; home?: boolean; overlay?: boolean; back?: boolean };
 const menu: { key: SearchScope; label: string; href: string }[] = [
   {key:'home',label:design.navigation.home,href:'/(tabs)/home'},
-  {key:'animation',label:design.navigation.animation,href:'/(tabs)/animation'},
+  {key:'movies',label:design.navigation.movies,href:'/(tabs)/movies'},
+  {key:'series',label:design.navigation.series,href:'/(tabs)/series'},
   {key:'anime',label:design.navigation.anime,href:'/(tabs)/anime'},
   {key:'animeMovies',label:design.navigation.animeMovies,href:'/(tabs)/anime-movies'},
+  {key:'animation',label:design.navigation.animation,href:'/(tabs)/animation'},
   {key:'cartoons',label:design.navigation.cartoons,href:'/(tabs)/cartoons'},
-  {key:'movies',label:design.navigation.movies,href:'/(tabs)/movies'},
   {key:'collections',label:design.navigation.collections,href:'/collections'},
-  {key:'series',label:design.navigation.series,href:'/(tabs)/series'},
 ];
 const AVATARS=[
   require('../../assets/AvatarRot.png'),
