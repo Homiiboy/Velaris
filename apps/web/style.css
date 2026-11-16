@@ -630,3 +630,48 @@ button:disabled{cursor:wait;opacity:.65}
  .shell .details-screen .detail-content{margin-top:-110px}
 }
 @media(max-width:849px){.resume-pair{display:block}.resume-mobile{display:block}.resume-desktop{display:none}}
+
+/* TV/Web UI-Pass 6 – desktop responsive and focus/safe-area hardening.
+   Constrained to desktop breakpoints; phone PWA styling stays unchanged. */
+@media(min-width:850px){
+ .shell>.top .category-logo{
+  display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;
+  overflow:hidden;overflow-wrap:anywhere;flex-shrink:0
+ }
+ .shell>.top .desktop-navigation{scroll-padding-inline:12px}
+ .shell>.top .desktop-navigation button{outline-offset:-2px}
+ .shell .rows .media-section>.rail>.poster{position:relative}
+ .shell .rows .media-section>.rail>.poster:focus-visible{z-index:5}
+ .shell .rows .media-section>.rail>.resume-pair{position:relative}
+ .shell .rows .media-section>.rail>.resume-pair:focus-within{z-index:5}
+ .shell .rows .media-section>.rail>.resume-pair .resume-card{
+  transition:transform .18s ease,filter .18s ease
+ }
+ .shell .rows .media-section>.rail>.resume-pair:focus-within .resume-card{
+  outline:0
+ }
+}
+@media(min-width:850px) and (max-width:1100px){
+ .shell>.top{gap:9px;padding-inline:20px}
+ .shell>.top .category-logo{max-width:170px;font-size:clamp(15px,1.7vw,19px)}
+ .shell>.top .desktop-navigation{gap:5px;padding-inline:5px!important}
+ .shell>.top .desktop-navigation button{padding-inline:11px!important;font-size:13px}
+ .shell>.top .desktop-navigation button span{font-size:13px}
+ .shell>.top .top-actions{gap:4px}
+ .shell>.top .top-actions .pill{padding-inline:8px}
+}
+@media(min-width:850px) and (max-height:740px){
+ .shell .hero-stage .hero{
+  height:clamp(345px,65svh,460px);min-height:345px;max-height:460px;
+  padding-top:38px;padding-bottom:38px
+ }
+ .shell .hero-stage .hero-copy p{-webkit-line-clamp:2}
+ .shell .hero-stage .hero-dots{bottom:13px}
+ .shell .details-screen .detail-hero{height:clamp(340px,64svh,460px);min-height:0}
+ .shell .details-screen .detail-content{margin-top:-100px}
+}
+@media(min-width:850px) and (prefers-reduced-motion:reduce){
+ .shell .poster:hover,.shell .poster:focus-visible,
+ .shell .resume-card:hover,.shell .resume-card:focus-visible{transform:none!important}
+ .shell .poster-focus-meta{transform:none!important}
+}
