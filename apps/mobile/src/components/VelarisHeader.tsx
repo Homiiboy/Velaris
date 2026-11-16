@@ -7,7 +7,7 @@ import { useVelarisTheme } from '@/context/ThemeContext';
 import { getGenres, type MediaLibraryKind } from '@/services/jellyfin';
 import { getActiveProfile, type VelarisProfile } from '@/services/session';
 
-export type SearchScope = MediaLibraryKind | 'collections' | 'home';
+export type SearchScope = MediaLibraryKind | 'collections' | 'favorites' | 'home';
 type Props = { scope?: SearchScope; collectionId?: string; home?: boolean; overlay?: boolean; back?: boolean };
 const menu: { key: SearchScope; label: string; href: string }[] = [
   {key:'home',label:design.navigation.home,href:'/(tabs)/home'},
@@ -17,6 +17,7 @@ const menu: { key: SearchScope; label: string; href: string }[] = [
   {key:'animeMovies',label:design.navigation.animeMovies,href:'/(tabs)/anime-movies'},
   {key:'animation',label:design.navigation.animation,href:'/(tabs)/animation'},
   {key:'cartoons',label:design.navigation.cartoons,href:'/(tabs)/cartoons'},
+  {key:'favorites',label:design.navigation.favorites,href:'/favorites'},
   {key:'collections',label:design.navigation.collections,href:'/collections'},
 ];
 const AVATARS=[
