@@ -72,7 +72,7 @@ const VelarisCastBridge=(()=>{
   document.body.appendChild(overlay);
   const devices=overlay.querySelector('#velaris-cast-devices'),feedback=overlay.querySelector('#velaris-cast-feedback');
   const controls=overlay.querySelector('#velaris-cast-controls'),positionNode=overlay.querySelector('#velaris-cast-position');
-  let selected=null,position=0,closed=false,interval=null;
+  let selected=null,position=0,closed=false,interval=null,startPolls=0,confirmed=false;
   const info=value=>{if(!closed)feedback.textContent=value};
   const onKeyDown=event=>{if(event.key==='Escape')close()};
   const close=()=>{if(closed)return;closed=true;if(interval)clearInterval(interval);
@@ -89,7 +89,21 @@ const VelarisCastBridge=(()=>{
     const entry=result.sessions?.find(x=>x.deviceId===selected);
     if(!entry){controls.hidden=true;selected=null;info('Keine aktive Cast-Sitzung.');return}
     position=entry.position||0;
-    positionNode.textContent=(entry.name||'Chromecast')+' · '+(entry.state||'Unbekannt')+' · '+Math.floor(position)+' s';
+    const state=String(entry.state||'UNKNOWN').toUpperCase();
+    const idle=String(entry.idleReason||'').toUpperCase();
+    startPolls++;
+    if(state==='PLAYING'||state==='PAUSED'||state==='BUFFERING'){
+     if(!confirmed){
+      confirmed=true;
+      info(state==='PLAYING'?'Wiedergabe auf dem Fernseher gestartet.':'Chromecast hat das Video angenommen ('+state+').');
+     }
+    }else if(state==='IDLE'&&(idle==='ERROR'||idle==='CANCELLED'||startPolls>=4&&!confirmed)){
+     info('Chromecast konnte den Videostream nicht starten'+(idle?' ('+idle+')':'')+'. Bitte LAN-Jellyfin-Adresse und Codec/Transcoding prüfen.');
+     controls.hidden=true;
+    }else if(!confirmed){
+     info('Chromecast-Verbindung steht – warte auf Videostart … ('+state+')');
+    }
+    positionNode.textContent=(entry.name||'Chromecast')+' · '+state+' · '+Math.floor(position)+' s';
    }catch(error){info('Status: '+error.message)}
   };
   const control=async(action,extra={})=>{
@@ -125,8 +139,8 @@ const VelarisCastBridge=(()=>{
       try{
        const result=await call(account,'play',{deviceId:device.id,itemId:item.Id});
        if(closed)return;
-       selected=device.id;controls.hidden=false;
-       info('Wiedergabeauftrag an '+escText(result.device||device.name)+' gesendet. Prüfe das Bild am Fernseher.');
+       selected=device.id;controls.hidden=false;confirmed=false;startPolls=0;
+       info('Wiedergabeauftrag an '+(result.device||device.name)+' gesendet. Warte auf den Player-Status …');
        await updateStatus();
        if(!interval)interval=setInterval(updateStatus,5000);
       }catch(error){
