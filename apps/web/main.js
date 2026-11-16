@@ -108,7 +108,7 @@ function resumeCard(item){
  const p=playbackPercent(item),remaining=remainingMinutes(item);
  const name=item.Type==='Episode'?[item.SeriesName,item.Name].filter(Boolean).join(' · '):item.Name;
  const ep=item.Type==='Episode'&&item.ParentIndexNumber!=null&&item.IndexNumber!=null?'S'+item.ParentIndexNumber+' · E'+item.IndexNumber:'Fortsetzen';
- return '<button class="poster resume-card" type="button" data-item="'+esc(item.Id)+'" aria-label="'+esc(name)+' fortsetzen"><span class="resume-art">'+(art?'<img loading="lazy" src="'+esc(art)+'" alt="'+esc(name)+'">':'<span class="resume-fallback">▶</span>')+'<span class="resume-play-icon" aria-hidden="true">▶</span>'+(p>0&&p<100?'<span class="resume-progress"><i style="width:'+p+'%"></i></span>':'')+'</span><span class="resume-title">'+esc(name)+'</span><span class="resume-details">'+esc(ep+(remaining!=null?' · Noch '+remaining+' Min.':''))+'</span></button>';
+ return '<button class="poster resume-card" type="button" data-item="'+esc(item.Id)+'" aria-label="'+esc(name)+' fortsetzen"><span class="resume-art">'+(art?'<img loading="lazy" src="'+esc(art)+'" alt="'+esc(name)+'">':'<span class="resume-fallback">▶</span>')+'<span class="resume-play-icon" aria-hidden="true"></span>'+(p>0&&p<100?'<span class="resume-progress"><i style="width:'+p+'%"></i></span>':'')+'</span><span class="resume-title">'+esc(name)+'</span><span class="resume-details">'+esc(ep+(remaining!=null?' · Noch '+remaining+' Min.':''))+'</span></button>';
 }
 function row(title,items,key=''){
  if(!items.length)return '';
