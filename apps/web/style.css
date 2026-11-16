@@ -410,3 +410,27 @@ button:disabled{cursor:wait;opacity:.65}
  .shell>.mobile-navigation,.shell>.mobile-categories{display:none!important}
  .shell>.desktop-navigation{display:flex!important}
 }
+
+/* Velaris mobile navigation: four fixed actions and a true scrollable category dialog. */
+@media(max-width:849px){
+ .shell>.mobile-categories{display:none!important}
+ .shell>.mobile-category-trigger{display:flex;align-items:center;gap:10px;width:calc(100% - 32px);min-height:46px;margin:8px 16px 0;padding:10px 15px;background:#1c1e29;color:#fff;border:1px solid #343645;border-radius:13px;text-align:left;font-weight:800}
+ .mobile-category-trigger span:nth-child(2){flex:1}
+ .mobile-category-dot{display:block;width:8px;height:8px;border-radius:50%;background:var(--accent)}
+ .shell>.mobile-navigation button{flex:1!important;max-width:none!important}
+ .shell .top{gap:7px;padding-left:12px;padding-right:12px}
+ .shell .top .category-logo{min-width:0;flex:1;font-size:clamp(11px,3.4vw,19px);letter-spacing:.055em;color:var(--accent);overflow-wrap:anywhere;line-height:1.18;text-shadow:none}
+ .shell .top .category-logo .brand-section{font-size:1em;letter-spacing:0}
+ .shell .top-actions{flex-shrink:0;gap:4px}
+ .shell .top-actions .pill{padding:8px;min-width:34px}
+}
+@media(min-width:850px){.shell>.mobile-category-trigger{display:none!important}}
+.velaris-category-overlay{position:fixed;inset:0;z-index:1000;background:#050509dd;display:flex;align-items:flex-end;justify-content:center;padding-top:env(safe-area-inset-top)}
+.velaris-category-panel{width:100%;max-width:560px;max-height:calc(100dvh - env(safe-area-inset-top) - 20px);overflow-y:auto;overscroll-behavior:contain;background:#11121b;border:1px solid #363642;border-radius:22px 22px 0 0;padding:18px 16px calc(28px + env(safe-area-inset-bottom))}
+.velaris-category-panel-head{position:sticky;top:-18px;background:#11121b;z-index:1;display:flex;justify-content:space-between;align-items:center;padding:0 0 14px}
+.velaris-category-panel-head h2{margin:0;font-size:22px}.velaris-category-panel-head button{border:0;background:#292b37;color:white;border-radius:10px;min-width:44px;min-height:44px}
+.velaris-category-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.velaris-category-grid button{min-width:0;min-height:89px;border-radius:13px;border:1px solid #343442;background:#20222e;color:#fff;display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;text-align:left;gap:12px;padding:14px;font-size:13px;font-weight:800;overflow-wrap:anywhere}
+.velaris-category-grid button.selected{border-color:var(--category-color)}
+.velaris-category-grid .category-symbol{font-size:23px;color:var(--category-color)}
+@media(min-width:850px){.velaris-category-overlay{align-items:center}.velaris-category-panel{border-radius:22px;max-height:85dvh}}
