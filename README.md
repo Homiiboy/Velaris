@@ -15,7 +15,8 @@ Die mobilen, TV- und Web-Anwendungen liegen in einem Monorepo, bleiben aber eige
 | Bereich | Pfad | Technik |
 | --- | --- | --- |
 | Smartphone (iOS / Android) | [apps/mobile](apps/mobile) | React Native / Expo / TypeScript |
-| Web (iPhone / Desktop PWA) | [apps/web](apps/web) | HTML / CSS / JavaScript / Jellyfin API |\n| TV (Android TV / Google TV) | [apps/tv](apps/tv) | Kotlin / Media3 |
+| Web (iPhone / Desktop PWA) | [apps/web](apps/web) | HTML / CSS / JavaScript / Jellyfin API |
+| TV (Android TV / Google TV) | [apps/tv](apps/tv) | Kotlin / Media3 |
 | Importnachweis und nächste Schritte | [docs/MIGRATION.md](docs/MIGRATION.md) | Quellstände, Umfang und Einschränkungen |
 
 ## Plattformversionen
@@ -26,9 +27,67 @@ Die mobilen, TV- und Web-Anwendungen liegen in einem Monorepo, bleiben aber eige
 | Velaris Smartphone | **2.2.1** (Expo, Android `versionCode` 11) – Design-Synchronisierung |
 | Velaris Web und iPhone-PWA | **2.2.1** (responsive Handy- und Desktop-Layout) |
 
-**Layout-Familien (2.2.1):** Smartphone-App und iPhone-PWA haben oben eine scrollbare Kategorienleiste und unten fünf Haupt-Tabs. Desktop-Web und Android TV verwenden eine horizontale Navigation mit derselben Kategorienreihenfolge. Der gemeinsame Vertrag liegt in [`brand.json`](packages/velaris-design/brand.json), der Umsetzungs- und Teststatus in [Design-Synchronisierung 2.2.1](docs/DESIGN_SYNC_2_2_1.md). Pixelgenaue Gerätevergleiche und native Builds stehen noch aus.
+**Layout-Familien:** Smartphone-App und iPhone-PWA nutzen das Mobile Design mit vier Bottom-Tabs und einer eigenen Kategorienauswahl. Desktop-Web und Android TV nutzen das TV/Desktop Design mit horizontaler Kategorienavigation. Der gemeinsame Vertrag liegt in [`brand.json`](packages/velaris-design/brand.json). Die [Design-Synchronisierung 2.2.1](docs/DESIGN_SYNC_2_2_1.md) dokumentiert den historischen Ausgangsstand vor dem neuen Mobile-Navigationspass. Pixelgenaue Gerätevergleiche, native Builds und ein erneutes PWA-Deployment stehen noch aus.
 
 Die Versionsnummern sind unabhängig von einem signierten oder ausgerollten Release. Mobile benötigt einen neuen EAS-Build, Web ein neues Deployment und TV eine signierte APK für produktive Updates.
+
+## Design – zwei Layout-Familien
+
+Velaris verwendet eine einheitliche Markenidentität, aber zwei für ihre Geräte optimierte Layouts. **Smartphone und iPhone-PWA** sind das mobile Paar, **Android TV und Desktop-Web** das TV/Desktop-Paar. Die Akzentfarben sind in [`packages/velaris-design/brand.json`](packages/velaris-design/brand.json) definiert. Die drei Apps besitzen derzeit eigenständige Oberflächenimplementierungen; gleiche Designtokens bedeuten nicht automatisch pixelgenaue Gleichheit.
+
+### Design A – Smartphone / iPhone-PWA
+
+**Plattformen:** Native Android-/iOS-Smartphone-App (`apps/mobile`) und mobile/iPhone-PWA (`apps/web` auf kleinen Viewports).
+
+**Navigation und Layout (im Quellcode umgesetzt):**
+
+- **Vier Bottom-Tabs:** `Start`, `Kategorien`, `Meine Liste` und `Profil`. Die Tab-Leiste soll inklusive iPhone-Home-Indikator und Android-Safe-Areas sichtbar bleiben.
+- **Kategorien statt überfüllter Tab-Leiste:** Eigene, scrollbar bedienbare Kategorieauswahl in einem zweispaltigen Raster. In der PWA wird sie als modales Overlay über dem aktuellen Inhalt geöffnet; in Expo gibt es eine eigene Kategorienansicht über den Bottom-Tab sowie einen modalen Kategorienaufruf im Header.
+- **Kategorie-Header:** Der *gesamte* Schriftzug `VELARIS` beziehungsweise `VELARIS FILME`, `VELARIS SERIEN`, `VELARIS ANIME` usw. erhält die Farbe der aktuellen Kategorie; **VELARIS wird nicht weiß abgesetzt**. Der bestehende kräftige Schriftstil bleibt erhalten, lange Titel müssen auch auf schmalen Geräten ohne Kollision mit Suche/Profil passen.
+- **Inhalte:** Dunkle Grundfläche (`#08080D`), linksbündiger Hero mit Aktionen, horizontale Medienreihen und Poster im Verhältnis 2:3.
+- **Verhalten:** Kategorieauswahl muss ohne Scrollen zum Seitenende erreichbar sein. Keine horizontalen Überschneidungen, abgeschnittenen Aktionen oder von der Tab-Leiste verdeckten Inhalte. Die Jellyfin-, Player- und Cast-Funktionen bleiben unabhängig von der optischen Navigation.
+
+**Kategorien:** Startseite, Filme, Serien, Anime, Anime Filme/Anime Movies, Animation, Cartoons, Meine Liste und Sammlungen. Die YouTube-Akzentfarbe ist vorhanden; der funktionsfähige Umfang unterscheidet sich noch je Plattform und wird nicht als gemeinsame Fertigstellung ausgewiesen.
+
+**Status:** Navigations- und Header-Änderungen im Repository eingetragen; Expo-Typecheck, reale Android-/iPhone-Tests und PWA-Deployment sowie visuelle Abnahme stehen noch aus. Die Versionsnummern wurden durch diesen Layoutschritt nicht automatisch erhöht.
+
+### Design B – Android TV / Desktop-Web
+
+**Plattformen:** Native Android-TV-/Google-TV-App (`apps/tv`) und Desktop-Ansicht der Web-App (`apps/web`).
+
+**Bisherige Basis:** Dunkles Velaris-Theme, gemeinsame Kategorie-Akzentfarben, große Hero-Fläche, Medienreihen und horizontale Kategorienavigation. Eine vollständige visuelle Parität ist noch **nicht** bestätigt: Der TV-Header integriert die Navigation derzeit anders als der Desktop-Web-Header.
+
+**NÄCHSTER DESIGNSCHRITT – TV/Web-Angleichung:**
+
+1. **Header & Navigation:** Identische Reihenfolge, Abstände und visuelle Hierarchie für `Start`, `Filme`, `Serien`, `Anime`, `Anime Filme`, `Animation`, `Cartoons`, `Meine Liste`, `Sammlungen` und – nur wo funktional vorhanden – `YouTube`. Auch bei kleineren Desktop- und TV-Auflösungen dürfen Elemente nicht abgeschnitten werden.
+2. **Branding:** `VELARIS` bzw. `VELARIS <KATEGORIE>` vollständig in der jeweiligen Akzentfarbe, mit identischer Typografie, Schriftgröße und Akzentführung. Grundfläche bleibt dunkel.
+3. **Hero & Startseite:** Bildausschnitt, Titelposition, Buttons, Indikatoren, Abstände und Übergänge so weit wie möglich vereinheitlichen; unterschiedliche Bildschirmformate responsiv behandeln.
+4. **Posterreihen & Detailseiten:** Einheitliche Posterproportionen (2:3), Kartenabstände, Zeilenhöhen, Fortschrittsanzeigen, Detailaktionen und Episoden-/Staffelansichten.
+5. **Plattformgerechte Bedienung:** TV benötigt sichtbare, nicht abgeschnittene D-Pad-Fokusrahmen und Fernbedienungsnavigation; Web benötigt sinnvolle Maus-, Hover- und Tastaturzustände. Visuelle Gleichheit darf die jeweilige Bedienbarkeit nicht verschlechtern.
+6. **Abnahme:** Desktop-Web und Google TV anhand gleicher Testansichten/Screenshots vergleichen; vorhandenen Player, Cast und Jellyfin-Funktionen mit Regressionstests absichern. Erst danach den Pass als abgeschlossen markieren.
+
+**Status:** **Als nächstes geplant – noch nicht umgesetzt oder geräteübergreifend abgenommen.** Keine TV-/Web-Oberflächenänderungen durch diesen README-Schritt.
+
+### Gemeinsame Designregeln und Farben
+
+Alle Plattformen nutzen den Grundhintergrund `#08080D`. Der aktive Kategoriename, der gesamte Velaris-Bereichsschriftzug sowie passende Fokus-, Auswahl- und Fortschrittsakzente übernehmen die jeweilige Farbe:
+
+| Bereich | Hex | Bereichsschriftzug |
+| --- | --- | --- |
+| Startseite | `#7C5CFC` | VELARIS |
+| Filme | `#46D369` | VELARIS FILME |
+| Serien | `#7DD3FC` | VELARIS SERIEN |
+| Anime | `#FF8A00` | VELARIS ANIME |
+| Anime Filme / Anime Movies | `#FFD43B` | VELARIS ANIME FILME |
+| Animation | `#FF6FAE` | VELARIS ANIMATION |
+| Cartoons | `#00D9C0` | VELARIS CARTOONS |
+| Meine Liste | `#E8A0FF` | VELARIS MEINE LISTE |
+| Sammlungen | `#D9A86C` | VELARIS SAMMLUNGEN |
+| YouTube (plattformabhängig / vorbereitet) | `#FF0033` | VELARIS YOUTUBE |
+
+Weitere mögliche Kategorien wie Dokumentationen, Musik, Live TV, Podcasts, Hörbücher oder Kurzfilme sind **nur Ideen für später** und gehören aktuell weder zur Navigation noch zu einem beauftragten Implementierungsschritt.
+
+**Wichtig:** Ein Quellcode-Commit ist kein Gerätetest und kein automatisches Deployment. Designänderungen müssen auf den jeweiligen Plattformen separat geprüft werden.
 
 ## Smartphone starten
 
