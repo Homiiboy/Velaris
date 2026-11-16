@@ -675,3 +675,19 @@ button:disabled{cursor:wait;opacity:.65}
  .shell .resume-card:hover,.shell .resume-card:focus-visible{transform:none!important}
  .shell .poster-focus-meta{transform:none!important}
 }
+
+/* Continue Watching: center the play triangle independently of font glyph metrics.
+   .poster span has global typography/margin styles, so override them explicitly. */
+@media(min-width:850px){
+ .shell .resume-card .resume-play-icon{
+  display:grid;place-items:center;
+  margin:0;padding:0;line-height:0;font-size:0;
+ }
+ .shell .resume-card .resume-play-icon::before{
+  content:"";display:block;width:0;height:0;
+  border-top:7px solid transparent;
+  border-bottom:7px solid transparent;
+  border-left:11px solid #fff;
+  transform:translateX(2px);
+ }
+}
