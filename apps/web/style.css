@@ -387,3 +387,26 @@ button:disabled{cursor:wait;opacity:.65}
 .yt-channel strong{font-size:14px;overflow-wrap:anywhere}
 .yt-page [hidden]{display:none!important}
 @media(max-width:480px){.yt-subtabs{gap:6px}.yt-subtabs button{font-size:12px;padding:10px}.yt-google{padding:14px}.yt-channel{flex-direction:column;text-align:center}.yt-channel img{width:55px;height:55px}}
+
+/* Shared mobile / desktop layout contract.
+   Phone PWA matches the Expo layout: category chips above content and five tabs below.
+   Desktop matches the TV's full horizontal categories and never shows bottom tabs. */
+@media (max-width:849px) {
+ .shell>.desktop-navigation{display:none!important}
+ .shell>.mobile-navigation{display:flex!important;position:fixed!important;top:auto!important;bottom:0!important;left:0!important;right:0!important;z-index:30!important;
+   justify-content:space-around!important;gap:3px!important;background:rgba(8,8,13,.97)!important;padding:8px 8px calc(10px + env(safe-area-inset-bottom))!important}
+ .shell>.mobile-navigation button{flex:1!important;max-width:100px!important;min-width:0!important}
+ .shell>.mobile-navigation button span{font-size:10px!important}
+ .shell>.mobile-categories{position:sticky;top:calc(67px + env(safe-area-inset-top));z-index:18;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;
+  background:rgba(8,8,13,.96);backdrop-filter:blur(16px);padding:8px 16px;min-height:52px;scroll-snap-type:x proximity}
+ .shell>.mobile-categories::-webkit-scrollbar{display:none}
+ .shell>.mobile-categories .category-chip{flex:none;white-space:nowrap;min-height:36px;border-radius:20px;
+  border:1px solid transparent;background:transparent;color:#d4d0de;padding:6px 14px;font-size:12px;font-weight:750;scroll-snap-align:start}
+ .shell>.mobile-categories .category-chip.selected{background:var(--accent,#7c5cfc);color:var(--accent-contrast,#fff);
+  box-shadow:0 2px 12px color-mix(in srgb,var(--accent,#7c5cfc) 22%,transparent)}
+ .shell>.mobile-categories .category-chip:focus-visible{outline:2px solid var(--accent,#7c5cfc);outline-offset:2px}
+}
+@media (min-width:850px) {
+ .shell>.mobile-navigation,.shell>.mobile-categories{display:none!important}
+ .shell>.desktop-navigation{display:flex!important}
+}
