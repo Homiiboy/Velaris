@@ -51,6 +51,14 @@ Velaris verwendet eine einheitliche Markenidentität, aber zwei für ihre Gerät
 
 **Status:** Navigations- und Header-Änderungen im Repository eingetragen; Expo-Typecheck, reale Android-/iPhone-Tests und PWA-Deployment sowie visuelle Abnahme stehen noch aus. Die Versionsnummern wurden durch diesen Layoutschritt nicht automatisch erhöht.
 
+### TV/Web UI-Pass 3 – Hero-Banner (Quellcode)
+
+**Umgesetzt am 16.11.2026:** Der Desktop-Web-Hero orientiert sich nun am 515-dp hohen TV-Hero (Desktop: 515 CSS-Pixel), mit links unten ausgerichtetem Inhalt, abgestimmten dunklen Verlaufsflächen, einer klaren Text-Hierarchie, bis zu drei Zeilen Beschreibung und großflächigen Abspiel-/Detailaktionen. Jahr, Bewertung/Medientyp und bis zu drei Genres werden im Web wie bisher am TV angezeigt, sofern Jellyfin diese Metadaten liefert. Die Highlight-Indikatoren stehen unten rechts. Der TV-Hero behält seine drei Aktionen einschließlich `Meine Liste`, die bestehende Crossfade-Funktion und seine D-Pad-Bedienung; Innenabstände, Logogröße und Indikatoren wurden angeglichen. Die vier großen Posterreihen aus Pass 1 bleiben erhalten.
+
+**Nicht verändert:** Mobile PWA Hero-Abmessungen, Jellyfin-API, Video-Player, Cast, Favoritenlogik, Hero-Klickbehandlung und automatische Highlight-Rotation. TV/Web besitzen eigene Rendertechniken; die Werte entsprechen einer optischen Zielvorgabe, nicht einer Garantie identischer Pixelgrößen.
+
+**Prüfstatus:** Quellcode integriert; visuelle Abnahme auf Google TV und Desktop-Web sowie Kotlin-/Browser-Tests stehen noch aus. Anschließend folgt UI-Pass 4 (Fokus und Animationen).
+
 ### TV/Web UI-Pass 2 – Header und Kategorienavigation (Quellcode)
 
 **Umgesetzt am 16.11.2026:** Desktop-Web integriert nun den VELARIS-Schriftzug, die horizontal scrollbare Kategoriennavigation und die Aktionen in **einer gemeinsamen Kopfzeile**, passend zur TV-Struktur. Die Kategorien behalten ihre bestehende Reihenfolge und individuelle Akzentfarbe; der gesamte Bereichsschriftzug hat dieselbe Kategorie-Akzentfarbe. Der aktive Navigationspunkt erhält eine farbige Pill-Fläche. TV verwendet keinen Weiß-Akzent-Verlauf mehr im Bereichsschriftzug, reduziert den Abstand zwischen Navigationselementen und scrollt bei Seitenwechsel zur aktiven Kategorie. Profil und Einstellungen bleiben auf dem TV auch außerhalb der Startseite erreichbar.
@@ -80,7 +88,7 @@ Velaris verwendet eine einheitliche Markenidentität, aber zwei für ihre Gerät
 5. **Plattformgerechte Bedienung:** TV benötigt sichtbare, nicht abgeschnittene D-Pad-Fokusrahmen und Fernbedienungsnavigation; Web benötigt sinnvolle Maus-, Hover- und Tastaturzustände. Visuelle Gleichheit darf die jeweilige Bedienbarkeit nicht verschlechtern.
 6. **Abnahme:** Desktop-Web und Google TV anhand gleicher Testansichten/Screenshots vergleichen; vorhandenen Player, Cast und Jellyfin-Funktionen mit Regressionstests absichern. Erst danach den Pass als abgeschlossen markieren.
 
-**Status:** UI-Pass 1 (Postergrößen) im Quellcode umgesetzt, aber noch nicht getestet oder deployed. UI-Pass 2 (Header und Navigation) ebenfalls im Quellcode umgesetzt; UI-Pässe 3–6 (Hero, Fokus, Details und Geräteabnahme) stehen aus.
+**Status:** UI-Pass 1 (Postergrößen) im Quellcode umgesetzt, aber noch nicht getestet oder deployed. UI-Pass 2 (Header und Navigation) ebenfalls im Quellcode umgesetzt; UI-Pass 3 (Hero-Banner) ebenfalls im Quellcode umgesetzt; UI-Pässe 4–6 (Fokus, Details und Geräteabnahme) stehen aus.
 
 ### Gemeinsame Designregeln und Farben
 
