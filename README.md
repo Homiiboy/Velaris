@@ -51,6 +51,12 @@ Velaris verwendet eine einheitliche Markenidentität, aber zwei für ihre Gerät
 
 **Status:** Navigations- und Header-Änderungen im Repository eingetragen; Expo-Typecheck, reale Android-/iPhone-Tests und PWA-Deployment sowie visuelle Abnahme stehen noch aus. Die Versionsnummern wurden durch diesen Layoutschritt nicht automatisch erhöht.
 
+### TV/Web UI-Pass 1 – Postergrößen und Medienreihen (Quellcode)
+
+**Umgesetzt am 16.11.2026:** Die normalen TV-Startseitenreihen berechnen ihre Posterbreite aus der aktuellen verfügbaren Bildschirmbreite und zielen auf vier vollständig sichtbare Cover im Verhältnis 2:3. Titel stehen lesbar unter dem Poster; Abstände und Fokuseffekte bleiben berücksichtigt. Desktop-Web verwendet bei mindestens 1200 CSS-Pixel Fensterbreite vier Poster pro normaler Startseitenreihe, von 850 bis 1199 CSS-Pixeln drei. Für schmalere Ansichten gilt unverändert das mobile Design. Top 10, Weiterschauen, Bibliotheksraster und Player bleiben eigenständig.
+
+**Abnahme offen:** TV-Lint/Build, reales Google-TV-Verhalten und Browser-Screenshots. Die Größenauslegung wird erst nach echten Gerätevergleichen final bestätigt. TV/Desktop-Header, Hero, Fokus-Polish und Detailseiten folgen in separaten Pässen; keine Änderungen an Jellyfin-/Player-/Cast-Logik.
+
 ### Design B – Android TV / Desktop-Web
 
 **Plattformen:** Native Android-TV-/Google-TV-App (`apps/tv`) und Desktop-Ansicht der Web-App (`apps/web`).
@@ -66,7 +72,7 @@ Velaris verwendet eine einheitliche Markenidentität, aber zwei für ihre Gerät
 5. **Plattformgerechte Bedienung:** TV benötigt sichtbare, nicht abgeschnittene D-Pad-Fokusrahmen und Fernbedienungsnavigation; Web benötigt sinnvolle Maus-, Hover- und Tastaturzustände. Visuelle Gleichheit darf die jeweilige Bedienbarkeit nicht verschlechtern.
 6. **Abnahme:** Desktop-Web und Google TV anhand gleicher Testansichten/Screenshots vergleichen; vorhandenen Player, Cast und Jellyfin-Funktionen mit Regressionstests absichern. Erst danach den Pass als abgeschlossen markieren.
 
-**Status:** **Als nächstes geplant – noch nicht umgesetzt oder geräteübergreifend abgenommen.** Keine TV-/Web-Oberflächenänderungen durch diesen README-Schritt.
+**Status:** UI-Pass 1 (Postergrößen) im Quellcode umgesetzt, aber noch nicht getestet oder deployed. UI-Pässe 2–6 (Header, Hero, Fokus, Details und Geräteabnahme) stehen aus.
 
 ### Gemeinsame Designregeln und Farben
 
