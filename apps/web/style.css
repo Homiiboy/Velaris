@@ -498,3 +498,31 @@ button:disabled{cursor:wait;opacity:.65}
 @media (max-width:849px) {
  .shell>.top .desktop-navigation {display:none!important}
 }
+
+/* TV/Web UI-Pass 3 – cinematic hero parity. Mobile PWA keeps its existing dimensions. */
+.velaris-hero-meta{color:#ebe9f3;font-size:14px;font-weight:800;line-height:1.5;margin-top:8px;text-shadow:0 2px 9px #000b}
+.velaris-hero-genres{color:#c5bfdb;font-size:13px;font-weight:600;line-height:1.4;margin-top:5px;max-width:650px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media(min-width:850px){
+ .shell .hero-stage{position:relative;overflow:hidden;background:#08080d;isolation:isolate}
+ .shell .hero-stage .hero{
+  height:515px;min-height:515px;max-height:515px;
+  padding:65px 52px 54px;display:flex;align-items:flex-end;
+  background-image:linear-gradient(0deg,#08080D 0%,#08080Dcc 12%,#08080D22 65%,transparent 100%),linear-gradient(90deg,#08080Df7 0%,#08080Dd2 26%,#08080D74 55%,#08080D10 100%),var(--hero);
+  background-size:cover;background-position:center,center,center 33%;
+ }
+ .shell .hero-stage .hero-copy{width:min(650px,62vw);max-width:650px;animation:hero-reveal .45s ease both}
+ .shell .hero-stage .hero-copy .p8-logo{max-width:430px;max-height:112px;object-fit:contain;object-position:left center}
+ .shell .hero-stage .hero-copy h1{font-size:clamp(36px,3.3vw,48px);line-height:1.06;margin:12px 0 8px}
+ .shell .hero-stage .hero-copy p{max-width:650px;font-size:16px;line-height:1.55;margin:11px 0 0;-webkit-line-clamp:3}
+ .shell .hero-stage .hero-copy .eyebrow{font-size:13px;letter-spacing:.15em}
+ .shell .hero-stage .hero-copy .actions{margin-top:18px;gap:12px;flex-wrap:wrap}
+ .shell .hero-stage .hero-copy .actions button{min-height:54px;min-width:175px;padding:12px 22px;border-radius:10px;font-size:15px}
+ .shell .hero-stage .hero-dots{bottom:23px;justify-content:flex-end;right:58px;left:auto;width:auto;gap:10px}
+ .shell .hero-stage .hero-dots button{min-width:22px;min-height:8px}
+ .shell .rows{margin-top:-8px}
+}
+@media(min-width:850px) and (max-width:1120px){
+ .shell .hero-stage .hero{padding-left:36px;padding-right:36px}
+ .shell .hero-stage .hero-copy{width:min(590px,72vw)}
+}
+@media(prefers-reduced-motion:reduce){.shell .hero-stage .hero-copy{animation:none}}
