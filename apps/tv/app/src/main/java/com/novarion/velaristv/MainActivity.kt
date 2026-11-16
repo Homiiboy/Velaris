@@ -1203,25 +1203,34 @@ class MainActivity : Activity() {
     private fun addRow(title: String, data: List<JSONObject>) {
         if(data.isEmpty()) return
         homeRoot?.addView(sectionTitle(title))
+        // UI-Pass 1: four FULL posters per normal home row on TV.
+        // Use the window's dp width rather than an arbitrary fixed poster size.
+        val screenWidthDp=resources.configuration.screenWidthDp
+        val horizontalInset=52+56
+        val cardGap=16
+        val cardWidth=((screenWidthDp-horizontalInset-cardGap*4)/4).coerceAtLeast(120)
+        val posterWidth=(cardWidth-8).coerceAtLeast(112)
+        val posterHeight=(posterWidth*3)/2
+        val rowHeight=posterHeight+84
         val row=LinearLayout(this).apply {
             orientation=LinearLayout.HORIZONTAL
-            setPadding(dp(52),dp(12),dp(56),dp(34))
+            setPadding(dp(52),dp(12),dp(56),dp(26))
             clipChildren=false
             clipToPadding=false
         }
         data.forEach { item ->
             val id=item.optString("Id")
-            val type=item.optString("Type")
             if(id.isBlank()) return@forEach
-            val cover=watchedPoster(item,176,248,"Primary",420)
+            val cover=watchedPoster(item,posterWidth,posterHeight,"Primary",posterWidth*2)
             val card=LinearLayout(this).apply {
                 tag="velaris_media_$id"
                 orientation=LinearLayout.VERTICAL; isFocusable=true; isClickable=true
+                clipChildren=false;clipToPadding=false
                 setPadding(dp(4),dp(4),dp(4),dp(4))
                 setOnClickListener { openMediaItem(item) }
                 applyCardFocus(this,cover)
             }
-            card.addView(cover,LinearLayout.LayoutParams(dp(176),dp(248)))
+            card.addView(cover,LinearLayout.LayoutParams(dp(posterWidth),dp(posterHeight)))
             card.setOnLongClickListener { showPosterQuickActions(item); true }
             val percent=playbackPercent(item)
             if(percent in 1..99)card.addView(ProgressBar(this,null,android.R.attr.progressBarStyleHorizontal).apply {
@@ -1230,13 +1239,24 @@ class MainActivity : Activity() {
                     VelarisDesign.color("progress",0xFFE50914.toInt()))
                 progressBackgroundTintList=android.content.res.ColorStateList.valueOf(
                     0xAA888888.toInt())
-            },LinearLayout.LayoutParams(dp(176),dp(4)))
-            row.addView(card,LinearLayout.LayoutParams(dp(188),dp(304)).apply { marginEnd=dp(12) })
+            },LinearLayout.LayoutParams(dp(posterWidth),dp(4)))
+            card.addView(TextView(this).apply {
+                text=item.optString("Name")
+                textSize=15f
+                typeface=Typeface.DEFAULT_BOLD
+                setTextColor(Color.WHITE)
+                maxLines=1
+                ellipsize=android.text.TextUtils.TruncateAt.END
+                setPadding(dp(2),dp(9),dp(2),0)
+            },LinearLayout.LayoutParams(dp(posterWidth),dp(33)))
+            row.addView(card,LinearLayout.LayoutParams(dp(cardWidth),dp(rowHeight)).apply {
+                marginEnd=dp(cardGap)
+            })
         }
         homeRoot?.addView(HorizontalScrollView(this).apply {
             isHorizontalScrollBarEnabled=false; clipChildren=false; clipToPadding=false
             addView(row)
-        },LinearLayout.LayoutParams(-1,dp(354)))
+        },LinearLayout.LayoutParams(-1,dp(rowHeight+48)))
     }
 
 
