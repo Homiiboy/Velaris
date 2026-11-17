@@ -322,7 +322,7 @@ for(const token of [
  'video.networkState',
  'video.readyState',
  "stageUpdate('Stream angefordert')",
- "stageUpdate('Safari-HLS wird geladen'",
+ "stageUpdate(isHls?'Safari-HLS wird geladen':'MP4 wird geladen')",
  'if(isIos&&!fallback){',
  "p9Stream(item,quality,currentSession,playbackInfo,true)",
  "playerMessage('Safari: MP4-Ersatzstream wird geladen …')",
