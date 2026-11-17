@@ -1,7 +1,7 @@
 /* Shared mobile full-screen controls for Velaris' modern and iOS fallback players.
    Keeps the existing HLS/MP4/Cast pipelines completely unchanged. */
 function velarisInstallFullscreenUI(root, video, item) {
- if (!root || !video || !window.matchMedia('(max-width:849px)').matches) return;
+ if (!root || !video || !window.matchMedia('(max-width:849px), (pointer:coarse) and (max-height:600px)').matches) return;
  const controls = document.createElement('div');
  controls.className = 'velaris-fullscreen-chrome';
  controls.innerHTML = '<div class="vfc-top"><button type="button" class="vfc-back" aria-label="Player schließen">‹</button><div class="vfc-heading"></div><button type="button" class="vfc-immersive" aria-label="Vollbild einschalten">⛶</button></div>'+
