@@ -1393,17 +1393,17 @@ class MainActivity : Activity() {
                         scaleType=ImageView.ScaleType.CENTER_CROP
                     }
                     collectionHero.addView(backdrop,FrameLayout.LayoutParams(-1,-1))
-                    loadImage(backdrop,collectionId,"Backdrop",1600)
+                    loadImage(backdrop,collectionId,"Backdrop",1920)
                     addCinematicHeroShades(collectionHero)
                     val copy=LinearLayout(this).apply{
                         orientation=LinearLayout.VERTICAL
                         gravity=Gravity.BOTTOM
-                        setPadding(dp(28),0,dp(34),dp(34))
+                        setPadding(dp(40),0,dp(45),dp(48))
                     }
                     copy.addView(heroEyebrow("VELARIS KOLLEKTION"))
                     copy.addView(TextView(this).apply{
                         text=collection.optString("Name","Sammlung")
-                        textSize=40f;maxLines=2
+                        textSize=49f;maxLines=2
                         typeface=Typeface.DEFAULT_BOLD;setTextColor(Color.WHITE)
                     })
                     val overview=collection.optString("Overview")
@@ -1417,7 +1417,7 @@ class MainActivity : Activity() {
                         setPadding(0,dp(10),0,0)
                     })
                     collectionHero.addView(copy,FrameLayout.LayoutParams(-1,-1))
-                    root.addView(collectionHero,LinearLayout.LayoutParams(-1,dp(365)).apply{bottomMargin=dp(18)})
+                    root.addView(collectionHero,LinearLayout.LayoutParams(-1,dp(455)).apply{bottomMargin=dp(28)})
                     homeRoot=root
                     if(children.isEmpty())root.addView(TextView(this).apply {
                         text="Diese Sammlung enthält keine verfügbaren Filme oder Serien."
@@ -1686,12 +1686,12 @@ class MainActivity : Activity() {
                 runOnUiThread {
                     val root=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; setBackgroundColor(VelarisDesign.color("background",0xFF08080D.toInt())) }
                     val hero=FrameLayout(this)
-                    val bg=ImageView(this).apply{scaleType=ImageView.ScaleType.CENTER_CROP}; hero.addView(bg,FrameLayout.LayoutParams(-1,dp(500))); loadImage(bg,seriesId,"Backdrop",1600)
+                    val bg=ImageView(this).apply{scaleType=ImageView.ScaleType.CENTER_CROP}; hero.addView(bg,FrameLayout.LayoutParams(-1,dp(545))); loadImage(bg,seriesId,"Backdrop",1920)
                     addCinematicHeroShades(hero)
-                    val info=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;gravity=Gravity.BOTTOM;setPadding(dp(54),dp(40),dp(54),dp(46))}
+                    val info=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;gravity=Gravity.BOTTOM;setPadding(dp(54),dp(40),dp(54),dp(60))}
                     info.addView(heroEyebrow("SERIE AUF VELARIS"))
                     info.addView(TextView(this).apply{
-                        text=series.optString("Name");textSize=44f;maxLines=2
+                        text=series.optString("Name");textSize=52f;maxLines=2
                         setTextColor(Color.WHITE);typeface=Typeface.DEFAULT_BOLD
                     },LinearLayout.LayoutParams(dp(770),-2))
                     val seriesMeta=heroMediaMeta(series)
@@ -1731,16 +1731,16 @@ class MainActivity : Activity() {
                             nextUnwatched.optJSONObject("UserData")?.optLong("PlaybackPositionTicks",0L)?:0L)
                     },LinearLayout.LayoutParams(dp(225),dp(56)).apply {marginEnd=dp(10)})
                     acts.addView(actionButton("Zufällige Folge",false){playRandomEpisode(seriesId)},LinearLayout.LayoutParams(dp(200),dp(56)))
-                    info.addView(acts); hero.addView(info,FrameLayout.LayoutParams(-1,-1)); root.addView(hero,LinearLayout.LayoutParams(-1,dp(500)))
+                    info.addView(acts); hero.addView(info,FrameLayout.LayoutParams(-1,-1)); root.addView(hero,LinearLayout.LayoutParams(-1,dp(545)))
                     // Netflix-style season selector: show season 1 episodes immediately
                     // under the same series page, without routing to a separate screen.
                     val selector=LinearLayout(this).apply {
                         orientation=LinearLayout.VERTICAL
-                        setPadding(dp(54),dp(16),dp(54),dp(8))
+                        setPadding(dp(54),dp(26),dp(54),dp(14))
                         clipChildren=false;clipToPadding=false
                     }
                     selector.addView(TextView(this).apply {
-                        text="Episoden";textSize=27f;typeface=Typeface.DEFAULT_BOLD
+                        text="Episoden";textSize=31f;typeface=Typeface.DEFAULT_BOLD
                         setTextColor(Color.WHITE)
                     })
                     val chooser=LinearLayout(this).apply {
@@ -1779,23 +1779,24 @@ class MainActivity : Activity() {
                             val eid=ep.optString("Id")
                             val ticks=ep.optJSONObject("UserData")?.optLong("PlaybackPositionTicks",0L)?:0L
                             val nextId=episodes.getOrNull(i+1)?.optString("Id").orEmpty()
-                            val cover=watchedPoster(ep,270,152,"Primary",600,landscape=true)
+                            val cover=watchedPoster(ep,290,163,"Primary",640,landscape=true)
                             val card=LinearLayout(this).apply {
                                 orientation=LinearLayout.HORIZONTAL
                                 gravity=Gravity.CENTER_VERTICAL
                                 isFocusable=true;isClickable=true
-                                setPadding(dp(10),dp(10),dp(10),dp(10))
+                                setPadding(dp(16),dp(14),dp(16),dp(14))
+                                background=GradientDrawable().apply{setColor(0xFF181720.toInt());cornerRadius=dp(16).toFloat()}
                                 setOnClickListener { startEpisode(eid,ticks,nextId) }
                                 applyCardFocus(this,cover)
                             }
-                            card.addView(cover,LinearLayout.LayoutParams(dp(270),dp(152)))
+                            card.addView(cover,LinearLayout.LayoutParams(dp(290),dp(163)))
                             val detail=LinearLayout(this).apply{
                                 orientation=LinearLayout.VERTICAL
                                 setPadding(dp(22),0,dp(12),0)
                             }
                             detail.addView(TextView(this).apply {
                                 text=episodeHeading(ep)
-                                textSize=20f;typeface=Typeface.DEFAULT_BOLD;setTextColor(Color.WHITE)
+                                textSize=22f;typeface=Typeface.DEFAULT_BOLD;setTextColor(Color.WHITE)
                             })
                             if(watchedLabel(ep)!=null)detail.addView(TextView(this).apply {
                                 text="✓ FOLGE GESEHEN";textSize=13f
@@ -1810,14 +1811,14 @@ class MainActivity : Activity() {
                                 setTextColor(Color.LTGRAY)
                             },params(-1,-2,8))
                             card.addView(detail,LinearLayout.LayoutParams(0,-2,1f))
-                            episodeList.addView(card,params(-1,196,12))
+                            episodeList.addView(card,params(-1,205,16))
                         }
                     }
                     seasonButton=actionButton("Staffel wählen",false) {
                         chooser.visibility=if(chooser.visibility==View.VISIBLE)View.GONE else View.VISIBLE
                         if(chooser.visibility==View.VISIBLE)chooser.post{chooser.getChildAt(0)?.requestFocus()}
                     }
-                    selector.addView(seasonButton,params(265,54,16))
+                    selector.addView(seasonButton,params(292,58,20))
                     seasons.forEachIndexed { index,season ->
                         val id=season.optString("Id")
                         val label=(if(finishedSeasons[id]==true)"✓  " else "")+
@@ -1825,7 +1826,7 @@ class MainActivity : Activity() {
                         chooser.addView(actionButton(label,false){
                             renderSeason(index)
                             seasonButton.requestFocus()
-                        },params(265,50,6))
+                        },params(292,52,7))
                     }
                     selector.addView(chooser)
                     selector.addView(episodeList)
@@ -2139,7 +2140,7 @@ class MainActivity : Activity() {
                             importantForAccessibility=View.IMPORTANT_FOR_ACCESSIBILITY_NO
                         }
                         hero.addView(backdrop,FrameLayout.LayoutParams(-1,-1))
-                        loadImage(backdrop,item.optString("Id"),"Backdrop",1280)
+                        loadImage(backdrop,item.optString("Id"),"Backdrop",1600)
                         hero.addView(View(this).apply {
                             background=GradientDrawable(
                                 GradientDrawable.Orientation.LEFT_RIGHT,
@@ -2153,7 +2154,7 @@ class MainActivity : Activity() {
                         val info=LinearLayout(this).apply {
                             orientation=LinearLayout.VERTICAL
                             gravity=Gravity.BOTTOM
-                            setPadding(dp(48),0,dp(60),dp(62))
+                            setPadding(dp(52),0,dp(64),dp(66))
                         }
                         info.addView(TextView(this).apply {
                             text="JETZT AUF VELARIS"
@@ -2247,11 +2248,11 @@ class MainActivity : Activity() {
         scene.addView(columns,FrameLayout.LayoutParams(-1,-1))
         val rail=LinearLayout(this).apply {
             orientation=LinearLayout.VERTICAL
-            setPadding(dp(40),dp(40),dp(18),dp(28))
-            setBackgroundColor(0xFF0D0D14.toInt())
+            setPadding(dp(42),dp(46),dp(22),dp(34))
+            setBackgroundColor(0xEE0D0D14.toInt())
             clipChildren=false;clipToPadding=false
         }
-        columns.addView(rail,LinearLayout.LayoutParams(dp(372),-1))
+        columns.addView(rail,LinearLayout.LayoutParams(dp(410),-1))
         val hero=FrameLayout(this).apply {
             isFocusable=false
             setBackgroundColor(0xFF12121C.toInt())
@@ -2265,7 +2266,7 @@ class MainActivity : Activity() {
         },params(-1,-2,20))
         rail.addView(TextView(this).apply {
             text="Wer schaut gerade?"
-            textSize=29f;typeface=Typeface.DEFAULT_BOLD
+            textSize=33f;typeface=Typeface.DEFAULT_BOLD
             setTextColor(Color.WHITE);maxLines=2
         },params(-1,-2,7))
         val hint=TextView(this).apply {
@@ -2305,7 +2306,7 @@ class MainActivity : Activity() {
                 isFocusable=true;isClickable=true
                 setPadding(dp(8),dp(4),dp(9),dp(4))
                 background=GradientDrawable().apply {
-                    setColor(0xFF1A1A24.toInt());cornerRadius=dp(14).toFloat()
+                    setColor(0xFF201D2C.toInt());cornerRadius=dp(18).toFloat()
                 }
                 setOnClickListener {
                     if(editProfilesMode)showProfileAvatarEditor(profile)
@@ -2314,13 +2315,13 @@ class MainActivity : Activity() {
                 setOnFocusChangeListener{v,focused ->
                     highlightAvatar(picture,focused)
                     v.background=GradientDrawable().apply {
-                        setColor(if(focused)0xFF302B48.toInt() else 0xFF1A1A24.toInt())
-                        cornerRadius=dp(14).toFloat()
+                        setColor(if(focused)0xFF353047.toInt() else 0xFF201D2C.toInt())
+                        cornerRadius=dp(18).toFloat()
                         if(focused)setStroke(dp(2),Color.WHITE)
                     }
                 }
             }
-            tile.addView(picture,LinearLayout.LayoutParams(dp(65),dp(65)))
+            tile.addView(picture,LinearLayout.LayoutParams(dp(76),dp(76)))
             tile.addView(TextView(this).apply {
                 text=name;maxLines=1;textSize=17f
                 setTextColor(Color.WHITE)
@@ -2328,8 +2329,8 @@ class MainActivity : Activity() {
                 setPadding(dp(13),0,0,0)
             },LinearLayout.LayoutParams(0,-2,1f))
             tile.addView(editIcon,LinearLayout.LayoutParams(dp(32),dp(40)))
-            list.addView(tile,LinearLayout.LayoutParams(-1,dp(81)).apply {
-                bottomMargin=dp(8)
+            list.addView(tile,LinearLayout.LayoutParams(-1,dp(96)).apply {
+                bottomMargin=dp(12)
             })
             if(firstProfile==null)firstProfile=tile
         }
