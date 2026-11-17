@@ -241,6 +241,7 @@ class PlayerActivity : Activity() {
                 "↶ 10s" to { player?.let { it.seekTo((it.currentPosition-10_000L).coerceAtLeast(0L)) } },
                 "10s ↷" to { player?.let { val end=it.duration;it.seekTo(if(end>0L) (it.currentPosition+10_000L).coerceAtMost(end) else it.currentPosition+10_000L) } },
                 "Audio / Untertitel" to { showTrackMenu() },
+                "Episoden" to { showEpisodePicker() },
                 "⚙ Qualität" to { showQualityMenu() }
             )
             actions.forEach { (label,click) ->
@@ -668,6 +669,68 @@ class PlayerActivity : Activity() {
                     preparePlayback(exo,itemId,position)
                 }
             }.setNegativeButton("Abbrechen",null).show()
+    }
+
+    /** Server-backed episode picker. Only usable for a Jellyfin Episode; never
+     * assumes arbitrary Movies belong to a series. Work stays off the UI thread. */
+    private fun showEpisodePicker() {
+        val selectedId=itemId
+        val currentPlayer=player ?: return
+        if(userId.isBlank())return
+        io.execute {
+            var options=emptyList<JSONObject>()
+            try {
+                val current=requestPlayerItem(selectedId)
+                val seriesId=current.optString("SeriesId")
+                if(seriesId.isNotBlank()){
+                    val url="$server/Shows/${URLEncoder.encode(seriesId,"UTF-8")}/Episodes?UserId=${URLEncoder.encode(userId,"UTF-8")}&Limit=1000&Fields=RunTimeTicks"
+                    val connection=URL(url).openConnection() as HttpURLConnection
+                    try {
+                        connection.connectTimeout=6000;connection.readTimeout=12000
+                        connection.setRequestProperty("Authorization",authorizationHeader().trim())
+                        if(connection.responseCode in 200..299){
+                            val response=JSONObject(connection.inputStream.bufferedReader().use{it.readText()})
+                            val array=response.optJSONArray("Items")?:JSONArray()
+                            options=(0 until array.length()).mapNotNull{array.optJSONObject(it)}
+                                .filter{it.optString("Id").isNotBlank() && !it.optBoolean("IsMissing",false)}
+                                .sortedWith(compareBy({it.optInt("ParentIndexNumber",0)},{it.optInt("IndexNumber",0)}))
+                        }
+                    }finally{connection.disconnect()}
+                }
+            }catch(error:Exception){Log.w("VelarisPlayback","Episoden konnten nicht geladen werden",error)}
+            runOnUiThread {
+                if(isFinishing||isDestroyed||player!==currentPlayer||itemId!=selectedId)return@runOnUiThread
+                if(options.isEmpty()){
+                    android.widget.Toast.makeText(this,"Für diesen Titel sind keine Episoden verfügbar.",android.widget.Toast.LENGTH_SHORT).show()
+                    return@runOnUiThread
+                }
+                val choices=options
+                val names=choices.map{
+                    "S${it.optInt("ParentIndexNumber",0)} · E${it.optInt("IndexNumber",0)} · ${it.optString("Name","Episode")}"
+                }.toTypedArray()
+                AlertDialog.Builder(this).setTitle("Episoden auswählen")
+                    .setItems(names){_,index ->
+                        val target=choices[index].optString("Id")
+                        if(target.isNotBlank()&&target!=itemId){
+                            reportStoppedOnce()
+                            itemId=target;stoppedReported=false;sessionStarted=false
+                            triedCompatibleFallback=false
+                            loadFollowingEpisodeAndPlay(currentPlayer,target)
+                        }
+                    }.setNegativeButton("Schließen",null).show()
+            }
+        }
+    }
+
+    private fun requestPlayerItem(id:String):JSONObject {
+        val url="$server/Users/${URLEncoder.encode(userId,"UTF-8")}/Items/${URLEncoder.encode(id,"UTF-8")}"
+        val connection=URL(url).openConnection() as HttpURLConnection
+        try {
+            connection.connectTimeout=6000;connection.readTimeout=12000
+            connection.setRequestProperty("Authorization",authorizationHeader().trim())
+            if(connection.responseCode !in 200..299)throw IllegalStateException("Jellyfin HTTP ${connection.responseCode}")
+            return JSONObject(connection.inputStream.bufferedReader().use{it.readText()})
+        }finally{connection.disconnect()}
     }
 
     private fun showTrackMenu() {
