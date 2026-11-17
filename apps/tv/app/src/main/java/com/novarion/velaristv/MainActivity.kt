@@ -357,7 +357,11 @@ class MainActivity : Activity() {
             setBackgroundColor(VelarisDesign.color("background",0xFF08080D.toInt()))
         }
         frame.addView(page,FrameLayout.LayoutParams(-1,-1).apply{topMargin=dp(82)})
-        frame.addView(appHeader(false),FrameLayout.LayoutParams(-1,dp(82),Gravity.TOP))
+        val header=appHeader(false)
+        frame.addView(header,FrameLayout.LayoutParams(-1,dp(82),Gravity.TOP))
+        (page as? ScrollView)?.setOnScrollChangeListener { _,_,scrollY,_,_ ->
+            updateTvHeaderAtmosphere(header,scrollY>dp(55))
+        }
         setContentView(frame)
         // Small, non-blocking reveal for navigating between media sections.
         // The header remains fixed and responds immediately to the remote.
@@ -425,7 +429,11 @@ class MainActivity : Activity() {
         val screen=FrameLayout(this).apply { setBackgroundColor(VelarisDesign.color("background",0xFF08080D.toInt())) }
         screen.addView(scroll,FrameLayout.LayoutParams(-1,-1))
 
-        screen.addView(appHeader(true),FrameLayout.LayoutParams(-1,dp(82),Gravity.TOP))
+        val header=appHeader(true)
+        screen.addView(header,FrameLayout.LayoutParams(-1,dp(82),Gravity.TOP))
+        scroll.setOnScrollChangeListener { _,_,scrollY,_,_ ->
+            updateTvHeaderAtmosphere(header,scrollY>dp(55))
+        }
         setContentView(screen)
         loadHome()
     }
@@ -648,6 +656,38 @@ class MainActivity : Activity() {
         },9000)
     }
 
+    /** Lightweight artwork-driven ambience; only a 640px image is requested.
+     * RenderEffect is optional on older Google TV devices, with a dim fallback.
+     * This layer is never focusable and doesn't change playback/navigation. */
+    private fun addTvArtAmbient(hero:FrameLayout,mediaId:String) {
+        if(mediaId.isBlank() || !prefs.getBoolean("ui_animations",true)) return
+        val glow=ImageView(this).apply {
+            scaleType=ImageView.ScaleType.CENTER_CROP
+            alpha=0.13f
+            isFocusable=false
+            importantForAccessibility=View.IMPORTANT_FOR_ACCESSIBILITY_NO
+            if(android.os.Build.VERSION.SDK_INT>=31) {
+                setRenderEffect(android.graphics.RenderEffect.createBlurEffect(
+                    dp(42).toFloat(),dp(42).toFloat(),android.graphics.Shader.TileMode.CLAMP))
+            }
+        }
+        hero.addView(glow,FrameLayout.LayoutParams(-1,-1))
+        loadImage(glow,mediaId,"Backdrop",640)
+    }
+
+    /** D-pad geometry stays fixed; the translucent header becomes denser
+     * when scrolling through a page and lighter again at the top. */
+    private fun updateTvHeaderAtmosphere(header:View,scrolled:Boolean) {
+        val top=header as? LinearLayout ?: return
+        val flag=if(scrolled)1 else 0
+        if(top.tag==flag)return
+        top.tag=flag
+        top.background=GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
+            if(scrolled)intArrayOf(0xFA08080D.toInt(),0xE408080D.toInt(),0xB008080D.toInt())
+            else intArrayOf(0xE608080D.toInt(),0x9908080D.toInt(),0x0008080D))
+        top.setPadding(dp(48),dp(if(scrolled)10 else 16),dp(48),dp(if(scrolled)6 else 8))
+    }
+
     /** Identical cinematic shading for home, movie and series backdrops. */
     private fun addCinematicHeroShades(hero:FrameLayout) {
         hero.addView(View(this).apply {
@@ -707,7 +747,7 @@ class MainActivity : Activity() {
         val image=ImageView(this).apply { scaleType=ImageView.ScaleType.CENTER_CROP }
         hero.addView(image, FrameLayout.LayoutParams(-1,dp(560)))
         loadImage(image,id,"Backdrop",1920)
-
+        addTvArtAmbient(hero,id)
         addCinematicHeroShades(hero)
 
         val info=LinearLayout(this).apply {
@@ -1394,6 +1434,7 @@ class MainActivity : Activity() {
                     }
                     collectionHero.addView(backdrop,FrameLayout.LayoutParams(-1,-1))
                     loadImage(backdrop,collectionId,"Backdrop",1920)
+                    addTvArtAmbient(collectionHero,collectionId)
                     addCinematicHeroShades(collectionHero)
                     val copy=LinearLayout(this).apply{
                         orientation=LinearLayout.VERTICAL
@@ -1687,6 +1728,7 @@ class MainActivity : Activity() {
                     val root=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; setBackgroundColor(VelarisDesign.color("background",0xFF08080D.toInt())) }
                     val hero=FrameLayout(this)
                     val bg=ImageView(this).apply{scaleType=ImageView.ScaleType.CENTER_CROP}; hero.addView(bg,FrameLayout.LayoutParams(-1,dp(545))); loadImage(bg,seriesId,"Backdrop",1920)
+                    addTvArtAmbient(hero,seriesId)
                     addCinematicHeroShades(hero)
                     val info=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;gravity=Gravity.BOTTOM;setPadding(dp(54),dp(40),dp(54),dp(60))}
                     info.addView(heroEyebrow("SERIE AUF VELARIS"))
