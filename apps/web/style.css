@@ -691,3 +691,77 @@ button:disabled{cursor:wait;opacity:.65}
   transform:translateX(2px);
  }
 }
+
+
+/* Velaris Desktop / TV UI-Polish-Pass 4.1
+   Scope deliberately limited to desktop, keeping iPhone PWA layout untouched. */
+@media(min-width:850px){
+ .shell .hero-stage{background:#08080d;isolation:isolate;overflow:hidden}
+ .shell .hero-stage .hero.hero-cinematic-v41{
+   height:560px;min-height:560px;max-height:560px;
+   padding:68px clamp(36px,4.1vw,78px) 64px;
+   background-image:
+     linear-gradient(0deg,#08080d 0%,#08080de8 8%,#08080d8f 24%,#08080d18 64%,transparent 100%),
+     linear-gradient(90deg,#08080df9 0%,#08080de9 20%,#08080da9 39%,#08080d28 70%,#08080d0b 100%),
+     var(--hero);
+   background-size:cover;
+   background-position:center,center,center 28%;
+   transition:background-position .5s ease;
+ }
+ .shell .hero-stage .hero-cinematic-v41::before{
+   content:"";position:absolute;pointer-events:none;inset:0;
+   background:radial-gradient(ellipse 55% 95% at 72% 40%,transparent 38%,#08080d2f 100%);
+   z-index:0
+ }
+ .shell .hero-stage .hero-cinematic-v41 .hero-copy{position:relative;z-index:2;width:min(670px,58vw);max-width:670px;animation:velaris-hero-41 .65s cubic-bezier(.16,1,.3,1) both}
+ .shell .hero-stage .hero-cinematic-v41 .hero-copy .p8-logo{max-width:470px;max-height:128px}
+ .shell .hero-stage .hero-cinematic-v41 .hero-copy h1{font-size:clamp(41px,3.5vw,58px);line-height:1.05;letter-spacing:-.04em;max-width:650px}
+ .shell .hero-stage .hero-cinematic-v41 .hero-copy .eyebrow{font-size:12px;letter-spacing:.17em;text-shadow:0 2px 12px #000b}
+ .shell .hero-stage .hero-cinematic-v41 .hero-copy .velaris-hero-meta{font-size:15px;margin-top:12px}
+ .shell .hero-stage .hero-cinematic-v41 .hero-copy .velaris-hero-genres{font-size:14px;margin-top:7px}
+ .shell .hero-stage .hero-cinematic-v41 .hero-copy p{font-size:16px;line-height:1.56;max-width:600px;margin:14px 0 0}
+ .shell .hero-stage .hero-cinematic-v41 .hero-copy .actions{gap:13px;margin-top:24px}
+ .shell .hero-stage .hero-cinematic-v41 .hero-copy .actions button{min-height:56px;border-radius:12px;padding:13px 23px;font-size:16px;transition:transform .18s,background .18s,box-shadow .18s}
+ .shell .hero-stage .hero-cinematic-v41 .hero-copy .actions .primary{background:#fff;color:#14121c;box-shadow:0 10px 35px #0008}
+ .shell .hero-stage .hero-cinematic-v41 .hero-copy .actions .secondary{background:#25222dd9;border-color:#ffffff35;backdrop-filter:blur(16px)}
+ .shell .hero-stage .hero-cinematic-v41 .hero-copy .actions button:hover,.shell .hero-stage .hero-cinematic-v41 .hero-copy .actions button:focus-visible{transform:translateY(-2px)}
+ .shell .hero-stage .hero-dots{bottom:29px;right:clamp(36px,4.1vw,78px);gap:13px}
+ .shell .hero-stage .hero-dot{background:#ffffff75;transition:background .22s,width .22s,box-shadow .22s}
+ .shell .hero-stage .hero-dot.active{width:30px;box-shadow:0 0 14px color-mix(in srgb,var(--accent) 40%,transparent)}
+ .shell .rows{margin-top:-8px}
+ .shell .rows .media-section>.rail{padding-top:22px;padding-bottom:40px;scroll-padding-left:6vw}
+ .shell .rows .media-section>.rail>.poster{position:relative;transform-origin:center center;transition:transform .19s cubic-bezier(.2,.8,.2,1),filter .19s;will-change:auto}
+ .shell .poster .poster-art{border-radius:13px!important;transition:box-shadow .2s,outline-color .2s;background:#1d1d26}
+ .shell .poster .poster-art img{border-radius:13px!important}
+ .shell .poster .poster-focus-meta{padding:24px 12px 12px;font-size:13px;background:linear-gradient(transparent,#08080de9)}
+ .shell .poster:hover,.shell .poster:focus-visible{transform:scale(1.052);z-index:6;filter:none}
+ .shell .poster:hover .poster-art,.shell .poster:focus-visible .poster-art{outline:3px solid var(--accent);outline-offset:-3px;box-shadow:0 15px 42px #000c,0 0 26px color-mix(in srgb,var(--accent) 33%,transparent)}
+ .shell .poster:focus-visible{outline:none}
+ .shell .media-section:has(.p8-ranked)>.rail{gap:18px;padding-top:26px;padding-bottom:45px;align-items:flex-end}
+ .shell .media-section .p8-ranked{position:relative;isolation:isolate;flex:0 0 232px;min-width:232px;height:278px;padding-left:60px;display:flex;align-items:flex-end}
+ .shell .media-section .p8-ranked .poster{width:164px;flex:0 0 164px;z-index:2}
+ .shell .media-section .p8-ranked .p8-rank{
+   position:absolute;z-index:1;left:-4px;bottom:13px;
+   font-family:Inter,system-ui,sans-serif;font-size:190px;font-weight:900;line-height:.9;letter-spacing:-.14em;
+   color:#08080d;-webkit-text-stroke:3px color-mix(in srgb,var(--accent) 65%,#fff);
+   text-shadow:0 10px 26px #000b;opacity:.96;
+   transition:transform .18s ease,filter .18s ease
+ }
+ .shell .media-section .p8-ranked:focus-within .p8-rank,.shell .media-section .p8-ranked:hover .p8-rank{transform:translateX(-2px);filter:drop-shadow(0 0 10px color-mix(in srgb,var(--accent) 30%,transparent))}
+}
+@media(min-width:850px) and (max-width:1199px){
+ .shell .hero-stage .hero.hero-cinematic-v41{padding-left:36px;padding-right:36px}
+ .shell .hero-stage .hero-cinematic-v41 .hero-copy{width:min(600px,66vw)}
+ .shell .media-section .p8-ranked{flex-basis:214px;min-width:214px;padding-left:52px}
+ .shell .media-section .p8-ranked .poster{width:154px;flex-basis:154px}
+ .shell .media-section .p8-ranked .p8-rank{font-size:172px}
+}
+@media(min-width:850px) and (max-height:740px){
+ .shell .hero-stage .hero.hero-cinematic-v41{height:490px;min-height:490px;max-height:490px;padding-bottom:44px}
+ .shell .hero-stage .hero-cinematic-v41 .hero-copy p{-webkit-line-clamp:2}
+}
+@keyframes velaris-hero-41{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@media(prefers-reduced-motion:reduce){
+ .shell .hero-stage .hero-cinematic-v41 .hero-copy{animation:none!important}
+ .shell .poster,.shell .poster .poster-art,.shell .p8-rank{transition:none!important}
+}
