@@ -357,7 +357,7 @@ for(const token of [
  "state.catalogStatus+=' Bibliotheksabfrage: '",
  "state.items=Array.from(combined.values());",
  "state.categories=velarisBuildCategories(state.items,[...initialLibraries,...libraries]);",
- "id=\\\"catalog-status\\\""
+  'id="catalog-status"'
 ])assert(runtime.includes(token),'Folder-first Jellyfin catalog recovery missing: '+token);
 console.log('Velaris Web: user-bound Jellyfin folder recovery guards passed.');
 
