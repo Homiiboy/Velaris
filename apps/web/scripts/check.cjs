@@ -229,7 +229,7 @@ const catContext={console,URLSearchParams};
 vm.createContext(catContext);
 vm.runInContext(catalogScript,catContext,{filename:'catalog.js'});
 assert(html.includes('<script src="./catalog.js" defer>'),'Catalog helper must load before main UI');
-assert(html.indexOf('catalog.js')<html.indexOf('<script src="./main.js"'),'Catalog script order is wrong');
+assert(html.indexOf('catalog.js')<mainScriptIndex,'Catalog script order is wrong');
 assert(sw.includes('catalog.js'),'PWA must cache catalog helper');
 assert(runtime.includes("velarisPaged((start,limit)=>page("),'Main library must be paginated');
 assert(runtime.includes('velarisBuildCategories(items,successful)'),'Categories must use Jellyfin library membership');
