@@ -393,7 +393,7 @@ console.log('Velaris Web: iOS source negotiation and fallback checks passed.');
 /* Regression rollback: iPhone must use the working pre-Chromecast player,
  * without disabling Chromecast for desktop browsers. */
 const classic=fs.readFileSync(path.join(root,'player9-classic.js'),'utf8');
-assert(html.includes('<script src="./player9-classic.js" defer></script>'),'Load pre-Cast player before current player');
+assert(/<script src="\.\/player9-classic\.js(?:\?[^"]*)?" defer><\/script>/.test(html),'Load pre-Cast player before current player');
 assert(classic.includes('const p9PlayClassic=(()=>{'),'Pre-Cast implementation must be isolated');
 assert(classic.includes('return p9Play;'),'Pre-Cast implementation must expose its own play entrypoint');
 assert(player.includes("typeof p9PlayClassic==='function')return p9PlayClassic(item)"),'iPhone playback must use classic player');
@@ -436,5 +436,5 @@ console.log('Velaris Web: authenticated LAN Cast Bridge guards passed.');
 assert(runtime.includes("castButton.onclick=event=>"),'Cast button handler missing');
 assert(runtime.includes("Cast Bridge nicht geladen. Bitte Velaris aktualisieren"),'Cast missing-script feedback missing');
 assert(runtime.includes("Cast-Fenster konnte nicht geöffnet werden:"),'Cast dialog exception feedback missing');
-assert(html.includes('cast-bridge.js?v=1213')&&html.includes('main.js?v=1213'),'iPhone cache bust missing');
+assert(/cast-bridge\.js\?v=\d+/.test(html)&&/main\.js\?v=\d+/.test(html),'iPhone cache bust missing');
 console.log('Velaris Web: Cast button feedback and cache-bust checks passed.');
