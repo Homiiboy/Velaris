@@ -14,6 +14,8 @@ import android.widget.FrameLayout
 import android.widget.TextView
 import android.widget.Button
 import android.widget.ImageView
+import android.widget.LinearLayout
+import android.view.Gravity
 import android.app.AlertDialog
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MimeTypes
@@ -65,6 +67,7 @@ class PlayerActivity : Activity() {
     private var playbackRequestSerial = 0
     private var lastMediaInfo = ""
     private var playerViewRef: PlayerView? = null
+    private var cinematicPlayerActions: LinearLayout? = null
     private var releasedPositionMs = 0L
     private var shouldResumeAfterStop = false
     private val introUiHandler = android.os.Handler(android.os.Looper.getMainLooper())
@@ -102,6 +105,7 @@ class PlayerActivity : Activity() {
                 val show = visibility == View.VISIBLE
                 titleText?.visibility = if (show) View.VISIBLE else View.GONE
                 playbackTimeText?.visibility = if (show) View.VISIBLE else View.GONE
+                cinematicPlayerActions?.visibility = if(show) View.VISIBLE else View.GONE
                 if (show) updatePlaybackTime()
             })
             setShowBuffering(PlayerView.SHOW_BUFFERING_WHEN_PLAYING)
@@ -178,6 +182,12 @@ class PlayerActivity : Activity() {
         root.addView(nextEpisodeImage,FrameLayout.LayoutParams(105,90,android.view.Gravity.END or android.view.Gravity.BOTTOM).apply{
             marginEnd=357;bottomMargin=140
         })
+        // Keep the proven Media3 controller for playback/seek, and add focus-safe
+        // premium quick actions. These appear only while controls are shown.
+        cinematicPlayerActions=createCinematicPlayerActions()
+        root.addView(cinematicPlayerActions,FrameLayout.LayoutParams(-2,playerPx(58),Gravity.TOP or Gravity.END).apply{
+            topMargin=playerPx(73);marginEnd=playerPx(35)
+        })
         VelarisDesign.load(this)
         loadPlayerTitle(itemId)
         setContentView(root)
@@ -191,6 +201,52 @@ class PlayerActivity : Activity() {
         preparePlayback(exo, itemId, startTicks)
         introUiHandler.post(introUiTick)
         playerView.requestFocus()
+    }
+
+    private fun playerPx(dp:Int):Int=(dp*resources.displayMetrics.density+0.5f).toInt()
+
+    /** Focus-safe buttons around Media3: no additional ExoPlayer instance, no
+     * custom seek engine and no changes to Jellyfin/intro/next-episode logic. */
+    private fun createCinematicPlayerActions():LinearLayout {
+        val accent=VelarisDesign.color("focus",0xFFDCCFFF.toInt())
+        fun button(label:String,action:()->Unit)=Button(this).apply {
+            text=label;isAllCaps=false;contentDescription=label
+            minWidth=0;minimumWidth=0
+            includeFontPadding=false;textSize=14f
+            typeface=Typeface.DEFAULT_BOLD
+            setTextColor(Color.WHITE)
+            setPadding(playerPx(13),0,playerPx(13),0)
+            stateListAnimator=null
+            background=GradientDrawable().apply{
+                setColor(0xE0232031.toInt());cornerRadius=playerPx(13).toFloat()
+                setStroke(playerPx(1),0x66FFFFFF)
+            }
+            setOnClickListener{action()}
+            setOnFocusChangeListener { v,focused ->
+                v.background=GradientDrawable().apply{
+                    setColor(if(focused)0xFF34304B.toInt() else 0xE0232031.toInt())
+                    cornerRadius=playerPx(13).toFloat()
+                    setStroke(playerPx(if(focused)2 else 1),if(focused)accent else 0x66FFFFFF)
+                }
+                v.animate().cancel()
+                v.animate().scaleX(if(focused)1.035f else 1f)
+                    .scaleY(if(focused)1.035f else 1f).setDuration(130).start()
+            }
+        }
+        return LinearLayout(this).apply {
+            orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL
+            clipChildren=false;clipToPadding=false
+            visibility=View.GONE
+            val actions=listOf(
+                "↶ 10s" to { player?.let { it.seekTo((it.currentPosition-10_000L).coerceAtLeast(0L)) } },
+                "10s ↷" to { player?.let { val end=it.duration;it.seekTo(if(end>0L) (it.currentPosition+10_000L).coerceAtMost(end) else it.currentPosition+10_000L) } },
+                "Audio / Untertitel" to { showTrackMenu() },
+                "⚙ Qualität" to { showQualityMenu() }
+            )
+            actions.forEach { (label,click) ->
+                addView(button(label,click),LinearLayout.LayoutParams(-2,playerPx(46)).apply{marginEnd=playerPx(9)})
+            }
+        }
     }
 
     private fun authorizationHeader():String =
