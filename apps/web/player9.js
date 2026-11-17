@@ -90,6 +90,7 @@ function p9Play(item){
  const diagnostics=root.querySelector('#p9-diagnostics'),castStatus=root.querySelector('#p9-cast-status'),castStop=root.querySelector('#p9-cast-stop'),castButton=root.querySelector('#p9-cast-button');
  const isIos=/iPad|iPhone|iPod/i.test(navigator.userAgent||'');
  if(!p9CastClientEligible()){castButton.hidden=true;castButton.style.display='none'}
+ if(typeof velarisInstallFullscreenUI==='function')velarisInstallFullscreenUI(root,video,item);
  const currentSession=session();const previous=document.querySelectorAll('#p9-player');for(const old of previous)if(old!==root){const previousVideo=old.querySelector('video');if(previousVideo){previousVideo.pause();previousVideo.removeAttribute('src');previousVideo.load()}old.remove()}let startupTimer=null;let stage='Initialisierung',stageError='',startedFallback=false;let castCtrl=null;let quality=prefs.quality,fallback=false,reloading=false,pendingPosition=(item.UserData?.PlaybackPositionTicks||0)/10000000,stopped=false,reported=0,playbackInfo=null,streamGeneration=0,sourceUrl='',hlsEngine=null,hlsError='',startupAt=0,infoReadyAt=0,mediaRequestedAt=0,manifestReadyAt=0,firstFrameReported=false,next=null,segments=[],skipSeen=new Set(),nextShown=false,countdown=null,lastNextCountdown=-1;
  const isAlive=()=>root.isConnected&&!stopped&&session()?.userId===currentSession.userId&&session()?.url===currentSession.url;
  const playerMessage=message=>{if(isAlive())note.textContent=message};
