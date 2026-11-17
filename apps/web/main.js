@@ -99,12 +99,46 @@ function openMobileCategories(){
 }
 
 function layout(inner){viewRevision++;const sectionNames={home:'',movies:'FILME',series:'SERIEN',anime:'ANIME',animeMovies:'ANIME FILME',animation:'ANIMATION',cartoons:'CARTOONS',favorites:'MEINE LISTE',collections:'SAMMLUNGEN',youtube:'YOUTUBE'};const suffix=sectionNames[state.tab]||'';app.innerHTML='<div class="shell"><header class="top"><div class="logo category-logo">VELARIS'+(suffix?' <span class="brand-section">'+suffix+'</span>':'')+'</div>'+desktopNav()+'<div class="top-actions"><button class="pill p9-settings-trigger" id="p9-settings" aria-label="Wiedergabeeinstellungen">▶</button><button class="pill p8-settings-trigger" id="p8-settings" aria-label="Startseite anpassen">⚙</button><button class="pill search-trigger" id="search" aria-label="Suche öffnen">⌕ <span>Suche</span></button><button class="avatar" id="profile" title="Profil wechseln">'+esc(session()?.name?.slice(0,1).toUpperCase())+'</button></div></header>'+mobileNav()+inner+'</div>';app.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{state.tab=b.dataset.tab;render()});app.querySelector('#mobile-category-trigger')?.addEventListener('click',openMobileCategories);app.querySelectorAll('[data-mobile-action]').forEach(b=>b.onclick=()=>{const id=b.dataset.mobileAction;if(id==='categories')return openMobileCategories();if(id==='profile')return profilePicker();state.tab=id;render()});app.querySelector('#profile').onclick=()=>{state.active=Math.max(0,Math.min(state.active,state.sessions.length-1));profilePicker()};app.querySelector('#search').onclick=searchUI;app.querySelector('#p8-settings').onclick=p8Customize;app.querySelector('#p9-settings').onclick=p9Settings;p8Theme();
+ installDesktopAtmosphere(app.querySelector('.shell'));
  // UI-Pass 6: a newly selected desktop category should never be hidden in the horizontal rail.
  if(window.matchMedia('(min-width:850px)').matches){
   const nav=app.querySelector('.top .desktop-navigation');
   const active=nav?.querySelector('button.selected');
   if(nav&&active)active.scrollIntoView({block:'nearest',inline:'nearest',behavior:'auto'});
  }
+}
+/* Pass 4.3: desktop-only header and artwork ambient light. */
+let velarisDesktopAtmosphereBound=false;
+function installDesktopAtmosphere(shell){
+ if(!shell||!window.matchMedia('(min-width:850px)').matches)return;
+ const glow=document.createElement('div');glow.className='desktop-ambient-v43';glow.setAttribute('aria-hidden','true');shell.insertBefore(glow,shell.firstChild);
+ const featured=state.items.find(item=>item.BackdropImageTags?.length);
+ const fallback=featured?image(featured,'Backdrop',900):'';
+ let activeUrl='';
+ const setArt=url=>{if(!url||url===activeUrl)return;activeUrl=url;glow.style.setProperty('--ambient-art','url("'+url.replaceAll('"','%22')+'")')};
+ if(fallback)setArt(fallback);
+ const mediaFromTarget=target=>{
+  const card=target?.closest?.('[data-item]');
+  if(!card||!shell.contains(card))return;
+  const item=[...state.items,...state.resume,...state.favorites,...(state.collections||[])].find(media=>media.Id===card.dataset.item);
+  if(item)setArt(image(item,item.BackdropImageTags?.length?'Backdrop':'Primary',900));
+ };
+ shell.addEventListener('pointerover',event=>mediaFromTarget(event.target));
+ shell.addEventListener('focusin',event=>mediaFromTarget(event.target));
+ shell.addEventListener('pointerleave',()=>{if(fallback)setArt(fallback)});
+ if(!velarisDesktopAtmosphereBound){
+  velarisDesktopAtmosphereBound=true;
+  let scheduled=false;
+  window.addEventListener('scroll',()=>{
+   if(scheduled)return;scheduled=true;
+   requestAnimationFrame(()=>{
+    scheduled=false;
+    const current=document.querySelector('.shell');
+    if(current&&window.matchMedia('(min-width:850px)').matches)current.classList.toggle('desktop-nav-compact-v43',window.scrollY>72);
+   });
+  },{passive:true});
+ }
+ shell.classList.toggle('desktop-nav-compact-v43',window.scrollY>72);
 }
 function post(item){const src=image(item);const progress=item.UserData?.PlayedPercentage;const kind=item.Type==='Series'?'SERIE':item.Type==='Episode'?'EPISODE':item.Type==='BoxSet'?'SAMMLUNG':'FILM';const meta=[kind,item.ProductionYear>0?item.ProductionYear:'',item.CommunityRating>0?'★ '+Number(item.CommunityRating).toFixed(1):''].filter(Boolean).join(' · ');return '<button class="poster" type="button" data-item="'+esc(item.Id)+'"><div class="poster-art">'+(src?'<img loading="lazy" src="'+esc(src)+'" alt="'+esc(item.Name)+'">':'<div class="placeholder">✦</div>')+(progress>0&&progress<100?'<div class="progress"><i style="width:'+Math.min(100,Math.max(0,progress))+'%"></i></div>':'')+'<div class="poster-focus-meta" aria-hidden="true">'+esc(meta)+'</div></div><span class="poster-title">'+esc(item.Name)+'</span></button>'}
 function wireItems(){p8Wire()}
@@ -161,6 +195,7 @@ const showHero=()=>{
  const heroMeta=[item.ProductionYear,item.Type==='Series'?'SERIE':item.Type==='Movie'?'FILM':'',Number(item.CommunityRating)>0?'★ '+Number(item.CommunityRating).toFixed(1):''].filter(Boolean).join(' · ');
  const heroGenres=Array.isArray(item.Genres)?item.Genres.slice(0,3).join(' · '):'';
  mount.innerHTML='<div class="hero hero-cinematic-v41" style="--hero:url(&quot;'+esc(src)+'&quot;)"><div class="hero-copy"><div class="eyebrow">✦ IM RAMPENLICHT</div>'+p8Logo(item)+(heroMeta?'<div class="velaris-hero-meta">'+esc(heroMeta)+'</div>':'')+(heroGenres?'<div class="velaris-hero-genres">'+esc(heroGenres)+'</div>':'')+'<p>'+esc((item.Overview||'Entdecke deine Mediathek.').slice(0,260))+'</p><div class="actions"><button type="button" class="primary" data-hero-action="play">▶ Abspielen</button><button type="button" class="secondary" data-hero-action="details">ⓘ Mehr Infos</button></div><p id="hero-action-error" class="hero-action-error" role="alert"></p></div></div>';
+ if(window.matchMedia('(min-width:850px)').matches){const ambient=app.querySelector('.desktop-ambient-v43');if(ambient)ambient.style.setProperty('--ambient-art','url("'+src.replaceAll('"','%22')+'")')}
  dots.innerHTML=featured.map((x,i)=>'<button type="button" class="hero-dot '+(i===heroIndex?'active':'')+'" data-slide="'+i+'" aria-label="Highlight '+(i+1)+': '+esc(x.Name)+'" aria-pressed="'+(i===heroIndex)+'"></button>').join('');
 };
 mount.onclick=event=>{
