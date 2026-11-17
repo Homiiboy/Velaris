@@ -827,3 +827,40 @@ button:disabled{cursor:wait;opacity:.65}
 @media(prefers-reduced-motion:reduce){
  .shell .details-screen .episode-card,.profiles-screen.profiles-cinematic-v42 .profile{transition:none!important}
 }
+
+
+/* WEB/TV UI Pass 4.3 – adaptive desktop navigation, artwork ambient & transitions.
+   Min-width protects the independent Smartphone/iPhone-PWA design. */
+@media(min-width:850px){
+ .shell{position:relative;isolation:isolate}
+ .shell>.desktop-ambient-v43{
+  position:fixed;inset:4vh -8vw auto;z-index:-1;height:85vh;
+  background-image:linear-gradient(0deg,#08080d 0%,#08080da6 62%,transparent 100%),var(--ambient-art,linear-gradient(115deg,#171023,#08080d));
+  background-size:cover;background-position:center center;
+  opacity:.13;filter:blur(65px) saturate(1.35);transform:scale(1.12);
+  pointer-events:none;contain:paint;
+ }
+ .shell>.top{height:82px;min-height:82px;transition:height .25s ease,min-height .25s ease,padding .25s ease,background .25s ease,box-shadow .25s ease;border-bottom:1px solid #ffffff18;backdrop-filter:blur(23px) saturate(140%);background:#08080de5}
+ .shell.desktop-nav-compact-v43>.top{height:66px;min-height:66px;padding-top:7px;padding-bottom:7px;background:#08080df2;box-shadow:0 10px 34px #0009}
+ .shell>.top .category-logo{transition:font-size .24s ease,max-width .24s ease}
+ .shell.desktop-nav-compact-v43>.top .category-logo{font-size:clamp(15px,1.3vw,20px);max-width:clamp(145px,20vw,240px)}
+ .shell>.top .desktop-navigation button{transition:background .18s ease,color .18s ease,box-shadow .18s ease,transform .18s ease}
+ .shell>.top .desktop-navigation button:hover,.shell>.top .desktop-navigation button:focus-visible{transform:translateY(-1px);background:#ffffff17}
+ .shell>.top .desktop-navigation button.selected:hover,.shell>.top .desktop-navigation button.selected:focus-visible{background:var(--accent);color:var(--accent-contrast)}
+ .shell>.top .top-actions button{transition:background .18s,transform .18s,border-color .18s}
+ .shell>.top .top-actions button:hover{transform:translateY(-1px)}
+ .shell .hero-stage .hero-cinematic-v41 .hero-copy{animation:velaris-v43-reveal .55s cubic-bezier(.18,.8,.25,1) both}
+ .shell .hero-stage .hero-dot{transition:width .25s,background .25s,opacity .2s}
+ .shell .poster:hover .poster-art img,.shell .poster:focus-visible .poster-art img{filter:saturate(1.09) brightness(1.045)}
+ .shell .poster .poster-art img{transition:filter .2s ease}
+ .shell .media-section,.shell .category-page,.shell .p8-collection,.shell .details-screen{position:relative}
+ .shell .media-section .row-title{transition:color .18s}
+ .shell .media-section:hover .row-title{color:#f1ebff}
+ .shell .detail-return,.shell .season-select,.shell .detail-actions button{transition:border-color .18s ease,background .18s ease,box-shadow .18s ease}
+ .shell .details-screen .episode-card{transition:transform .19s ease,background .19s ease,border-color .19s ease}
+}
+@keyframes velaris-v43-reveal{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@media(prefers-reduced-motion:reduce){
+ .shell>.top,.shell>.top .desktop-navigation button,.shell>.top .top-actions button,.shell .poster .poster-art img,.shell .details-screen .episode-card{transition:none!important}
+ .shell .hero-stage .hero-cinematic-v41 .hero-copy{animation:none!important}
+}
