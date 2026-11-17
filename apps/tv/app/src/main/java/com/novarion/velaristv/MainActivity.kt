@@ -365,8 +365,11 @@ class MainActivity : Activity() {
         setContentView(frame)
         // Small, non-blocking reveal for navigating between media sections.
         // The header remains fixed and responds immediately to the remote.
-        page.alpha=0.88f
-        page.animate().alpha(1f).setDuration(170).start()
+        if(prefs.getBoolean("ui_animations",true) &&
+            android.animation.ValueAnimator.areAnimatorsEnabled()) {
+            page.alpha=0.9f
+            page.animate().alpha(1f).setDuration(210).start()
+        } else page.alpha=1f
     }
 
     /** A single pulsing placeholder scene with automatically cancelled animation. */
