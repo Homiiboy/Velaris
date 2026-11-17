@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Modal, Pressable, ScrollView, StyleSheet, StatusBar, Text, View, useWindowDimensions } from 'react-native';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { VideoView, useVideoPlayer } from 'expo-video';
 import { useAuth } from '@/context/AuthContext';
@@ -24,6 +24,7 @@ const formatTime=(seconds:number)=>{
 export default function PlayerScreen(){
  const {id}=useLocalSearchParams<{id:string}>(); const {session}=useAuth();
  const {accentColor}=useVelarisTheme();
+ const {width:viewportWidth,height:viewportHeight}=useWindowDimensions();
  const goBack=()=>{if(router.canGoBack())router.back();else router.replace('/(tabs)/home')};
  const [downloaded,setDownloaded]=useState(false); const [downloading,setDownloading]=useState(false); const [downloadProgress,setDownloadProgress]=useState(0); const [downloadError,setDownloadError]=useState(''); const [item,setItem]=useState<JellyfinItem|null>(null); const [info,setInfo]=useState<JellyfinPlaybackInfo|null>(null); const [url,setUrl]=useState('');
  const [quality,setQuality]=useState<number|undefined>();
@@ -31,6 +32,10 @@ export default function PlayerScreen(){
  const [settingsSheet,setSettingsSheet]=useState<'audio'|'subtitles'|'quality'|null>(null);
  const [episodeSheet,setEpisodeSheet]=useState(false);
  const [episodeOptions,setEpisodeOptions]=useState<JellyfinItem[]>([]);
+ const [fullscreen,setFullscreen]=useState(false);
+ const [controlsVisible,setControlsVisible]=useState(true);
+ const [playing,setPlaying]=useState(false);
+ const [seekWidth,setSeekWidth]=useState(1);
  const [plugins,setPlugins]=useState<PluginSettings>(defaultPluginSettings); const [segments,setSegments]=useState<{Type:string;StartTicks:number;EndTicks:number}[]>([]); const [position,setPosition]=useState(0); const [audio,setAudio]=useState<number|undefined>(); const [subtitle,setSubtitle]=useState<number|undefined>(); const [error,setError]=useState(''); const [nextEpisode,setNextEpisode]=useState<JellyfinItem|null>(null); const [autoPlay,setAutoPlay]=useState(true);
  const lastReport=useRef(0); const stopped=useRef(false); const resumeAt=useRef(0); const didResume=useRef(false);
  const pendingSeek=useRef<number|null>(null);
@@ -66,6 +71,8 @@ export default function PlayerScreen(){
  useEffect(()=>{if(url){didResume.current=false;player.replace(url);player.play()}},[url]);
  useEffect(()=>{const sub=player.addListener('statusChange',({status})=>{if(status==='readyToPlay'&&!didResume.current){didResume.current=true;const target=pendingSeek.current??resumeAt.current;pendingSeek.current=null;if(target>0)player.currentTime=target;player.play()}});return()=>sub.remove()},[player]);
  useEffect(()=>{const sub=player.addListener('timeUpdate',({currentTime})=>setPosition(currentTime));return()=>sub.remove()},[player]);
+ useEffect(()=>{const sub=player.addListener('playingChange',({isPlaying})=>{setPlaying(isPlaying);setControlsVisible(true)});return()=>sub.remove()},[player]);
+ useEffect(()=>{if(!fullscreen||!controlsVisible||!playing||settingsSheet||episodeSheet)return;const timer=setTimeout(()=>setControlsVisible(false),4200);return()=>clearTimeout(timer)},[fullscreen,controlsVisible,playing,position,settingsSheet,episodeSheet]);
  useEffect(()=>{const sub=player.addListener('playToEnd',()=>{if(autoPlay&&plugins.autoNext&&nextEpisode)router.replace({pathname:'/player/[id]',params:{id:nextEpisode.Id}})});return()=>sub.remove()},[player,autoPlay,nextEpisode]);
  useEffect(()=>{
    const segment=segments.find(candidate=>position>=candidate.StartTicks/10_000_000 &&
@@ -91,17 +98,47 @@ export default function PlayerScreen(){
  async function selectAudio(index:number){setAudio(index);await prepare(index,subtitle)}
  async function selectSubtitle(index:number|undefined){setSubtitle(index);await prepare(audio,index)}
  async function selectQuality(value:number|undefined){setQuality(value);await prepare(audio,subtitle,value)}
- return <View style={styles.page}>
-   <View style={styles.videoWrap}>{url?<VideoView player={player} style={styles.video} nativeControls fullscreenOptions={{enable:true}} allowsPictureInPicture />:<ActivityIndicator color={accentColor}/>} {canSkip&&<Pressable style={styles.skipOverlay} onPress={()=>{if(activeSegment)player.currentTime=activeSegment.EndTicks/10_000_000}}><Text style={styles.skipText}>{segmentType.includes('intro')?'Intro überspringen':segmentType.includes('recap')?'Rückblick überspringen':'Abspann überspringen'}  ›</Text></Pressable>}{showNextPrompt&&nextEpisode&&<Pressable style={[styles.nextOverlay,{borderColor:accentColor}]}
-   onPress={()=>router.replace({pathname:'/player/[id]',params:{id:nextEpisode.Id}})}>
-   <Image source={{uri:getPrimaryImageUrl(session,nextEpisode.Id,nextEpisode.PrimaryImageTag??nextEpisode.ImageTags?.Primary)}}
-     style={styles.nextArtwork} resizeMode="cover"/>
-   <View style={styles.nextInfo}>
-    <Text style={styles.nextOverlayLabel}>ALS NÄCHSTES · {formatTime(Math.max(0,(item?.RunTimeTicks??0)/10_000_000-position))}</Text>
-    <Text numberOfLines={2} style={styles.nextOverlayTitle}>▶  {nextEpisode.Name}</Text>
-    <Text numberOfLines={1} style={styles.nextOverlayLabel}>{nextEpisode.SeasonName??'Nächste Episode'}</Text>
-   </View>
-  </Pressable>}</View>
+ const duration=Number.isFinite(player.duration)&&player.duration>0?player.duration:(item?.RunTimeTicks??0)/10_000_000;
+ const skipBy=(offset:number)=>{player.currentTime=Math.max(0,Math.min(duration||Infinity,(player.currentTime||0)+offset));setControlsVisible(true)};
+ const seekTo=(fraction:number)=>{if(duration>0){player.currentTime=Math.min(duration,Math.max(0,fraction)*duration);setControlsVisible(true)}};
+ const videoControls=(large:boolean)=><View style={[styles.cinematicOverlay,large&&styles.fullOverlay]} pointerEvents="box-none">
+   {(!large||controlsVisible)&&<View style={styles.overlayHeader}>
+     <Pressable accessibilityRole="button" accessibilityLabel={large?'Vollbild verlassen':'Zurück'} onPress={()=>large?setFullscreen(false):goBack()} style={styles.overlayIcon}><Text style={styles.overlayIconText}>‹</Text></Pressable>
+     <View style={{flex:1}}><Text numberOfLines={1} style={styles.overlayTitle}>{item?.SeriesName||item?.Name||'VELARIS'}</Text>{!!item?.SeriesName&&<Text numberOfLines={1} style={styles.overlaySubtitle}>{item.Name}</Text>}</View>
+   </View>}
+   {large&&!controlsVisible&&<Pressable accessibilityLabel="Steuerung einblenden" style={StyleSheet.absoluteFill} onPress={()=>setControlsVisible(true)}/>}
+   {(!large||controlsVisible)&&<View style={styles.overlayCenter} pointerEvents="box-none">
+     <Pressable accessibilityRole="button" accessibilityLabel="10 Sekunden zurück" onPress={()=>skipBy(-10)} style={styles.overlayCircle}><Text style={styles.overlayControlText}>↶ 10</Text></Pressable>
+     <Pressable accessibilityRole="button" accessibilityLabel={playing?'Pause':'Abspielen'} onPress={()=>{if(playing)player.pause();else player.play();setControlsVisible(true)}} style={styles.overlayMainCircle}><Text style={styles.overlayMainText}>{playing?'Ⅱ':'▶'}</Text></Pressable>
+     <Pressable accessibilityRole="button" accessibilityLabel="10 Sekunden vor" onPress={()=>skipBy(10)} style={styles.overlayCircle}><Text style={styles.overlayControlText}>10 ↷</Text></Pressable>
+   </View>}
+   {(!large||controlsVisible)&&<View style={styles.overlayBottom}>
+     {canSkip&&<Pressable style={styles.overlaySkip} onPress={()=>{if(activeSegment)player.currentTime=activeSegment.EndTicks/10_000_000}}><Text style={styles.overlaySkipText}>{segmentType.includes('intro')?'Intro':segmentType.includes('recap')?'Rückblick':'Abspann'} überspringen ›</Text></Pressable>}
+     {showNextPrompt&&nextEpisode&&<Pressable style={styles.overlayNext} onPress={()=>router.replace({pathname:'/player/[id]',params:{id:nextEpisode.Id}})}><Text style={styles.overlayNextText}>Nächste Episode ›</Text></Pressable>}
+     <Pressable accessibilityRole="adjustable" accessibilityLabel="Wiedergabeposition" accessibilityValue={{min:0,max:100,now:duration?Math.round(position/duration*100):0}} disabled={!duration} onLayout={e=>setSeekWidth(e.nativeEvent.layout.width)} onPress={e=>seekTo(e.nativeEvent.locationX/seekWidth)} style={styles.overlaySeekTouch}>
+       <View style={styles.overlaySeekTrack}><View style={[styles.overlaySeekFill,{width:`${duration?Math.min(100,position/duration*100):0}%`,backgroundColor:accentColor}]}/></View>
+     </Pressable>
+     <View style={styles.overlayTime}><Text style={styles.overlayTimeText}>{formatTime(position)}</Text><Text style={styles.overlayTimeText}>{formatTime(duration)}</Text></View>
+     <View style={styles.overlayTools}>
+       <Pressable onPress={()=>setSettingsSheet('audio')} style={styles.overlayTool}><Text style={styles.overlayToolText}>Audio</Text></Pressable>
+       <Pressable onPress={()=>setSettingsSheet('subtitles')} style={styles.overlayTool}><Text style={styles.overlayToolText}>Untertitel</Text></Pressable>
+       {episodeOptions.length>0&&<Pressable onPress={()=>setEpisodeSheet(true)} style={styles.overlayTool}><Text style={styles.overlayToolText}>Episoden</Text></Pressable>}
+       <Pressable onPress={()=>setSettingsSheet('quality')} style={styles.overlayTool}><Text style={styles.overlayToolText}>⚙</Text></Pressable>
+       <Pressable accessibilityRole="button" accessibilityLabel={large?'Vollbild verlassen':'Vollbild öffnen'} onPress={()=>{setFullscreen(!large);setControlsVisible(true)}} style={styles.overlayTool}><Text style={styles.overlayToolText}>{large?'⤢':'⛶'}</Text></Pressable>
+     </View>
+   </View>}
+ </View>;
+ return <View style={styles.page}><StatusBar hidden={fullscreen} />
+   {!fullscreen&&<View style={styles.videoWrap}>
+     {url?<VideoView player={player} style={styles.video} nativeControls={false} fullscreenOptions={{enable:false}} allowsPictureInPicture contentFit="contain"/>:<ActivityIndicator color={accentColor}/>}
+     {!!url&&videoControls(false)}
+   </View>}
+   <Modal visible={fullscreen} animationType="fade" supportedOrientations={['portrait','landscape','landscape-left','landscape-right']} statusBarTranslucent navigationBarTranslucent onRequestClose={()=>setFullscreen(false)}>
+     <View style={[styles.fullscreenStage,{width:viewportWidth,height:viewportHeight}]}>
+       {fullscreen&&url?<VideoView player={player} style={StyleSheet.absoluteFill} nativeControls={false} fullscreenOptions={{enable:false}} contentFit="contain" allowsPictureInPicture/>:<ActivityIndicator color={accentColor}/>}
+       {videoControls(true)}
+     </View>
+   </Modal>
    <ScrollView contentContainerStyle={styles.body}><Pressable onPress={goBack}><Text style={[styles.back,{color:accentColor}]}>‹ Zurück</Text></Pressable>
    <Text style={styles.title}>{item?.Name||'Wird geladen …'}</Text>
    {!!url&&position>0&&<View style={styles.timeBar}>
@@ -154,5 +191,6 @@ export default function PlayerScreen(){
  </View>
 }
 const styles=StyleSheet.create({page:{flex:1,backgroundColor:'#000'},videoWrap:{width:'100%',aspectRatio:16/9,marginTop:48,alignItems:'center',justifyContent:'center',backgroundColor:'#000'},video:{width:'100%',height:'100%'},body:{padding:20,paddingBottom:50,backgroundColor:colors.background,flexGrow:1},back:{color:colors.accent,fontSize:16,fontWeight:'800'},title:{color:colors.text,fontSize:25,fontWeight:'900',marginTop:20},series:{color:colors.muted,marginTop:5},timeMeta:{color:'#DCCFFF',fontSize:12,fontWeight:'700'},timeBar:{marginTop:10,flexDirection:'row',justifyContent:'space-between',alignItems:'center'},timeRemaining:{color:colors.muted,fontSize:12},seekActions:{flexDirection:'row',gap:9,marginTop:12},seekButton:{flex:1,borderWidth:1,borderColor:colors.border,borderRadius:18,backgroundColor:'rgba(35,32,48,.95)',alignItems:'center',justifyContent:'center',paddingVertical:11},seekText:{color:colors.text,fontSize:15,fontWeight:'900'},error:{color:colors.danger,marginBottom:12},errorPanel:{marginTop:14,backgroundColor:colors.surface,padding:14,borderRadius:12},retry:{alignSelf:'flex-start',borderWidth:1,borderRadius:8,padding:10},retryText:{color:colors.text,fontWeight:'900',fontSize:12},preparing:{color:colors.muted,fontSize:12,marginTop:8},qualityNote:{color:colors.muted,fontSize:11,marginBottom:10},section:{color:colors.text,fontSize:17,fontWeight:'800',marginTop:28,marginBottom:10},options:{flexDirection:'row',flexWrap:'wrap',gap:8},chip:{paddingHorizontal:13,paddingVertical:9,borderRadius:18,backgroundColor:colors.surfaceAlt,borderWidth:1,borderColor:colors.border},active:{backgroundColor:colors.accent,borderColor:colors.accent},chipText:{color:colors.text,fontSize:12,fontWeight:'700'},skipOverlay:{position:'absolute',right:14,bottom:14,backgroundColor:'rgba(18,18,24,.92)',borderWidth:1,borderColor:'rgba(255,255,255,.72)',borderRadius:16,paddingHorizontal:18,paddingVertical:12},skipText:{color:'#fff',fontSize:12,fontWeight:'900'},nextOverlay:{position:'absolute',right:14,top:14,width:245,minHeight:88,flexDirection:'row',gap:9,backgroundColor:'rgba(18,18,24,.94)',borderColor:'rgba(180,157,255,.52)',borderWidth:1,borderRadius:16,padding:11},nextArtwork:{width:62,height:68,borderRadius:5,backgroundColor:colors.surfaceAlt},nextInfo:{flex:1,justifyContent:'center'},nextOverlayLabel:{color:'#aaa',fontSize:8,fontWeight:'900'},nextOverlayTitle:{color:'#fff',fontSize:11,fontWeight:'800',marginTop:3},offlineButton:{height:42,borderRadius:6,backgroundColor:'#202020',borderWidth:1,borderColor:'#333',alignItems:'center',justifyContent:'center',marginTop:14},offlineText:{color:'#fff',fontSize:12,fontWeight:'800'},downloadError:{color:colors.danger,fontSize:11,marginTop:8},nextBox:{marginTop:24,padding:14,borderRadius:12,backgroundColor:'#171717',flexDirection:'row',alignItems:'center',gap:12},nextLabel:{color:colors.accent,fontSize:10,fontWeight:'900',textTransform:'uppercase'},nextTitle:{color:'#fff',fontSize:14,fontWeight:'800',marginTop:3},nextMeta:{color:colors.muted,fontSize:10,marginTop:3},nextButton:{width:42,height:42,borderRadius:21,backgroundColor:'#fff',alignItems:'center',justifyContent:'center'},nextButtonText:{color:'#000',fontSize:16},autoRow:{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginTop:12},autoText:{color:'#ccc',fontSize:12},autoState:{color:'#777',fontSize:11,fontWeight:'900'},autoOn:{color:colors.accent},
+ cinematicOverlay:{...StyleSheet.absoluteFillObject,justifyContent:'space-between'},fullscreenStage:{flex:1,backgroundColor:'#000'},fullOverlay:{paddingTop:20,paddingBottom:15},overlayHeader:{flexDirection:'row',alignItems:'center',gap:10,paddingHorizontal:18,paddingTop:8,backgroundColor:'#0004'},overlayIcon:{width:42,height:42,alignItems:'center',justifyContent:'center',backgroundColor:'#0008',borderRadius:22},overlayIconText:{color:'#fff',fontSize:31,lineHeight:36},overlayTitle:{color:'#fff',fontSize:16,fontWeight:'900'},overlaySubtitle:{color:'#dedbe6',fontSize:11},overlayCenter:{position:'absolute',top:'35%',left:0,right:0,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:20},overlayCircle:{height:43,width:60,justifyContent:'center',alignItems:'center',backgroundColor:'#0008',borderRadius:24},overlayMainCircle:{height:62,width:62,justifyContent:'center',alignItems:'center',borderRadius:36,backgroundColor:'#ffffffde'},overlayMainText:{color:'#111',fontSize:28,fontWeight:'900'},overlayControlText:{color:'#fff',fontSize:15,fontWeight:'900'},overlayBottom:{paddingHorizontal:18,paddingBottom:12,backgroundColor:'#0008'},overlaySeekTouch:{height:24,justifyContent:'center'},overlaySeekTrack:{height:4,borderRadius:3,backgroundColor:'#ffffff65'},overlaySeekFill:{height:4,borderRadius:3},overlayTime:{flexDirection:'row',justifyContent:'space-between'},overlayTimeText:{fontSize:11,color:'#fff',fontWeight:'700'},overlayTools:{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginTop:10,gap:6},overlayTool:{minHeight:39,minWidth:43,alignItems:'center',justifyContent:'center',borderRadius:11,backgroundColor:'#171721b8',paddingHorizontal:7},overlayToolText:{fontSize:11,color:'#fff',fontWeight:'800'},overlaySkip:{alignSelf:'flex-end',backgroundColor:'#111c',borderColor:'#ffffff70',borderWidth:1,borderRadius:11,padding:9,marginBottom:6},overlaySkipText:{color:'#fff',fontWeight:'800',fontSize:11},overlayNext:{alignSelf:'flex-end',backgroundColor:'#252036cc',borderRadius:10,padding:9,marginBottom:6},overlayNextText:{color:'#fff',fontSize:11,fontWeight:'800'},
  quickOptions:{flexDirection:'row',flexWrap:'wrap',gap:9,marginTop:12},quickOption:{backgroundColor:'#242230',borderWidth:1,borderColor:'#ffffff25',borderRadius:17,paddingHorizontal:14,paddingVertical:12},quickOptionText:{color:'#fff',fontWeight:'800',fontSize:12},
  sheetBackdrop:{flex:1,backgroundColor:'#000a',justifyContent:'flex-end'},sheet:{backgroundColor:'#191723',borderTopLeftRadius:28,borderTopRightRadius:28,paddingHorizontal:20,paddingTop:18,paddingBottom:40,borderWidth:1,borderColor:'#ffffff22'},sheetHeader:{flexDirection:'row',justifyContent:'space-between',alignItems:'center',paddingBottom:14},sheetTitle:{color:'#fff',fontWeight:'900',fontSize:23},sheetClose:{color:'#fff',fontSize:22,padding:8},sheetItem:{minHeight:50,flexDirection:'row',alignItems:'center',justifyContent:'space-between',borderTopWidth:1,borderTopColor:'#ffffff16',gap:12},sheetItemText:{flex:1,color:'#fff',fontSize:14,fontWeight:'700'}});
