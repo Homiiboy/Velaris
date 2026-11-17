@@ -23,11 +23,9 @@ for(const token of ['activeView(revision,account.userId)','viewRevision++','p8Co
 for(const token of ['const doClose=','p9Play(target)','video.removeAttribute(\'src\')','p9NextEpisode','p9Segments'])assert(player.includes(token),'player guard missing: '+token);
 
 // UI action wiring guard: the hero player and all main interactive surfaces must remain usable.
-// Accept a version query for PWA cache invalidation while requiring classic script order.
-const scriptIndex=name=>{const escaped=name.replace(/[.*+?^$\{\}()|[\]\\]/g,'\\const playerScriptIndex=html.indexOf('<script src="./player9.js" defer>');
-const mainScriptIndex=html.indexOf('<script src="./main.js" defer>');');const matcher=new RegExp('<script\\s+src="\\./'+escaped+'(?:\\?[^"]*)?"\\s+defer\\s*>');const found=matcher.exec(html);return found?found.index:-1};
-const playerScriptIndex=scriptIndex('player9.js');
-const mainScriptIndex=scriptIndex('main.js');
+// Allow cache-busting version query strings without relaxing classic script ordering.
+const playerScriptIndex=html.search(/<script src="\.\/player9\.js(?:\?[^"]*)?" defer>/);
+const mainScriptIndex=html.search(/<script src="\.\/main\.js(?:\?[^"]*)?" defer>/);
 assert(playerScriptIndex>=0&&mainScriptIndex>playerScriptIndex,'Player and app scripts must share the classic script global scope in order');
 for(const token of [
  'mount.onclick=event=>','dots.onclick=event=>','data-hero-action="play"','data-hero-action="details"',
