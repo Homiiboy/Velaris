@@ -7,7 +7,10 @@ function velarisInstallFullscreenUI(root, video, item) {
  controls.innerHTML = '<div class="vfc-top"><button type="button" class="vfc-back" aria-label="Player schließen">‹</button><div class="vfc-heading"></div><button type="button" class="vfc-immersive" aria-label="Vollbild einschalten">⛶</button></div>'+
   '<div class="vfc-center"><button type="button" class="vfc-rewind" aria-label="10 Sekunden zurück">↶ 10</button><button type="button" class="vfc-play" aria-label="Wiedergabe anhalten oder starten">▶</button><button type="button" class="vfc-forward" aria-label="10 Sekunden vor">10 ↷</button></div>'+
   '<div class="vfc-bottom"><input type="range" class="vfc-seek" aria-label="Wiedergabeposition" min="0" max="1000" value="0" step="1"><div class="vfc-timing"><span class="vfc-current">0:00</span><span class="vfc-total">0:00</span></div><div class="vfc-actions"><button type="button" class="vfc-episodes" hidden>Episoden</button><button type="button" class="vfc-tracks">Audio / Untertitel</button><button type="button" class="vfc-collapse">Steuerung ausblenden</button></div></div>';
+ root.classList.add('vfc-enabled');
  root.appendChild(controls);
+ // Keep the proven Safari stream startup path; replace chrome only after metadata arrives.
+ video.addEventListener('loadedmetadata',()=>{video.controls=false},{once:true});
  const q=selector=>controls.querySelector(selector);
  const format=seconds=>{const t=Math.max(0,Math.floor(Number.isFinite(seconds)?seconds:0)),h=Math.floor(t/3600),m=Math.floor(t%3600/60),s=String(t%60).padStart(2,'0');return h?h+':'+String(m).padStart(2,'0')+':'+s:m+':'+s};
  let hideTimer=null,locked=false,sliderActive=false,dialog=null;
@@ -36,8 +39,9 @@ function velarisInstallFullscreenUI(root, video, item) {
   q('.vfc-immersive').setAttribute('aria-label',enabled?'Vollbild verlassen':'Vollbild einschalten');
   // On Safari PWA the player is already viewport-sized; avoid webkitEnterFullscreen,
   // which would discard our custom controls and can interrupt HLS playback.
+  if(enabled&&root.requestFullscreen&&document.fullscreenEnabled)root.requestFullscreen().catch(()=>{});
   if(enabled&&screen.orientation?.lock)screen.orientation.lock('landscape').catch(()=>{});
-  else if(!enabled&&screen.orientation?.unlock)try{screen.orientation.unlock()}catch{}
+  else if(!enabled){if(document.fullscreenElement===root)document.exitFullscreen?.().catch(()=>{});if(screen.orientation?.unlock)try{screen.orientation.unlock()}catch{}}
   display();
  };
  q('.vfc-collapse').onclick=()=>root.classList.add('vfc-hidden');
