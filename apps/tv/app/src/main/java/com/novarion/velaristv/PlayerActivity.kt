@@ -126,8 +126,15 @@ class PlayerActivity : Activity() {
             isAllCaps = false
             textSize = 17f
             setTextColor(Color.WHITE)
-            background=GradientDrawable().apply{setColor(0xDDFFFFFF.toInt());cornerRadius=10f}
-            setTextColor(Color.BLACK)
+            background=GradientDrawable().apply{setColor(0xEEFFFFFF.toInt());cornerRadius=playerPx(13).toFloat()}
+            setTextColor(0xFF17121F.toInt())
+            setOnFocusChangeListener { view,focused ->
+                view.background=GradientDrawable().apply{
+                    setColor(if(focused)0xFFFFFFFF.toInt() else 0xEEFFFFFF.toInt())
+                    cornerRadius=playerPx(13).toFloat()
+                    if(focused)setStroke(playerPx(3),VelarisDesign.color("accent",0xFF7C5CFC.toInt()))
+                }
+            }
             stateListAnimator=null
             visibility = View.GONE
             setOnClickListener {
@@ -144,13 +151,19 @@ class PlayerActivity : Activity() {
         })
         statsText=TextView(this).apply { textSize=14f; setTextColor(Color.WHITE); setBackgroundColor(0xAA000000.toInt()); setPadding(18,12,18,12); visibility=View.GONE }
         root.addView(statsText,FrameLayout.LayoutParams(-2,-2,android.view.Gravity.START or android.view.Gravity.TOP).apply { marginStart=28; topMargin=54 })
-        titleText=TextView(this).apply{textSize=18f;setTextColor(Color.WHITE);typeface=Typeface.DEFAULT_BOLD;setPadding(0,12,0,12);visibility=View.GONE}
+        titleText=TextView(this).apply{
+            textSize=19f;setTextColor(Color.WHITE);typeface=Typeface.DEFAULT_BOLD
+            setPadding(playerPx(14),playerPx(9),playerPx(14),playerPx(9))
+            background=GradientDrawable().apply{setColor(0xA8181722.toInt());cornerRadius=playerPx(12).toFloat()}
+            visibility=View.GONE
+        }
         root.addView(titleText,FrameLayout.LayoutParams(-2,-2,android.view.Gravity.START or android.view.Gravity.BOTTOM).apply{marginStart=34;bottomMargin=42})
         playbackTimeText = TextView(this).apply {
             textSize = 16f
             setTextColor(Color.WHITE)
             typeface = Typeface.DEFAULT_BOLD
-            setPadding(0, 12, 0, 12)
+            setPadding(playerPx(14),playerPx(9),playerPx(14),playerPx(9))
+            background=GradientDrawable().apply{setColor(0xA8181722.toInt());cornerRadius=playerPx(12).toFloat()}
             visibility = View.GONE
         }
         root.addView(playbackTimeText, FrameLayout.LayoutParams(-2, -2, android.view.Gravity.END or android.view.Gravity.BOTTOM).apply {
@@ -166,6 +179,13 @@ class PlayerActivity : Activity() {
                 setStroke(2,VelarisDesign.color("accent",0xFF7C5CFC.toInt()))
             }
             visibility=View.GONE
+            setOnFocusChangeListener{view,focused ->
+                view.background=GradientDrawable().apply{
+                    setColor(if(focused)0xFF35304B.toInt() else 0xF0181822.toInt())
+                    cornerRadius=playerPx(16).toFloat()
+                    setStroke(playerPx(if(focused)3 else 1),VelarisDesign.color("focus",0xFFDCCFFF.toInt()))
+                }
+            }
             setOnClickListener { playNextEpisodeNow() }
         }
         root.addView(nextOverlay,FrameLayout.LayoutParams(420,90,android.view.Gravity.END or android.view.Gravity.BOTTOM).apply{marginEnd=42;bottomMargin=140})
