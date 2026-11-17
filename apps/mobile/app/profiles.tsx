@@ -129,7 +129,7 @@ export default function ProfilesScreen(){
    </Pressable>
   </View>
   {selected&&<View style={styles.modalBackdrop}>
-   <View style={styles.editor}>
+   <ScrollView style={styles.editor} contentContainerStyle={{paddingBottom:16}} showsVerticalScrollIndicator={false}>
     <Text style={styles.editorHeading}>Profil bearbeiten</Text>
     <Text style={styles.editorSubtitle}>Nur dieses Geräteprofil – dein Jellyfin-Konto bleibt unverändert</Text>
     <TextInput value={draftName} onChangeText={setDraftName} maxLength={30} placeholder="Profilname" placeholderTextColor={colors.muted} style={styles.nameInput}/>
@@ -150,7 +150,7 @@ export default function ProfilesScreen(){
     <Pressable style={styles.cancel} onPress={()=>setSelected(null)} disabled={saving}>
      <Text style={styles.cancelText}>Abbrechen</Text>
     </Pressable>
-   </View>
+   </ScrollView>
   </View>}
  </View>
 }
