@@ -48,7 +48,7 @@ assert(!runtime.includes("b.onclick=async()=>"),'Episode click must not await a 
 console.log('Velaris Web: direct episode playback wiring passed.');
 
 /* Regression coverage for profile navigation, optional home rows and next-episode ordering. */
-assert(runtime.includes('function profilePicker(){stopHero();viewRevision++'),'Profile picker must invalidate pending page loads');
+assert(/function profilePicker\(\)\s*\{\s*stopHero\(\);\s*viewRevision\+\+/.test(runtime),'Profile picker must invalidate pending page loads');
 assert(runtime.includes('function auth(){stopHero();viewRevision++'),'Login must invalidate pending page loads');
 assert(runtime.includes('Promise.allSettled(['),'Optional Jellyfin rows must not break the full library');
 assert(player.includes('p9NextEpisode(item,currentSession)'),'Next episode must use the original player profile');
@@ -211,7 +211,8 @@ console.log('Velaris Web: Google Cast sender and local HLS syntax checks passed.
 /* Safari playback regression: no unsupported Cast SDK request, and a visible
  * manual start when native autoplay is delayed or blocked. */
 for(const token of [
- "if(!p9CastClientEligible())castButton.hidden=true",
+ "if(!p9CastClientEligible())",
+ "castButton.hidden=true",
  "if(isIos){retry.hidden=false;retry.textContent='▶ Wiedergabe starten'}",
  "startupTimer=setTimeout(",
  "if(isIos&&sourceUrl&&video.paused){",
