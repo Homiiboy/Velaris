@@ -569,7 +569,7 @@ class MainActivity : Activity() {
         }
         val wrapper=FrameLayout(this).apply { clipChildren=false;clipToPadding=false }
         wrapper.addView(holder,FrameLayout.LayoutParams(-1,-1))
-        homeRoot?.addView(wrapper,LinearLayout.LayoutParams(-1,dp(515)).apply{bottomMargin=dp(-8)})
+        homeRoot?.addView(wrapper,LinearLayout.LayoutParams(-1,dp(560)).apply{bottomMargin=dp(-8)})
         val indicators=mutableListOf<View>()
         var currentIndex=-1
         fun render(index:Int) {
@@ -653,13 +653,13 @@ class MainActivity : Activity() {
         hero.addView(View(this).apply {
             isFocusable=false
             background=GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,
-                intArrayOf(0xF708080D.toInt(),0xD208080D.toInt(),0x7408080D,0x1008080D))
+                intArrayOf(0xFB08080D.toInt(),0xE608080D.toInt(),0xA008080D.toInt(),0x1208080D))
         },FrameLayout.LayoutParams(-1,-1))
         hero.addView(View(this).apply {
             isFocusable=false
             background=GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
-                intArrayOf(0x0008080D,0x1908080D,0xEB08080D.toInt()))
-        },FrameLayout.LayoutParams(-1,dp(260),Gravity.BOTTOM))
+                intArrayOf(0x0008080D,0x3008080D,0xF008080D.toInt()))
+        },FrameLayout.LayoutParams(-1,dp(320),Gravity.BOTTOM))
     }
 
     private fun heroEyebrow(label:String)=TextView(this).apply {
@@ -701,26 +701,26 @@ class MainActivity : Activity() {
         val ticks=item.optJSONObject("UserData")?.optLong("PlaybackPositionTicks",0L) ?: 0L
 
         val hero=FrameLayout(this).apply {
-            minimumHeight=dp(515)
+            minimumHeight=dp(560)
             setBackgroundColor(Color.rgb(12,12,18))
         }
         val image=ImageView(this).apply { scaleType=ImageView.ScaleType.CENTER_CROP }
-        hero.addView(image, FrameLayout.LayoutParams(-1,dp(515)))
-        loadImage(image,id,"Backdrop",1600)
+        hero.addView(image, FrameLayout.LayoutParams(-1,dp(560)))
+        loadImage(image,id,"Backdrop",1920)
 
         addCinematicHeroShades(hero)
 
         val info=LinearLayout(this).apply {
             orientation=LinearLayout.VERTICAL
             gravity=Gravity.BOTTOM
-            setPadding(dp(52),0,dp(52),dp(54))
+            setPadding(dp(52),0,dp(52),dp(65))
         }
         info.addView(heroEyebrow(VelarisDesign.themeText("heroLabel","IM RAMPENLICHT")))
         val logo=ImageView(this).apply{scaleType=ImageView.ScaleType.FIT_START;visibility=View.INVISIBLE}
-        info.addView(logo,LinearLayout.LayoutParams(dp(430),dp(112)))
-        loadImageWithFallback(logo,id,"Logo",700) {
+        info.addView(logo,LinearLayout.LayoutParams(dp(470),dp(128)))
+        loadImageWithFallback(logo,id,"Logo",850) {
             logo.visibility=View.GONE
-            info.addView(TextView(this).apply { text=title; textSize=48f; setTextColor(Color.WHITE); typeface=Typeface.DEFAULT_BOLD;maxLines=2 },1)
+            info.addView(TextView(this).apply { text=title; textSize=52f; setTextColor(Color.WHITE); typeface=Typeface.DEFAULT_BOLD;maxLines=2 },1)
         }
         val meta=heroMediaMeta(item)
         if(meta.isNotBlank())info.addView(TextView(this).apply {
@@ -739,14 +739,14 @@ class MainActivity : Activity() {
             })
         }
         if(overview.isNotBlank()) info.addView(TextView(this).apply {
-            text=overview;textSize=16f;setTextColor(0xFFE6E3ED.toInt())
+            text=overview;textSize=17f;setTextColor(0xFFE6E3ED.toInt())
             maxLines=3;ellipsize=android.text.TextUtils.TruncateAt.END;setLineSpacing(dp(2).toFloat(),1.06f)
             setPadding(0,dp(12),0,0)
         },LinearLayout.LayoutParams(dp(650),-2))
 
         val actions=LinearLayout(this).apply {
             orientation=LinearLayout.HORIZONTAL
-            setPadding(0,dp(18),0,0)
+            setPadding(0,dp(24),0,0)
         }
         actions.addView(actionButton(if(ticks>0) "▶  Fortsetzen" else "▶  Abspielen",true) {
             playNative(id,ticks)
@@ -758,7 +758,7 @@ class MainActivity : Activity() {
             LinearLayout.LayoutParams(dp(195),dp(58)))
         info.addView(actions)
         hero.addView(info,FrameLayout.LayoutParams(-1,-1))
-        homeRoot?.addView(hero,LinearLayout.LayoutParams(-1,dp(515)).apply { bottomMargin=dp(8) })
+        homeRoot?.addView(hero,LinearLayout.LayoutParams(-1,dp(560)).apply { bottomMargin=dp(8) })
     }
 
     private fun watchedLabel(item:JSONObject):String? {
@@ -1121,21 +1121,21 @@ class MainActivity : Activity() {
                 tag="velaris_media_${item.optString("Id")}"
             }
             wrap.addView(TextView(this).apply {
-                text="${index+1}";textSize=104f
+                text="${index+1}";textSize=137f
                 includeFontPadding=false
                 typeface=Typeface.create("sans-serif-black",Typeface.BOLD)
-                setTextColor(0xFF11111B.toInt())
-                setShadowLayer(dp(2).toFloat(),0f,0f,VelarisDesign.color("accent",0xFF7C5CFC.toInt()))
+                setTextColor(0xFF08080D.toInt())
+                setShadowLayer(dp(3).toFloat(),0f,0f,VelarisDesign.color("focus",0xFFDCCFFF.toInt()))
                 gravity=Gravity.BOTTOM or Gravity.LEFT
-            },FrameLayout.LayoutParams(dp(128),dp(246),Gravity.BOTTOM or Gravity.LEFT))
-            wrap.addView(cover,FrameLayout.LayoutParams(dp(160),dp(234),Gravity.TOP or Gravity.RIGHT))
-            row.addView(wrap,LinearLayout.LayoutParams(dp(230),dp(252)).apply{marginEnd=dp(12)})
+            },FrameLayout.LayoutParams(dp(148),dp(255),Gravity.BOTTOM or Gravity.LEFT))
+            wrap.addView(cover,FrameLayout.LayoutParams(dp(160),dp(234),Gravity.TOP or Gravity.RIGHT).apply{marginEnd=dp(1)})
+            row.addView(wrap,LinearLayout.LayoutParams(dp(235),dp(262)).apply{marginEnd=dp(16)})
         }
         homeRoot?.addView(HorizontalScrollView(this).apply{
             isHorizontalScrollBarEnabled=false
             clipChildren=false;clipToPadding=false
             addView(row)
-        },LinearLayout.LayoutParams(-1,dp(320)))
+        },LinearLayout.LayoutParams(-1,dp(332)))
     }
 
     /** Category heading with the current brand accent; backgrounds stay near black. */
@@ -1201,9 +1201,9 @@ class MainActivity : Activity() {
             // Preserve D-pad navigation order; elevation alone draws the focused card above siblings.
             target.animate().cancel()
             target.animate()
-                .scaleX(if(focused)1.035f else 1f)
-                .scaleY(if(focused)1.035f else 1f)
-                .translationZ(if(focused)dp(12).toFloat() else 0f)
+                .scaleX(if(focused)1.052f else 1f)
+                .scaleY(if(focused)1.052f else 1f)
+                .translationZ(if(focused)dp(16).toFloat() else 0f)
                 .setDuration(if(prefs.getBoolean("ui_animations",true)) { if(focused)180 else 140 } else 0).start()
         }
     }
