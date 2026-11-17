@@ -42,7 +42,7 @@ function velarisInstallDesktopPlayer(root,video,item){
  root.addEventListener('mouseleave',()=>{if(!video.paused&&!dialog){clearTimeout(timer);timer=setTimeout(()=>root.classList.add('p44-controls-hidden'),3200)}});
  const keyboard=e=>{
   if(!root.isConnected){document.removeEventListener('keydown',keyboard);return}
-  if(e.target.closest('input,select,textarea,[contenteditable="true"],.p44-track-dialog'))return;
+  if(e.target?.closest?.('input,select,textarea,[contenteditable="true"],.p44-track-dialog'))return;
   if(e.key==='Escape'&&dialog){e.preventDefault();closeDialog();return}
   if(e.key===' '||e.key.toLowerCase()==='k'){e.preventDefault();toggle()}
   else if(e.key==='ArrowLeft'){e.preventDefault();root.querySelector('#p9-rewind')?.click();show()}
