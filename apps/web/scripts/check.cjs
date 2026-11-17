@@ -232,7 +232,7 @@ assert(html.includes('<script src="./catalog.js" defer>'),'Catalog helper must l
 assert(html.indexOf('catalog.js')<mainScriptIndex,'Catalog script order is wrong');
 assert(sw.includes('catalog.js'),'PWA must cache catalog helper');
 assert(runtime.includes("velarisPaged((start,limit)=>page("),'Main library must be paginated');
-assert(runtime.includes('velarisBuildCategories(items,successful)'),'Categories must use Jellyfin library membership');
+assert(runtime.includes('velarisBuildCategories(state.items,[...initialLibraries,...libraries])'),'Categories must use Jellyfin library membership');
 assert(!runtime.includes('Limit=250'),'Main catalog must not be truncated to 250 results');
 for(const [library,expected] of [
  ['Anime Filme','animeMovies'],['Anime','anime'],['Filme','movies'],
