@@ -4,7 +4,7 @@
     "slug": "velaris-smartphone-app",
     "scheme": "velaris",
     "version": "2.2.1",
-    "orientation": "portrait",
+    "orientation": "default",
     "userInterfaceStyle": "dark",
     "ios": {
       "supportsTablet": true,
@@ -13,7 +13,12 @@
         "NSLocalNetworkUsageDescription": "Velaris benötigt Zugriff auf dein lokales Netzwerk, um Chromecast- und Cast-fähige Fernseher zu finden.",
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": true
-        }
+        },
+        "UISupportedInterfaceOrientations": [
+          "UIInterfaceOrientationPortrait",
+          "UIInterfaceOrientationLandscapeLeft",
+          "UIInterfaceOrientationLandscapeRight"
+        ]
       },
       "icon": "./assets/NewAppIcon.png"
     },
