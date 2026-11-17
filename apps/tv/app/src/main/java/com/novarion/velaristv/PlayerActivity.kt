@@ -14,6 +14,8 @@ import android.widget.FrameLayout
 import android.widget.TextView
 import android.widget.Button
 import android.widget.ImageView
+import android.widget.LinearLayout
+import android.view.Gravity
 import android.app.AlertDialog
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MimeTypes
@@ -65,6 +67,7 @@ class PlayerActivity : Activity() {
     private var playbackRequestSerial = 0
     private var lastMediaInfo = ""
     private var playerViewRef: PlayerView? = null
+    private var cinematicPlayerActions: LinearLayout? = null
     private var releasedPositionMs = 0L
     private var shouldResumeAfterStop = false
     private val introUiHandler = android.os.Handler(android.os.Looper.getMainLooper())
@@ -102,6 +105,7 @@ class PlayerActivity : Activity() {
                 val show = visibility == View.VISIBLE
                 titleText?.visibility = if (show) View.VISIBLE else View.GONE
                 playbackTimeText?.visibility = if (show) View.VISIBLE else View.GONE
+                cinematicPlayerActions?.visibility = if(show) View.VISIBLE else View.GONE
                 if (show) updatePlaybackTime()
             })
             setShowBuffering(PlayerView.SHOW_BUFFERING_WHEN_PLAYING)
@@ -122,8 +126,15 @@ class PlayerActivity : Activity() {
             isAllCaps = false
             textSize = 17f
             setTextColor(Color.WHITE)
-            background=GradientDrawable().apply{setColor(0xDDFFFFFF.toInt());cornerRadius=10f}
-            setTextColor(Color.BLACK)
+            background=GradientDrawable().apply{setColor(0xEEFFFFFF.toInt());cornerRadius=playerPx(13).toFloat()}
+            setTextColor(0xFF17121F.toInt())
+            setOnFocusChangeListener { view,focused ->
+                view.background=GradientDrawable().apply{
+                    setColor(if(focused)0xFFFFFFFF.toInt() else 0xEEFFFFFF.toInt())
+                    cornerRadius=playerPx(13).toFloat()
+                    if(focused)setStroke(playerPx(3),VelarisDesign.color("accent",0xFF7C5CFC.toInt()))
+                }
+            }
             stateListAnimator=null
             visibility = View.GONE
             setOnClickListener {
@@ -140,13 +151,19 @@ class PlayerActivity : Activity() {
         })
         statsText=TextView(this).apply { textSize=14f; setTextColor(Color.WHITE); setBackgroundColor(0xAA000000.toInt()); setPadding(18,12,18,12); visibility=View.GONE }
         root.addView(statsText,FrameLayout.LayoutParams(-2,-2,android.view.Gravity.START or android.view.Gravity.TOP).apply { marginStart=28; topMargin=54 })
-        titleText=TextView(this).apply{textSize=18f;setTextColor(Color.WHITE);typeface=Typeface.DEFAULT_BOLD;setPadding(0,12,0,12);visibility=View.GONE}
+        titleText=TextView(this).apply{
+            textSize=19f;setTextColor(Color.WHITE);typeface=Typeface.DEFAULT_BOLD
+            setPadding(playerPx(14),playerPx(9),playerPx(14),playerPx(9))
+            background=GradientDrawable().apply{setColor(0xA8181722.toInt());cornerRadius=playerPx(12).toFloat()}
+            visibility=View.GONE
+        }
         root.addView(titleText,FrameLayout.LayoutParams(-2,-2,android.view.Gravity.START or android.view.Gravity.BOTTOM).apply{marginStart=34;bottomMargin=42})
         playbackTimeText = TextView(this).apply {
             textSize = 16f
             setTextColor(Color.WHITE)
             typeface = Typeface.DEFAULT_BOLD
-            setPadding(0, 12, 0, 12)
+            setPadding(playerPx(14),playerPx(9),playerPx(14),playerPx(9))
+            background=GradientDrawable().apply{setColor(0xA8181722.toInt());cornerRadius=playerPx(12).toFloat()}
             visibility = View.GONE
         }
         root.addView(playbackTimeText, FrameLayout.LayoutParams(-2, -2, android.view.Gravity.END or android.view.Gravity.BOTTOM).apply {
@@ -162,6 +179,13 @@ class PlayerActivity : Activity() {
                 setStroke(2,VelarisDesign.color("accent",0xFF7C5CFC.toInt()))
             }
             visibility=View.GONE
+            setOnFocusChangeListener{view,focused ->
+                view.background=GradientDrawable().apply{
+                    setColor(if(focused)0xFF35304B.toInt() else 0xF0181822.toInt())
+                    cornerRadius=playerPx(16).toFloat()
+                    setStroke(playerPx(if(focused)3 else 1),VelarisDesign.color("focus",0xFFDCCFFF.toInt()))
+                }
+            }
             setOnClickListener { playNextEpisodeNow() }
         }
         root.addView(nextOverlay,FrameLayout.LayoutParams(420,90,android.view.Gravity.END or android.view.Gravity.BOTTOM).apply{marginEnd=42;bottomMargin=140})
@@ -178,6 +202,12 @@ class PlayerActivity : Activity() {
         root.addView(nextEpisodeImage,FrameLayout.LayoutParams(105,90,android.view.Gravity.END or android.view.Gravity.BOTTOM).apply{
             marginEnd=357;bottomMargin=140
         })
+        // Keep the proven Media3 controller for playback/seek, and add focus-safe
+        // premium quick actions. These appear only while controls are shown.
+        cinematicPlayerActions=createCinematicPlayerActions()
+        root.addView(cinematicPlayerActions,FrameLayout.LayoutParams(-2,playerPx(58),Gravity.TOP or Gravity.END).apply{
+            topMargin=playerPx(73);marginEnd=playerPx(35)
+        })
         VelarisDesign.load(this)
         loadPlayerTitle(itemId)
         setContentView(root)
@@ -191,6 +221,53 @@ class PlayerActivity : Activity() {
         preparePlayback(exo, itemId, startTicks)
         introUiHandler.post(introUiTick)
         playerView.requestFocus()
+    }
+
+    private fun playerPx(dp:Int):Int=(dp*resources.displayMetrics.density+0.5f).toInt()
+
+    /** Focus-safe buttons around Media3: no additional ExoPlayer instance, no
+     * custom seek engine and no changes to Jellyfin/intro/next-episode logic. */
+    private fun createCinematicPlayerActions():LinearLayout {
+        val accent=VelarisDesign.color("focus",0xFFDCCFFF.toInt())
+        fun button(label:String,action:()->Unit)=Button(this).apply {
+            text=label;isAllCaps=false;contentDescription=label
+            minWidth=0;minimumWidth=0
+            includeFontPadding=false;textSize=14f
+            typeface=Typeface.DEFAULT_BOLD
+            setTextColor(Color.WHITE)
+            setPadding(playerPx(13),0,playerPx(13),0)
+            stateListAnimator=null
+            background=GradientDrawable().apply{
+                setColor(0xE0232031.toInt());cornerRadius=playerPx(13).toFloat()
+                setStroke(playerPx(1),0x66FFFFFF)
+            }
+            setOnClickListener{action()}
+            setOnFocusChangeListener { v,focused ->
+                v.background=GradientDrawable().apply{
+                    setColor(if(focused)0xFF34304B.toInt() else 0xE0232031.toInt())
+                    cornerRadius=playerPx(13).toFloat()
+                    setStroke(playerPx(if(focused)2 else 1),if(focused)accent else 0x66FFFFFF)
+                }
+                v.animate().cancel()
+                v.animate().scaleX(if(focused)1.035f else 1f)
+                    .scaleY(if(focused)1.035f else 1f).setDuration(130).start()
+            }
+        }
+        return LinearLayout(this).apply {
+            orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL
+            clipChildren=false;clipToPadding=false
+            visibility=View.GONE
+            val actions=listOf(
+                "↶ 10s" to { player?.let { it.seekTo((it.currentPosition-10_000L).coerceAtLeast(0L)) }; Unit },
+                "10s ↷" to { player?.let { val end=it.duration;it.seekTo(if(end>0L) (it.currentPosition+10_000L).coerceAtMost(end) else it.currentPosition+10_000L) }; Unit },
+                "Audio / Untertitel" to { showTrackMenu() },
+                "Episoden" to { showEpisodePicker() },
+                "⚙ Qualität" to { showQualityMenu() }
+            )
+            actions.forEach { (label,click) ->
+                addView(button(label,click),LinearLayout.LayoutParams(-2,playerPx(46)).apply{marginEnd=playerPx(9)})
+            }
+        }
     }
 
     private fun authorizationHeader():String =
@@ -612,6 +689,68 @@ class PlayerActivity : Activity() {
                     preparePlayback(exo,itemId,position)
                 }
             }.setNegativeButton("Abbrechen",null).show()
+    }
+
+    /** Server-backed episode picker. Only usable for a Jellyfin Episode; never
+     * assumes arbitrary Movies belong to a series. Work stays off the UI thread. */
+    private fun showEpisodePicker() {
+        val selectedId=itemId
+        val currentPlayer=player ?: return
+        if(userId.isBlank())return
+        io.execute {
+            var options=emptyList<JSONObject>()
+            try {
+                val current=requestPlayerItem(selectedId)
+                val seriesId=current.optString("SeriesId")
+                if(seriesId.isNotBlank()){
+                    val url="$server/Shows/${URLEncoder.encode(seriesId,"UTF-8")}/Episodes?UserId=${URLEncoder.encode(userId,"UTF-8")}&Limit=1000&Fields=RunTimeTicks"
+                    val connection=URL(url).openConnection() as HttpURLConnection
+                    try {
+                        connection.connectTimeout=6000;connection.readTimeout=12000
+                        connection.setRequestProperty("Authorization",authorizationHeader().trim())
+                        if(connection.responseCode in 200..299){
+                            val response=JSONObject(connection.inputStream.bufferedReader().use{it.readText()})
+                            val array=response.optJSONArray("Items")?:JSONArray()
+                            options=(0 until array.length()).mapNotNull{array.optJSONObject(it)}
+                                .filter{it.optString("Id").isNotBlank() && !it.optBoolean("IsMissing",false)}
+                                .sortedWith(compareBy({it.optInt("ParentIndexNumber",0)},{it.optInt("IndexNumber",0)}))
+                        }
+                    }finally{connection.disconnect()}
+                }
+            }catch(error:Exception){Log.w("VelarisPlayback","Episoden konnten nicht geladen werden",error)}
+            runOnUiThread {
+                if(isFinishing||isDestroyed||player!==currentPlayer||itemId!=selectedId)return@runOnUiThread
+                if(options.isEmpty()){
+                    android.widget.Toast.makeText(this,"Für diesen Titel sind keine Episoden verfügbar.",android.widget.Toast.LENGTH_SHORT).show()
+                    return@runOnUiThread
+                }
+                val choices=options
+                val names=choices.map{
+                    "S${it.optInt("ParentIndexNumber",0)} · E${it.optInt("IndexNumber",0)} · ${it.optString("Name","Episode")}"
+                }.toTypedArray()
+                AlertDialog.Builder(this).setTitle("Episoden auswählen")
+                    .setItems(names){_,index ->
+                        val target=choices[index].optString("Id")
+                        if(target.isNotBlank()&&target!=itemId){
+                            reportStoppedOnce()
+                            itemId=target;stoppedReported=false;sessionStarted=false
+                            triedCompatibleFallback=false
+                            loadFollowingEpisodeAndPlay(currentPlayer,target)
+                        }
+                    }.setNegativeButton("Schließen",null).show()
+            }
+        }
+    }
+
+    private fun requestPlayerItem(id:String):JSONObject {
+        val url="$server/Users/${URLEncoder.encode(userId,"UTF-8")}/Items/${URLEncoder.encode(id,"UTF-8")}"
+        val connection=URL(url).openConnection() as HttpURLConnection
+        try {
+            connection.connectTimeout=6000;connection.readTimeout=12000
+            connection.setRequestProperty("Authorization",authorizationHeader().trim())
+            if(connection.responseCode !in 200..299)throw IllegalStateException("Jellyfin HTTP ${connection.responseCode}")
+            return JSONObject(connection.inputStream.bufferedReader().use{it.readText()})
+        }finally{connection.disconnect()}
     }
 
     private fun showTrackMenu() {

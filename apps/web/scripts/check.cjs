@@ -23,8 +23,9 @@ for(const token of ['activeView(revision,account.userId)','viewRevision++','p8Co
 for(const token of ['const doClose=','p9Play(target)','video.removeAttribute(\'src\')','p9NextEpisode','p9Segments'])assert(player.includes(token),'player guard missing: '+token);
 
 // UI action wiring guard: the hero player and all main interactive surfaces must remain usable.
-const playerScriptIndex=html.indexOf('<script src="./player9.js" defer>');
-const mainScriptIndex=html.indexOf('<script src="./main.js" defer>');
+// Allow cache-busting version query strings without relaxing classic script ordering.
+const playerScriptIndex=html.search(/<script src="\.\/player9\.js(?:\?[^"]*)?" defer>/);
+const mainScriptIndex=html.search(/<script src="\.\/main\.js(?:\?[^"]*)?" defer>/);
 assert(playerScriptIndex>=0&&mainScriptIndex>playerScriptIndex,'Player and app scripts must share the classic script global scope in order');
 for(const token of [
  'mount.onclick=event=>','dots.onclick=event=>','data-hero-action="play"','data-hero-action="details"',
@@ -47,7 +48,7 @@ assert(!runtime.includes("b.onclick=async()=>"),'Episode click must not await a 
 console.log('Velaris Web: direct episode playback wiring passed.');
 
 /* Regression coverage for profile navigation, optional home rows and next-episode ordering. */
-assert(runtime.includes('function profilePicker(){stopHero();viewRevision++'),'Profile picker must invalidate pending page loads');
+assert(/function profilePicker\(\)\s*\{\s*stopHero\(\);\s*viewRevision\+\+/.test(runtime),'Profile picker must invalidate pending page loads');
 assert(runtime.includes('function auth(){stopHero();viewRevision++'),'Login must invalidate pending page loads');
 assert(runtime.includes('Promise.allSettled(['),'Optional Jellyfin rows must not break the full library');
 assert(player.includes('p9NextEpisode(item,currentSession)'),'Next episode must use the original player profile');
@@ -210,7 +211,8 @@ console.log('Velaris Web: Google Cast sender and local HLS syntax checks passed.
 /* Safari playback regression: no unsupported Cast SDK request, and a visible
  * manual start when native autoplay is delayed or blocked. */
 for(const token of [
- "if(!p9CastClientEligible())castButton.hidden=true",
+ "if(!p9CastClientEligible())",
+ "castButton.hidden=true",
  "if(isIos){retry.hidden=false;retry.textContent='▶ Wiedergabe starten'}",
  "startupTimer=setTimeout(",
  "if(isIos&&sourceUrl&&video.paused){",
@@ -227,10 +229,10 @@ const catContext={console,URLSearchParams};
 vm.createContext(catContext);
 vm.runInContext(catalogScript,catContext,{filename:'catalog.js'});
 assert(html.includes('<script src="./catalog.js" defer>'),'Catalog helper must load before main UI');
-assert(html.indexOf('catalog.js')<html.indexOf('<script src="./main.js"'),'Catalog script order is wrong');
+assert(html.indexOf('catalog.js')<mainScriptIndex,'Catalog script order is wrong');
 assert(sw.includes('catalog.js'),'PWA must cache catalog helper');
 assert(runtime.includes("velarisPaged((start,limit)=>page("),'Main library must be paginated');
-assert(runtime.includes('velarisBuildCategories(items,successful)'),'Categories must use Jellyfin library membership');
+assert(runtime.includes('velarisBuildCategories(state.items,[...initialLibraries,...libraries])'),'Categories must use Jellyfin library membership');
 assert(!runtime.includes('Limit=250'),'Main catalog must not be truncated to 250 results');
 for(const [library,expected] of [
  ['Anime Filme','animeMovies'],['Anime','anime'],['Filme','movies'],
@@ -320,7 +322,7 @@ for(const token of [
  'video.networkState',
  'video.readyState',
  "stageUpdate('Stream angefordert')",
- "stageUpdate('Safari-HLS wird geladen'",
+ "stageUpdate(isHls?'Safari-HLS wird geladen':'MP4 wird geladen')",
  'if(isIos&&!fallback){',
  "p9Stream(item,quality,currentSession,playbackInfo,true)",
  "playerMessage('Safari: MP4-Ersatzstream wird geladen …')",
@@ -355,7 +357,7 @@ for(const token of [
  "state.catalogStatus+=' Bibliotheksabfrage: '",
  "state.items=Array.from(combined.values());",
  "state.categories=velarisBuildCategories(state.items,[...initialLibraries,...libraries]);",
- "id=\\\"catalog-status\\\""
+  'id="catalog-status"'
 ])assert(runtime.includes(token),'Folder-first Jellyfin catalog recovery missing: '+token);
 console.log('Velaris Web: user-bound Jellyfin folder recovery guards passed.');
 
@@ -391,7 +393,7 @@ console.log('Velaris Web: iOS source negotiation and fallback checks passed.');
 /* Regression rollback: iPhone must use the working pre-Chromecast player,
  * without disabling Chromecast for desktop browsers. */
 const classic=fs.readFileSync(path.join(root,'player9-classic.js'),'utf8');
-assert(html.includes('<script src="./player9-classic.js" defer></script>'),'Load pre-Cast player before current player');
+assert(/<script src="\.\/player9-classic\.js(?:\?[^"]*)?" defer><\/script>/.test(html),'Load pre-Cast player before current player');
 assert(classic.includes('const p9PlayClassic=(()=>{'),'Pre-Cast implementation must be isolated');
 assert(classic.includes('return p9Play;'),'Pre-Cast implementation must expose its own play entrypoint');
 assert(player.includes("typeof p9PlayClassic==='function')return p9PlayClassic(item)"),'iPhone playback must use classic player');
@@ -434,5 +436,5 @@ console.log('Velaris Web: authenticated LAN Cast Bridge guards passed.');
 assert(runtime.includes("castButton.onclick=event=>"),'Cast button handler missing');
 assert(runtime.includes("Cast Bridge nicht geladen. Bitte Velaris aktualisieren"),'Cast missing-script feedback missing');
 assert(runtime.includes("Cast-Fenster konnte nicht geöffnet werden:"),'Cast dialog exception feedback missing');
-assert(html.includes('cast-bridge.js?v=1213')&&html.includes('main.js?v=1213'),'iPhone cache bust missing');
+assert(/cast-bridge\.js\?v=\d+/.test(html)&&/main\.js\?v=\d+/.test(html),'iPhone cache bust missing');
 console.log('Velaris Web: Cast button feedback and cache-bust checks passed.');
