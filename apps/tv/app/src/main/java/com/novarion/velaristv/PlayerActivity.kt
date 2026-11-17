@@ -258,8 +258,8 @@ class PlayerActivity : Activity() {
             clipChildren=false;clipToPadding=false
             visibility=View.GONE
             val actions=listOf(
-                "↶ 10s" to { player?.let { it.seekTo((it.currentPosition-10_000L).coerceAtLeast(0L)) } },
-                "10s ↷" to { player?.let { val end=it.duration;it.seekTo(if(end>0L) (it.currentPosition+10_000L).coerceAtMost(end) else it.currentPosition+10_000L) } },
+                "↶ 10s" to { player?.let { it.seekTo((it.currentPosition-10_000L).coerceAtLeast(0L)) }; Unit },
+                "10s ↷" to { player?.let { val end=it.duration;it.seekTo(if(end>0L) (it.currentPosition+10_000L).coerceAtMost(end) else it.currentPosition+10_000L) }; Unit },
                 "Audio / Untertitel" to { showTrackMenu() },
                 "Episoden" to { showEpisodePicker() },
                 "⚙ Qualität" to { showQualityMenu() }
