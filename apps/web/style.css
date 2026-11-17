@@ -765,3 +765,65 @@ button:disabled{cursor:wait;opacity:.65}
  .shell .hero-stage .hero-cinematic-v41 .hero-copy{animation:none!important}
  .shell .poster,.shell .poster .poster-art,.shell .p8-rank{transition:none!important}
 }
+
+
+/* Web/TV UI-Pass 4.2: premium desktop detail, profile and collection presentations.
+   Mobile PWA deliberately retains its separate phone layout. */
+@media(min-width:850px){
+ .shell .details-screen .detail-hero{height:clamp(500px,56vw,620px);min-height:500px;isolation:isolate;background:#090911}
+ .shell .details-screen .detail-hero::after{background:linear-gradient(0deg,#08080d 0%,#08080dd9 14%,#08080d45 55%,transparent 100%),linear-gradient(90deg,#08080de0,transparent 72%)}
+ .shell .details-screen .detail-back{object-position:center 24%;filter:saturate(1.07)}
+ .shell .details-screen .detail-content{margin:-164px 0 0;padding:10px clamp(36px,5vw,90px) 74px}
+ .shell .details-screen .detail-content>.eyebrow{font-size:13px;letter-spacing:.2em}
+ .shell .details-screen .detail-content h1{font-size:clamp(44px,4.3vw,64px);line-height:1.04;max-width:850px;letter-spacing:-.045em}
+ .shell .details-screen .detail-meta{font-size:16px;margin-top:14px}
+ .shell .details-screen .quality-badge{border-radius:9px;padding:7px 11px;background:#292334b8;border-color:#ffffff36}
+ .shell .details-screen .detail-actions button{border-radius:13px;min-height:57px}
+ .shell .details-screen .detail-actions .detail-play{background:#fff;color:#121218;box-shadow:0 8px 28px #0008}
+ .shell .details-screen .genres{color:#d7cced}
+ .shell .details-screen .series-section{max-width:1230px;margin-top:46px}
+ .shell .details-screen .series-title{border-bottom:1px solid #ffffff24;padding-bottom:9px}
+ .shell .details-screen .series-title h2{font-size:30px;letter-spacing:-.04em}
+ .shell .details-screen .season-select{min-width:240px;min-height:57px;border-radius:13px;background:#272330;border:1px solid #ffffff40;padding:14px 18px}
+ .shell .details-screen .episode-list{display:grid;gap:12px;margin-top:22px}
+ .shell .details-screen .episode-card{min-height:175px;display:flex;gap:24px;align-items:center;background:#ffffff09;border:1px solid #ffffff17;border-radius:17px;padding:16px 20px;transition:transform .2s ease,background .2s,border-color .2s,box-shadow .2s}
+ .shell .details-screen .episode-card:hover,.shell .details-screen .episode-card:focus-visible{transform:translateY(-2px);background:#ffffff10;border-color:var(--accent);box-shadow:0 12px 32px #0006;outline:none}
+ .shell .details-screen .episode-art{flex-basis:260px;border-radius:12px;border:1px solid #ffffff1b;overflow:hidden}
+ .shell .details-screen .episode-body strong{font-size:19px}
+ .shell .details-screen .episode-meta{font-size:13px}
+ .shell .details-screen .episode-overview{font-size:14px;line-height:1.6;-webkit-line-clamp:3}
+ .shell .details-screen .episode-play{width:44px;height:44px;border-radius:50%;background:#09090bcc;box-shadow:0 5px 20px #000a}
+ .shell .details-screen .cast-person{border-radius:14px;background:#24202cb3;border-color:#ffffff2a}
+ .profiles-screen.profiles-cinematic-v42{position:relative;isolation:isolate;background:#08080d;overflow:hidden;min-height:100svh}
+ .profiles-screen.profiles-cinematic-v42::before{content:"";position:absolute;inset:0;z-index:-2;background-image:var(--profile-backdrop,linear-gradient(135deg,#282037,#08080d));background-size:cover;background-position:center;filter:blur(6px) saturate(.85);transform:scale(1.06)}
+ .profiles-screen.profiles-cinematic-v42::after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(0deg,#08080dfb,#08080dc9 37%,#08080db4),linear-gradient(90deg,#08080de8,#08080d55)}
+ .profiles-screen.profiles-cinematic-v42 .profile-panel{max-width:1000px;padding:35px 25px 50px}
+ .profiles-screen.profiles-cinematic-v42 .profile-panel .logo{font-size:28px;letter-spacing:.25em}
+ .profiles-screen.profiles-cinematic-v42 .profile-panel h1{font-size:clamp(41px,4vw,58px);margin:10px 0}
+ .profiles-screen.profiles-cinematic-v42 .profiles{gap:24px;margin:40px auto 32px;align-items:start}
+ .profiles-screen.profiles-cinematic-v42 .profile{width:155px;border-radius:20px;padding:14px 10px 18px;background:#100f1bbe;border:1px solid #ffffff22;font-weight:800;font-size:15px;transition:transform .2s,border-color .2s,background .2s}
+ .profiles-screen.profiles-cinematic-v42 .profile .profile-avatar{width:112px;height:112px;border-radius:22px;margin:0 auto 14px;font-size:45px;border:2px solid #a88cff;box-shadow:0 12px 35px #000a}
+ .profiles-screen.profiles-cinematic-v42 .profile:hover,.profiles-screen.profiles-cinematic-v42 .profile:focus-visible{transform:translateY(-5px) scale(1.03);border-color:var(--accent);background:#211b30dc;outline:2px solid var(--accent);outline-offset:2px}
+ .profiles-screen.profiles-cinematic-v42 .profile-actions{display:flex;justify-content:center;flex-wrap:wrap;gap:14px}
+ .profiles-screen.profiles-cinematic-v42 .profile-actions button{border-radius:13px;min-height:46px}
+ .p8-collection .p8-collection-hero{min-height:550px;padding:38px clamp(36px,5vw,90px) 70px;background-image:linear-gradient(0deg,#08080d 0%,#08080de8 10%,#08080d64 50%,transparent),linear-gradient(90deg,#08080dee,#08080d22 78%),var(--art);background-position:center,center,center 28%}
+ .p8-collection .p8-collection-copy{max-width:800px}
+ .p8-collection .p8-collection-copy h1{font-size:clamp(43px,4.1vw,65px);line-height:1.04;letter-spacing:-.045em}
+ .p8-collection .p8-collection-copy p{font-size:16px;line-height:1.7;max-width:710px}
+ .p8-collection .p8-collection-copy b{display:inline-flex;border-radius:99px;padding:8px 13px;color:#f4edff;background:#312b41c7;border:1px solid #ffffff3a}
+ .p8-collection .p42-collection-body{padding-top:28px}
+ .p8-collection .p42-collection-heading{display:flex;justify-content:space-between;align-items:center;gap:12px;border-bottom:1px solid #ffffff22;margin-bottom:26px;padding-bottom:16px}
+ .p8-collection .p42-collection-heading h2{font-size:28px;margin:0;letter-spacing:-.035em}
+ .p8-collection .p42-collection-heading span{font-size:13px;color:#beb8cc;font-weight:800}
+ .p8-collection .grid{gap:28px 18px}
+ .p8-collection .grid .poster img{border-radius:14px}
+}
+@media(min-width:850px) and (max-width:1120px){
+ .shell .details-screen .detail-content{margin-top:-135px}
+ .shell .details-screen .episode-art{flex-basis:200px}
+ .profiles-screen.profiles-cinematic-v42 .profile{width:135px}
+ .profiles-screen.profiles-cinematic-v42 .profile .profile-avatar{height:95px;width:95px}
+}
+@media(prefers-reduced-motion:reduce){
+ .shell .details-screen .episode-card,.profiles-screen.profiles-cinematic-v42 .profile{transition:none!important}
+}
