@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { Text, View, type ColorValue } from 'react-native';
+import { Text, type ColorValue } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, design } from '@/theme';
 import { useVelarisTheme, categoryAccentForRoute } from '@/context/ThemeContext';
@@ -13,7 +13,6 @@ export default function TabLayout(){
   headerShown:false,
   tabBarStyle:{position:'absolute',left:16,right:16,bottom:Math.max(12,safeArea.bottom),height:66,paddingTop:7,paddingBottom:7,borderRadius:24,backgroundColor:'rgba(19,18,28,0.94)',borderWidth:1,borderTopWidth:1,borderColor:'rgba(255,255,255,0.16)',shadowColor:'#000',shadowOffset:{width:0,height:9},shadowOpacity:0.48,shadowRadius:24,elevation:20,overflow:'hidden'},
   tabBarItemStyle:{borderRadius:20,marginHorizontal:2},
-  tabBarBackground:()=> <View style={{flex:1,backgroundColor:'rgba(20,18,32,0.55)'}}/>,
   tabBarActiveTintColor:accentColor,tabBarInactiveTintColor:colors.muted,
   tabBarLabelStyle:{fontSize:10,fontWeight:'800',marginBottom:1},
   sceneStyle:{backgroundColor:colors.background}
