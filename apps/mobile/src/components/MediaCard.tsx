@@ -22,7 +22,7 @@ export function MediaCard({ item, session, width = 128, showMeta = false, showFa
   }).start();
   const setFocus=(value:boolean)=>{
     setHighlighted(value);
-    animateScale(value&&display.animations?1.02:1);
+    animateScale(value&&display.animations?1.045:1);
     Animated.timing(detailOpacity,{toValue:value&&display.previews?1:0,duration:display.animations?150:0,useNativeDriver:true}).start();
   };
   const imageTag=item.PrimaryImageTag ?? item.ImageTags?.Primary;
@@ -45,7 +45,7 @@ export function MediaCard({ item, session, width = 128, showMeta = false, showFa
     <Pressable
       onFocus={()=>setFocus(true)} onBlur={()=>setFocus(false)}
       onHoverIn={()=>setFocus(true)} onHoverOut={()=>setFocus(false)}
-      onPressIn={()=>{setPressedState(true);animateScale(.98)}} onPressOut={()=>{setPressedState(false);animateScale(highlighted?1.02:1)}}
+      onPressIn={()=>{setPressedState(true);animateScale(.98)}} onPressOut={()=>{setPressedState(false);animateScale(highlighted?1.045:1)}}
       onPress={() => item.Type === 'BoxSet' ? router.push({ pathname: '/collection/[id]', params: { id: item.Id } }) : router.push({ pathname: '/details/[id]', params: { id: item.Id } })}
       onLongPress={()=>{if(!display.previews)return;
         Alert.alert(item.Name,
@@ -96,7 +96,7 @@ export function MediaCard({ item, session, width = 128, showMeta = false, showFa
 const styles = StyleSheet.create({
   cardLift:{shadowColor:colors.accent,shadowRadius:15,shadowOffset:{width:0,height:5}},
   poster:{width:'100%',height:'100%',backgroundColor:colors.surfaceAlt},
-  posterShell:{borderRadius:colors.posterRadius,overflow:'hidden',backgroundColor:colors.surfaceAlt,borderWidth:1,borderColor:'rgba(255,255,255,0.15)'},
+  posterShell:{borderRadius:colors.posterRadius,overflow:'hidden',backgroundColor:colors.surfaceAlt,borderWidth:1,borderColor:'rgba(255,255,255,0.20)'},
   posterFocused:{borderColor:'#DCCFFF',borderWidth:2},
   focusMeta:{position:'absolute',left:6,right:35,top:7,
     borderRadius:5,paddingHorizontal:7,paddingVertical:5,

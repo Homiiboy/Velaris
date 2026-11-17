@@ -25,7 +25,7 @@ const AVATARS = [
 export default function HomeScreen() {
   const { session } = useAuth();
   const {accentColor,display}=useVelarisTheme();
-  const { height } = useWindowDimensions();
+  const { height, width } = useWindowDimensions();
   const [latest, setLatest] = useState<JellyfinItem[]>([]);
   const [resume, setResume] = useState<JellyfinItem[]>([]);
   const [hiddenResume,setHiddenResume]=useState<string[]>([]);
@@ -122,7 +122,7 @@ export default function HomeScreen() {
         }} />}
       >
         {hero ? (
-          <View style={[styles.hero, { height: Math.max(565, height * 0.76) }]}>
+          <View style={[styles.hero, { height: Math.max(580, height * 0.84) }]}>
             <Animated.View style={[StyleSheet.absoluteFill, { opacity: heroOpacity }]}>
               <ImageBackground source={{ uri: getBackdropUrl(session, hero) }} style={StyleSheet.absoluteFill} resizeMode="cover" />
             </Animated.View>
@@ -143,7 +143,7 @@ export default function HomeScreen() {
                 hero.CommunityRating ? '★ ' + hero.CommunityRating.toFixed(1) : null
               ].filter(Boolean).join('   ·   ')}</Text>
               {!!hero.Genres?.length && <Text style={styles.heroGenres} numberOfLines={1}>{hero.Genres.slice(0, 3).join('   ·   ')}</Text>}
-              {!!hero.Overview && <Text style={styles.heroOverview} numberOfLines={3}>{hero.Overview}</Text>}
+              {!!hero.Overview && <Text style={styles.heroOverview} numberOfLines={width<380?2:3}>{hero.Overview}</Text>}
               <View style={styles.heroButtons}>
                 <Pressable accessibilityRole="button" style={({pressed}) => [styles.play, pressed && styles.pressed]} onPress={() => router.push({ pathname: '/player/[id]', params: { id: hero.Id } })}>
                   <PlayGlyph size={17} color="#101016"/><Text style={styles.playText}>Abspielen</Text>
@@ -233,22 +233,22 @@ const styles = StyleSheet.create({
   heroDotActive: { width: 23, backgroundColor: colors.text },
   heroEmpty: { minHeight: 315, backgroundColor: colors.background,paddingTop:86 },
 
-  heroContent: { paddingHorizontal: 22, paddingBottom: 56, alignItems: 'flex-start', width:'100%' },
+  heroContent: { paddingHorizontal: 22, paddingBottom: 66, alignItems: 'flex-start', width:'100%' },
   eyebrow: { color: colors.text, fontSize: 10, fontWeight: '900', letterSpacing: 2.5, marginBottom: 12 },
   eyebrowDot: { color: colors.accent },
-  heroLogo:{width:'88%',height:125,maxWidth:430,marginBottom:1,alignSelf:'flex-start'},
-  heroTitle: { color: colors.text, fontSize: 38, lineHeight: 43, fontWeight: '900', letterSpacing: -0.8, textAlign: 'left' },
+  heroLogo:{width:'90%',height:139,maxWidth:430,marginBottom:4,alignSelf:'flex-start'},
+  heroTitle: { color: colors.text, fontSize: 42, lineHeight: 46, fontWeight: '900', letterSpacing: -0.8, textAlign: 'left' },
   heroMeta: { color: '#EBE9F3', fontSize: 12, fontWeight: '800', marginTop: 13, textAlign:'left' },
   heroGenres: { color: '#C5BFDB', fontSize: 12, fontWeight: '700', marginTop: 8, textAlign:'left' },
   heroOverview: { color: '#E6E3ED', fontSize: 13, lineHeight: 19, marginTop: 12, textAlign:'left', maxWidth:490 },
   heroButtons: { flexDirection: 'row', gap: 12, marginTop: 22, alignSelf: 'stretch' },
-  play: { flex: 1, height: 48, borderRadius: 9, backgroundColor: '#FFFFFF', flexDirection: 'row', gap: 9, justifyContent: 'center', alignItems: 'center' },
-  info: { flex: 1, height: 48, borderRadius: 9, backgroundColor: 'rgba(84,84,92,0.84)', flexDirection: 'row', gap: 9, justifyContent: 'center', alignItems: 'center' },
+  play: { flex: 1, height: 48, borderRadius: 13, backgroundColor: '#FFFFFF', flexDirection: 'row', gap: 9, justifyContent: 'center', alignItems: 'center' },
+  info: { flex: 1, height: 48, borderRadius: 13, backgroundColor: 'rgba(37,36,47,0.70)', flexDirection: 'row', gap: 9, justifyContent: 'center', alignItems: 'center' },
   infoIcon: { width: 17, height: 17, borderRadius: 9, borderWidth: 1.5, borderColor: colors.text, alignItems: 'center', justifyContent: 'center' },
   infoIconText: { color: colors.text, fontSize: 12, fontWeight: '900', lineHeight: 14, includeFontPadding: false },
   pressed: { opacity: 0.83, transform:[{scale:0.985}] },
   playText: { color: '#111115', fontSize: 14, fontWeight: '900' },
   infoText: { color: colors.text, fontSize: 14, fontWeight: '800' },
   randomBar:{paddingHorizontal:22,marginTop:8,marginBottom:14},randomButton:{height:45,borderRadius:12,borderWidth:1,backgroundColor:colors.surface,alignItems:'center',justifyContent:'center'},randomLabel:{color:colors.text,fontSize:14,fontWeight:'900'},
-  rows: { paddingTop: 0, paddingBottom: 30, marginTop: -6 }
+  rows: { paddingTop: 0, paddingBottom: 130, marginTop: -6 }
 });

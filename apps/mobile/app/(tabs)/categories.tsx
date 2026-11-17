@@ -40,8 +40,8 @@ const styles=StyleSheet.create({
  title:{fontSize:26,color:colors.text,fontWeight:'900'},
  close:{width:44,height:44,backgroundColor:'#292B37',borderRadius:10,alignItems:'center',justifyContent:'center'},
  closeText:{fontSize:20,color:colors.text},
- grid:{paddingHorizontal:16,paddingBottom:40,flexDirection:'row',flexWrap:'wrap',justifyContent:'space-between',rowGap:10},
- tile:{width:'48.5%',minHeight:96,backgroundColor:'#20222E',borderColor:'#343442',borderWidth:1,borderRadius:13,padding:14,justifyContent:'space-between'},
+ grid:{paddingHorizontal:16,paddingBottom:132,flexDirection:'row',flexWrap:'wrap',justifyContent:'space-between',rowGap:14},
+ tile:{width:'48.5%',minHeight:112,backgroundColor:'rgba(35,32,50,.88)',borderColor:'#343442',borderWidth:1,borderRadius:20,padding:16,justifyContent:'space-between'},
  marker:{height:4,width:25,borderRadius:3},
  tileText:{color:colors.text,fontWeight:'800',fontSize:14}
 });
