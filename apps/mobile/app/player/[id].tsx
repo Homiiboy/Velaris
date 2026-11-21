@@ -29,9 +29,10 @@ export default function PlayerScreen(){
  const [downloaded,setDownloaded]=useState(false); const [downloading,setDownloading]=useState(false); const [downloadProgress,setDownloadProgress]=useState(0); const [downloadError,setDownloadError]=useState(''); const [item,setItem]=useState<JellyfinItem|null>(null); const [info,setInfo]=useState<JellyfinPlaybackInfo|null>(null); const [url,setUrl]=useState('');
  const [quality,setQuality]=useState<number|undefined>();
  const [preparing,setPreparing]=useState(false);
- const [settingsSheet,setSettingsSheet]=useState<'audio'|'subtitles'|'quality'|null>(null);
+ const [settingsSheet,setSettingsSheet]=useState<'tracks'|'quality'|null>(null);
  const [episodeSheet,setEpisodeSheet]=useState(false);
  const [episodeOptions,setEpisodeOptions]=useState<JellyfinItem[]>([]);
+ const [selectedSeason,setSelectedSeason]=useState<number|null>(null);
  const [fullscreen,setFullscreen]=useState(false);
  const [controlsVisible,setControlsVisible]=useState(true);
  const [playing,setPlaying]=useState(false);
@@ -125,8 +126,7 @@ export default function PlayerScreen(){
      </Pressable>
      <View style={styles.overlayTime}><Text style={styles.overlayTimeText}>{formatTime(position)}</Text><Text style={styles.overlayTimeText}>{formatTime(duration)}</Text></View>
      <View style={styles.overlayTools}>
-       <Pressable onPress={()=>setSettingsSheet('audio')} style={styles.overlayTool}><Text style={styles.overlayToolText}>Audio</Text></Pressable>
-       <Pressable onPress={()=>setSettingsSheet('subtitles')} style={styles.overlayTool}><Text style={styles.overlayToolText}>Untertitel</Text></Pressable>
+        <Pressable accessibilityRole="button" accessibilityLabel="Audio und Untertitel auswählen" onPress={()=>setSettingsSheet('tracks')} style={styles.overlayTool}><Text style={styles.overlayToolText}>Audio & UT</Text></Pressable>
        {episodeOptions.length>0&&<Pressable onPress={()=>setEpisodeSheet(true)} style={styles.overlayTool}><Text style={styles.overlayToolText}>Episoden</Text></Pressable>}
        <Pressable onPress={()=>setSettingsSheet('quality')} style={styles.overlayTool}><Text style={styles.overlayToolText}>⚙</Text></Pressable>
        <Pressable accessibilityRole="button" accessibilityLabel={large?'Vollbild verlassen':'Vollbild öffnen'} onPress={()=>{setFullscreen(!large);setControlsVisible(true)}} style={styles.overlayTool}><Text style={styles.overlayToolText}>{large?'⤢':'⛶'}</Text></Pressable>
@@ -181,7 +181,7 @@ export default function PlayerScreen(){
    {!!nextEpisode&&<View style={styles.nextBox}><View style={{flex:1}}><Text style={[styles.nextLabel,{color:accentColor}]}>Als Nächstes</Text><Text style={styles.nextTitle}>{nextEpisode.Name}</Text><Text style={styles.nextMeta}>{nextEpisode.SeasonName??''}{nextEpisode.IndexNumber!=null?` · Episode ${nextEpisode.IndexNumber}`:''}</Text></View><Pressable style={styles.nextButton} onPress={()=>router.replace({pathname:'/player/[id]',params:{id:nextEpisode.Id}})}><Text style={styles.nextButtonText}>▶</Text></Pressable></View>}
    {!!nextEpisode&&<Pressable onPress={()=>setAutoPlay(v=>!v)} style={styles.autoRow}><Text style={styles.autoText}>Nächste Episode automatisch abspielen</Text><Text style={[styles.autoState,autoPlay&&styles.autoOn]}>{autoPlay?'AN':'AUS'}</Text></Pressable>}
    <Text style={styles.section}>Wiedergabeoptionen</Text>
-   <View style={styles.quickOptions}><Pressable style={styles.quickOption} onPress={()=>setSettingsSheet('audio')}><Text style={styles.quickOptionText}>◉  Audio</Text></Pressable><Pressable style={styles.quickOption} onPress={()=>setSettingsSheet('subtitles')}><Text style={styles.quickOptionText}>▤  Untertitel</Text></Pressable><Pressable style={styles.quickOption} onPress={()=>setSettingsSheet('quality')}><Text style={styles.quickOptionText}>⚙  Qualität</Text></Pressable>{episodeOptions.length>0&&<Pressable style={styles.quickOption} onPress={()=>setEpisodeSheet(true)}><Text style={styles.quickOptionText}>▦  Episoden</Text></Pressable>}</View>
+   <View style={styles.quickOptions}><Pressable style={styles.quickOption} onPress={()=>setSettingsSheet('tracks')}><Text style={styles.quickOptionText}>◉  Audio & Untertitel</Text></Pressable><Pressable style={styles.quickOption} onPress={()=>setSettingsSheet('quality')}><Text style={styles.quickOptionText}>⚙  Qualität</Text></Pressable>{episodeOptions.length>0&&<Pressable style={styles.quickOption} onPress={()=>setEpisodeSheet(true)}><Text style={styles.quickOptionText}>▦  Episoden</Text></Pressable>}</View>
    <Text style={styles.section}>Streamingqualität</Text>
    <Text style={styles.qualityNote}>Jellyfin entscheidet weiterhin zwischen Direct Play und Transcoding.</Text>
    <View style={styles.options}>{([
