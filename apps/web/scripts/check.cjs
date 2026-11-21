@@ -438,3 +438,14 @@ assert(runtime.includes("Cast Bridge nicht geladen. Bitte Velaris aktualisieren"
 assert(runtime.includes("Cast-Fenster konnte nicht geöffnet werden:"),'Cast dialog exception feedback missing');
 assert(/cast-bridge\.js\?v=\d+/.test(html)&&/main\.js\?v=\d+/.test(html),'iPhone cache bust missing');
 console.log('Velaris Web: Cast button feedback and cache-bust checks passed.');
+
+
+/* PWA episode descriptions come from Jellyfin and must never be interpolated as HTML. */
+const fullscreenUi=fs.readFileSync(path.join(root,'fullscreen-controls.js'),'utf8');
+assert(fullscreenUi.includes("overview:typeof ep.Overview==='string'?ep.Overview.trim():''"),
+ 'Episode list must read Jellyfin episode overviews');
+assert(fullscreenUi.includes("overview.textContent=entry.overview"),
+ 'Episode descriptions must be rendered safely');
+assert(stylesheet.includes('.vfc-episode-overview'),'PWA episode description styles missing');
+assert(sw.includes("'./fullscreen-controls.js'"),'PWA service worker must cache fullscreen controls');
+console.log('Velaris Web: Jellyfin episode descriptions are displayed safely.');
