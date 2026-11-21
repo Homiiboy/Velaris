@@ -36,6 +36,7 @@ function velarisInstallFullscreenUI(root, video, item) {
    const btn=document.createElement('button');btn.type='button';btn.className='vfc-dialog-option';
    if(entry.selected){btn.classList.add('vfc-option-selected');btn.setAttribute('aria-pressed','true')}
    if(entry.disabled){btn.disabled=true;btn.classList.add('vfc-option-disabled')}
+   if(entry.art){const thumb=document.createElement('img');thumb.className='vfc-episode-thumb';thumb.src=entry.art;thumb.alt='';thumb.loading='lazy';btn.appendChild(thumb)}
    const name=document.createElement('span');name.textContent=entry.title;btn.appendChild(name);
    if(entry.selected){const tick=document.createElement('span');tick.textContent='✓';tick.className='vfc-option-check';btn.appendChild(tick)}
    if(entry.meta){const sub=document.createElement('small');sub.textContent=entry.meta;name.appendChild(sub)}
@@ -113,6 +114,7 @@ function velarisInstallFullscreenUI(root, video, item) {
    const list=episodes.filter(ep=>(ep.ParentIndexNumber??0)===season).sort((a,b)=>(a.IndexNumber??0)-(b.IndexNumber??0));
    const rows=list.length?list.map(ep=>({
     title:'E'+(ep.IndexNumber??'–')+' · '+(ep.Name||'Episode'),
+    art:ep.ImageTags?.Primary?image(ep,'Primary',240):'',
     meta:ep.UserData?.Played?'✓ Gesehen':ep.UserData?.PlaybackPositionTicks?'Fortsetzen':'',
     selected:ep.Id===item.Id,
     action:()=>{
