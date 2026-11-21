@@ -1089,3 +1089,25 @@ button:disabled{cursor:wait;opacity:.65}
  .p9-player.vfc-enabled .vfc-bottom{padding-top:7px;padding-bottom:calc(5px + env(safe-area-inset-bottom))}
  .p9-player.vfc-enabled .vfc-center .vfc-play{width:66px;height:66px}
 }
+
+/* Mobile Player 4.5: accessible audio/subtitle picker and season-aware episode drawer. */
+@media(max-width:849px), (pointer:coarse) and (max-height:600px){
+ .p9-player.vfc-enabled .vfc-dialog{background:linear-gradient(160deg,#24202e,#111018 65%);padding:23px clamp(16px,4vw,34px) calc(24px + env(safe-area-inset-bottom));overflow:auto}
+ .p9-player.vfc-enabled .vfc-dialog h2{font-size:clamp(20px,5vw,26px);letter-spacing:-.03em;margin-bottom:20px}
+ .p9-player.vfc-enabled .vfc-dialog-heading{font-size:13px;color:#c7bed4;margin:18px 0 8px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
+ .p9-player.vfc-enabled .vfc-dialog-body{max-height:calc(75dvh - 92px);overflow-y:auto;overscroll-behavior:contain}
+ .p9-player.vfc-enabled .vfc-dialog-option{display:flex;justify-content:space-between;align-items:center;gap:15px;min-height:58px;padding:13px 14px;border-radius:13px;border:0;border-bottom:1px solid #ffffff16;font-size:14px}
+ .p9-player.vfc-enabled .vfc-dialog-option span{min-width:0}
+ .p9-player.vfc-enabled .vfc-dialog-option small{display:block;color:#aaa2b5;margin-top:6px;font-size:11px}
+ .p9-player.vfc-enabled .vfc-dialog-option.vfc-option-selected{background:#ffffff13}
+ .p9-player.vfc-enabled .vfc-dialog-option.vfc-option-disabled{color:#a7a1b0;opacity:.75;cursor:default}
+ .p9-player.vfc-enabled .vfc-option-check{color:var(--accent,#a78bfa);font-size:19px;font-weight:900}
+ .p9-player.vfc-enabled .vfc-season-tabs{display:flex;gap:9px;overflow-x:auto;overscroll-behavior-inline:contain;margin:0 0 15px;padding:6px 0}
+ .p9-player.vfc-enabled .vfc-season-tab{min-height:42px;white-space:nowrap;border:1px solid #ffffff23;border-radius:24px;padding:8px 17px;color:white;background:#ffffff15;font-size:13px;font-weight:800}
+ .p9-player.vfc-enabled .vfc-season-tab.selected{background:var(--accent,#7c5cfc);border-color:var(--accent,#7c5cfc);color:#fff}
+ .p9-player.vfc-enabled .vfc-season-tab:focus-visible,.p9-player.vfc-enabled .vfc-dialog-option:focus-visible{outline:2px solid white;outline-offset:2px}
+}
+@media(orientation:landscape) and (max-height:500px){
+ .p9-player.vfc-enabled .vfc-dialog{max-height:96dvh;max-width:650px;margin:auto;border-radius:22px 22px 0 0}
+ .p9-player.vfc-enabled .vfc-dialog-body{max-height:calc(90dvh - 115px)}
+}
