@@ -442,7 +442,7 @@ async function detail(id){
      const version=++revision,seasonId=select.value;
      panel.innerHTML='<p class="hint">Episoden werden geladen …</p>';
      try{
-      const result=await api('/Shows/'+encodeURIComponent(id)+'/Episodes?UserId='+encodeURIComponent(session().userId)+'&SeasonId='+encodeURIComponent(seasonId));
+      const result=await api('/Shows/'+encodeURIComponent(id)+'/Episodes?UserId='+encodeURIComponent(session().userId)+'&SeasonId='+encodeURIComponent(seasonId)+'&Fields=Overview&EnableUserData=true&IsMissing=false');
       if(version!==revision||!onDetailPage()||!panel.isConnected)return;
       const episodes=result.Items||[];
       panel.innerHTML=episodes.length?episodes.map(episodeCard).join(''):'<p class="empty">Keine Episoden vorhanden.</p>';
