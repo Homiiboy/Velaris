@@ -457,3 +457,19 @@ assert(runtime.includes("'&Fields=Overview&EnableUserData=true&IsMissing=false'"
 assert(fullscreenUi.includes("'&Fields=Overview&EnableUserData=true&IsMissing=false'"),
  'PWA player episode browser must explicitly request episode descriptions');
 console.log('Velaris Web: episode overview API fields verified for both lists.');
+
+
+/* Performance guardrails: above-the-fold poster requests and instant player return. */
+assert(runtime.includes("const prioritized=index<3"),
+ 'Initial home posters must have elevated loading priority');
+assert(runtime.includes('fetchpriority="high"'),
+ 'Initial poster images must request high priority');
+assert(runtime.includes("window.matchMedia('(max-width:849px)').matches?280:400"),
+ 'Mobile poster images should avoid desktop-size image downloads');
+assert(runtime.includes('function refreshHomePlaybackRows()'),
+ 'Player return must refresh Continue Watching without blocking on full catalog');
+for(const source of [player,classic]){
+ assert(source.includes("if(state.items.length){render();refreshHomePlaybackRows()}else load()"),
+  'Player must reuse loaded home catalog on close');
+}
+console.log('Velaris Web: poster and player return performance guardrails passed.');
