@@ -1121,6 +1121,7 @@ button:disabled{cursor:wait;opacity:.65}
 /* Show Jellyfin episode descriptions below the episode title in the PWA player. */
 @media(max-width:849px), (pointer:coarse) and (max-height:600px){
  .p9-player.vfc-enabled .vfc-dialog-option:has(.vfc-episode-overview){align-items:flex-start;min-height:92px}
+ .p9-player.vfc-enabled .vfc-dialog-option .vfc-option-copy{flex:1;min-width:0;text-align:left}
  .p9-player.vfc-enabled .vfc-dialog-option .vfc-episode-overview{
   margin:7px 0 0;color:#beb9c9;font-size:12px;font-weight:400;
   line-height:1.55;white-space:pre-line;overflow-wrap:anywhere;text-transform:none;
