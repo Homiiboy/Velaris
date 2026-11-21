@@ -13,8 +13,16 @@ function velarisInstallFullscreenUI(root, video, item) {
  video.addEventListener('loadedmetadata',()=>{video.controls=false},{once:true});
  const q=selector=>controls.querySelector(selector);
  const format=seconds=>{const t=Math.max(0,Math.floor(Number.isFinite(seconds)?seconds:0)),h=Math.floor(t/3600),m=Math.floor(t%3600/60),s=String(t%60).padStart(2,'0');return h?h+':'+String(m).padStart(2,'0')+':'+s:m+':'+s};
- let hideTimer=null,locked=false,sliderActive=false,dialog=null;
- const display=()=>{if(!root.isConnected)return;root.classList.remove('vfc-hidden');clearTimeout(hideTimer);if(!video.paused&&!dialog)hideTimer=setTimeout(()=>{root.classList.add('vfc-hidden')},4400)};
+ const AUTO_HIDE_MS=10000;
+ let hideTimer=null,sliderActive=false,dialog=null;
+ const cancelHide=()=>{if(hideTimer!==null){clearTimeout(hideTimer);hideTimer=null}};
+ const scheduleHide=()=>{
+  cancelHide();
+  if(!root.isConnected||video.paused||video.ended||dialog||sliderActive)return;
+  hideTimer=setTimeout(()=>{if(root.isConnected&&!video.paused&&!video.ended&&!dialog&&!sliderActive)root.classList.add('vfc-hidden')},AUTO_HIDE_MS);
+ };
+ const display=()=>{if(!root.isConnected)return;root.classList.remove('vfc-hidden');scheduleHide()};
+ const hide=()=>{if(video.paused||dialog||sliderActive)return;cancelHide();root.classList.add('vfc-hidden')};
  const update=()=>{if(!root.isConnected){clearTimeout(hideTimer);return}const d=Number.isFinite(video.duration)?video.duration:0;if(!sliderActive)q('.vfc-seek').value=d?String(Math.round(video.currentTime/d*1000)):'0';q('.vfc-seek').style.setProperty('--vfc-progress',(d?Math.min(100,video.currentTime/d*100):0)+'%');q('.vfc-current').textContent=format(video.currentTime);q('.vfc-total').textContent=format(d);q('.vfc-play').textContent=video.paused?'▶':'Ⅱ'};
  const closeDialog=()=>{dialog?.remove();dialog=null;display()};
  const openDialog=(title,rows)=>{
@@ -30,7 +38,8 @@ function velarisInstallFullscreenUI(root, video, item) {
  q('.vfc-forward').onclick=()=>seek(video.currentTime+10);
  q('.vfc-seek').addEventListener('input',()=>{sliderActive=true;const d=video.duration;if(Number.isFinite(d))q('.vfc-current').textContent=format(d*Number(q('.vfc-seek').value)/1000);q('.vfc-seek').style.setProperty('--vfc-progress',(Number(q('.vfc-seek').value)/10)+'%');display()});
  q('.vfc-seek').addEventListener('change',()=>{sliderActive=false;seek(video.duration*Number(q('.vfc-seek').value)/1000)});
- q('.vfc-seek').addEventListener('pointerup',()=>{sliderActive=false;update()});
+ q('.vfc-seek').addEventListener('pointerup',()=>{sliderActive=false;update();display()});
+ q('.vfc-seek').addEventListener('pointercancel',()=>{sliderActive=false;display()});
  q('.vfc-back').onclick=()=>root.querySelector('#p9-close')?.click();
  q('.vfc-immersive').onclick=()=>{
   root.classList.toggle('vfc-immersive-active');
@@ -44,11 +53,18 @@ function velarisInstallFullscreenUI(root, video, item) {
   else if(!enabled){if(document.fullscreenElement===root)document.exitFullscreen?.().catch(()=>{});if(screen.orientation?.unlock)try{screen.orientation.unlock()}catch{}}
   display();
  };
- q('.vfc-collapse').onclick=()=>root.classList.add('vfc-hidden');
- root.addEventListener('pointerdown',event=>{if(event.target===root||event.target===video)display()});
+ q('.vfc-collapse').onclick=hide;
+ // A single tap toggles the chrome; touching controls does not close them.
+ root.addEventListener('pointerup',event=>{
+  if(event.target!==root&&event.target!==video)return;
+  if(root.classList.contains('vfc-hidden'))display();
+  else hide();
+ });
+ root.addEventListener('keydown',event=>{if(event.key==='Escape'&&dialog)closeDialog()});
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden&&root.isConnected)display()});
  video.addEventListener('timeupdate',update);video.addEventListener('loadedmetadata',update);
  video.addEventListener('durationchange',update);video.addEventListener('play',()=>{update();display()});
- video.addEventListener('pause',()=>{update();display()});video.addEventListener('ended',update);
+ video.addEventListener('pause',()=>{update();display()});video.addEventListener('ended',()=>{cancelHide();display();update()});
  q('.vfc-heading').textContent=item.SeriesName?item.SeriesName+' · '+item.Name:item.Name||'VELARIS';
  q('.vfc-tracks').onclick=()=>{
   const audioTracks=video.audioTracks,subtitleTracks=video.textTracks;
