@@ -449,3 +449,11 @@ assert(fullscreenUi.includes("overview.textContent=entry.overview"),
 assert(stylesheet.includes('.vfc-episode-overview'),'PWA episode description styles missing');
 assert(sw.includes("'./fullscreen-controls.js'"),'PWA service worker must cache fullscreen controls');
 console.log('Velaris Web: Jellyfin episode descriptions are displayed safely.');
+
+/* Regression: both episode lists must explicitly request Jellyfin Overview.
+ * Displaying ep.Overview alone is not enough: Jellyfin omits optional Fields. */
+assert(runtime.includes("'&Fields=Overview&EnableUserData=true&IsMissing=false'"),
+ 'PWA series detail must explicitly request episode descriptions');
+assert(fullscreenUi.includes("'&Fields=Overview&EnableUserData=true&IsMissing=false'"),
+ 'PWA player episode browser must explicitly request episode descriptions');
+console.log('Velaris Web: episode overview API fields verified for both lists.');
