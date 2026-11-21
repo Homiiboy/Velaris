@@ -178,6 +178,27 @@ function p9Play(item){
   reloading=true;
   retry.hidden=true;
   playerMessage('Jellyfin-Stream wird vorbereitet …');
+  // Native Safari HLS can start in the original user tap. Waiting for
+  // PlaybackInfo would add a round trip and lose the autoplay gesture.
+  if(nativeHls){
+   const immediateGeneration=generation;
+   fallback=false;
+   infoReadyAt=performance.now();
+   try{
+    activateStream(p9Stream(item,quality,currentSession,null),pendingPosition);
+    playerMessage('Safari-HLS wird direkt gestartet …');
+    // Metadata is still needed for reporting/fallback, but must not restart
+    // an already healthy video stream once it arrives.
+    void p9Warmup(item,currentSession,quality).then(info=>{
+     if(!isAlive()||streamGeneration!==immediateGeneration)return;
+     playbackInfo=info;
+     infoReadyAt=performance.now();
+    }).catch(error=>{
+     if(isAlive()&&streamGeneration===immediateGeneration)console.warn('Velaris background PlaybackInfo unavailable',error);
+    });
+    return;
+   }catch(error){console.warn('Velaris Safari fast HLS unavailable; negotiating stream',error)}
+  }
   let media=null;
   try{media=await p9Warmup(item,currentSession,quality)}
   catch(error){console.warn('Velaris PlaybackInfo unavailable; trying MP4 fallback',error)}

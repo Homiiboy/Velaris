@@ -473,3 +473,20 @@ for(const source of [player,classic]){
   'Player must reuse loaded home catalog on close');
 }
 console.log('Velaris Web: poster and player return performance guardrails passed.');
+
+
+/* Safari quick start must begin playback without awaiting PlaybackInfo,
+ * while keeping the original negotiated path for browsers and fallback. */
+const safariSourceStart=classic.indexOf('const source=async(position=0)=>');
+const safariFastStart=classic.indexOf('if(nativeHls){',safariSourceStart);
+const safariNegotiatedStart=classic.indexOf('try{media=await p9Warmup(item,currentSession,quality)}',safariSourceStart);
+assert(safariSourceStart>=0&&safariFastStart>safariSourceStart&&safariFastStart<safariNegotiatedStart,
+ 'Safari native HLS must be attempted before awaiting Jellyfin PlaybackInfo');
+const safariFastPath=classic.slice(safariFastStart,safariNegotiatedStart);
+assert(safariFastPath.includes('activateStream(p9Stream(item,quality,currentSession,null),pendingPosition)'),
+ 'Native HLS stream must start directly inside play gesture');
+assert(safariFastPath.includes('void p9Warmup(item,currentSession,quality).then(info=>{'),
+ 'Jellyfin PlaybackInfo must be negotiated in the background');
+assert(safariFastPath.includes('playbackInfo=info;')&&safariFastPath.includes('return;'),
+ 'Background metadata must not force an unnecessary stream restart');
+console.log('Velaris Web: Safari immediate HLS startup regression passed.');
