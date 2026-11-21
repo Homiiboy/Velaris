@@ -40,6 +40,7 @@ function velarisInstallFullscreenUI(root, video, item) {
    const name=document.createElement('span');name.textContent=entry.title;btn.appendChild(name);
    if(entry.selected){const tick=document.createElement('span');tick.textContent='✓';tick.className='vfc-option-check';btn.appendChild(tick)}
    if(entry.meta){const sub=document.createElement('small');sub.textContent=entry.meta;name.appendChild(sub)}
+   if(entry.overview){const overview=document.createElement('p');overview.className='vfc-episode-overview';overview.textContent=entry.overview;name.appendChild(overview)}
    btn.onclick=()=>{if(entry.disabled)return;closeDialog();entry.action?.()};
    body.appendChild(btn);
   }
@@ -116,6 +117,7 @@ function velarisInstallFullscreenUI(root, video, item) {
     title:'E'+(ep.IndexNumber??'–')+' · '+(ep.Name||'Episode'),
     art:ep.ImageTags?.Primary?image(ep,'Primary',240):'',
     meta:ep.UserData?.Played?'✓ Gesehen':ep.UserData?.PlaybackPositionTicks?'Fortsetzen':'',
+    overview:typeof ep.Overview==='string'?ep.Overview.trim():'',
     selected:ep.Id===item.Id,
     action:()=>{
      if(ep.Id===item.Id)return;
