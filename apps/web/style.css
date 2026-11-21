@@ -1065,3 +1065,27 @@ button:disabled{cursor:wait;opacity:.65}
  .p9-player.vfc-enabled .p9-bottom{bottom:95px}
 }
 @media(prefers-reduced-motion:reduce){.p9-player.vfc-enabled .velaris-fullscreen-chrome{transition:none}}
+
+/* Mobile Player 4.5 – immersive video-only mode after 10 seconds. */
+@media(max-width:849px), (pointer:coarse) and (max-height:600px){
+ .p9-player.vfc-enabled .velaris-fullscreen-chrome{z-index:20}
+ .p9-player.vfc-enabled .vfc-top{padding-inline:clamp(14px,4vw,34px);padding-bottom:28px;background:linear-gradient(to bottom,rgba(0,0,0,.85),transparent)}
+ .p9-player.vfc-enabled .vfc-center{top:50%;gap:clamp(12px,5vw,36px)}
+ .p9-player.vfc-enabled .vfc-center button{width:64px;height:60px;border-radius:32px;background:rgba(0,0,0,.46);font-size:17px;min-width:56px}
+ .p9-player.vfc-enabled .vfc-center .vfc-play{width:76px;height:76px;border-radius:50%;background:#fff;color:#111;font-size:30px}
+ .p9-player.vfc-enabled .vfc-bottom{padding:24px clamp(14px,4vw,32px) calc(16px + env(safe-area-inset-bottom));background:linear-gradient(to top,#000 0%,rgba(0,0,0,.8) 45%,transparent)}
+ .p9-player.vfc-enabled .vfc-actions button{min-height:44px;font-size:12px}
+ .p9-player.vfc-enabled.vfc-hidden .p9-header,
+ .p9-player.vfc-enabled.vfc-hidden .p9-bottom,
+ .p9-player.vfc-enabled.vfc-hidden .p9-message,
+ .p9-player.vfc-enabled.vfc-hidden .p9-next,
+ .p9-player.vfc-enabled.vfc-hidden #p9-skip{opacity:0!important;visibility:hidden!important;pointer-events:none!important}
+ .p9-player.vfc-enabled .vfc-dialog{z-index:25}
+ .p9-player.vfc-enabled.vfc-hidden .velaris-fullscreen-chrome{visibility:hidden}
+ .p9-player.vfc-enabled .velaris-fullscreen-chrome{visibility:visible;transition:opacity .25s ease,visibility .25s ease}
+}
+@media(orientation:landscape) and (max-height:500px){
+ .p9-player.vfc-enabled .vfc-top{padding-top:calc(6px + env(safe-area-inset-top));padding-bottom:6px}
+ .p9-player.vfc-enabled .vfc-bottom{padding-top:7px;padding-bottom:calc(5px + env(safe-area-inset-bottom))}
+ .p9-player.vfc-enabled .vfc-center .vfc-play{width:66px;height:66px}
+}
