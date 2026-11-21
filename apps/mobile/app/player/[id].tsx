@@ -71,8 +71,9 @@ export default function PlayerScreen(){
  useEffect(()=>{if(url){didResume.current=false;player.replace(url);player.play()}},[url]);
  useEffect(()=>{const sub=player.addListener('statusChange',({status})=>{if(status==='readyToPlay'&&!didResume.current){didResume.current=true;const target=pendingSeek.current??resumeAt.current;pendingSeek.current=null;if(target>0)player.currentTime=target;player.play()}});return()=>sub.remove()},[player]);
  useEffect(()=>{const sub=player.addListener('timeUpdate',({currentTime})=>setPosition(currentTime));return()=>sub.remove()},[player]);
- useEffect(()=>{const sub=player.addListener('playingChange',({isPlaying})=>{setPlaying(isPlaying);setControlsVisible(true)});return()=>sub.remove()},[player]);
- useEffect(()=>{if(!fullscreen||!controlsVisible||!playing||settingsSheet||episodeSheet)return;const timer=setTimeout(()=>setControlsVisible(false),4200);return()=>clearTimeout(timer)},[fullscreen,controlsVisible,playing,position,settingsSheet,episodeSheet]);
+ useEffect(()=>{const sub=player.addListener('playingChange',({isPlaying})=>{setPlaying(isPlaying);if(!isPlaying)setControlsVisible(true)});return()=>sub.remove()},[player]);
+ // Playback ticks must not reset the inactivity timer.
+ useEffect(()=>{if(!fullscreen||!controlsVisible||!playing||settingsSheet||episodeSheet)return;const timer=setTimeout(()=>setControlsVisible(false),10000);return()=>clearTimeout(timer)},[fullscreen,controlsVisible,playing,settingsSheet,episodeSheet]);
  useEffect(()=>{const sub=player.addListener('playToEnd',()=>{if(autoPlay&&plugins.autoNext&&nextEpisode)router.replace({pathname:'/player/[id]',params:{id:nextEpisode.Id}})});return()=>sub.remove()},[player,autoPlay,nextEpisode]);
  useEffect(()=>{
    const segment=segments.find(candidate=>position>=candidate.StartTicks/10_000_000 &&
@@ -111,7 +112,7 @@ export default function PlayerScreen(){
      <Pressable accessibilityRole="button" accessibilityLabel={large?'Vollbild verlassen':'Zurück'} onPress={()=>large?setFullscreen(false):goBack()} style={styles.overlayIcon}><Text style={styles.overlayIconText}>‹</Text></Pressable>
      <View style={{flex:1}}><Text numberOfLines={1} style={styles.overlayTitle}>{item?.SeriesName||item?.Name||'VELARIS'}</Text>{!!item?.SeriesName&&<Text numberOfLines={1} style={styles.overlaySubtitle}>{item.Name}</Text>}</View>
    </View>}
-   {large&&!controlsVisible&&<Pressable accessibilityLabel="Steuerung einblenden" style={StyleSheet.absoluteFill} onPress={()=>setControlsVisible(true)}/>}
+   {large&&!controlsVisible&&<Pressable accessibilityRole="button" accessibilityLabel="Playersteuerung einblenden" style={StyleSheet.absoluteFill} onPress={()=>setControlsVisible(true)}/>}
    {(!large||controlsVisible)&&<View style={styles.overlayCenter} pointerEvents="box-none">
      <Pressable accessibilityRole="button" accessibilityLabel="10 Sekunden zurück" onPress={()=>skipBy(-10)} style={styles.overlayCircle}><Text style={styles.overlayControlText}>↶ 10</Text></Pressable>
      <Pressable accessibilityRole="button" accessibilityLabel={playing?'Pause':'Abspielen'} onPress={()=>{if(playing)player.pause();else player.play();setControlsVisible(true)}} style={styles.overlayMainCircle}><Text style={styles.overlayMainText}>{playing?'Ⅱ':'▶'}</Text></Pressable>
