@@ -146,7 +146,7 @@ function velarisInstallFullscreenUI(root, video, item) {
    try{
     const account=session();
     if(!account)throw Error('Keine Anmeldung');
-    const data=await api('/Shows/'+encodeURIComponent(item.SeriesId)+'/Episodes?UserId='+encodeURIComponent(account.userId)+'&EnableUserData=true&IsMissing=false',{},account);
+    const data=await api('/Shows/'+encodeURIComponent(item.SeriesId)+'/Episodes?UserId='+encodeURIComponent(account.userId)+'&Fields=Overview&EnableUserData=true&IsMissing=false',{},account);
     if(!root.isConnected||!dialog)return;
     episodesCache=(data.Items||[]).filter(ep=>ep.Type==='Episode'&&!ep.IsMissing);
     if(!episodesCache.length){openDialog('Episoden',[{title:'Keine Episoden verfügbar',disabled:true}]);return}
