@@ -112,7 +112,6 @@ export default function PlayerScreen(){
      <Pressable accessibilityRole="button" accessibilityLabel={large?'Vollbild verlassen':'Zurück'} onPress={()=>large?setFullscreen(false):goBack()} style={styles.overlayIcon}><Text style={styles.overlayIconText}>‹</Text></Pressable>
      <View style={{flex:1}}><Text numberOfLines={1} style={styles.overlayTitle}>{item?.SeriesName||item?.Name||'VELARIS'}</Text>{!!item?.SeriesName&&<Text numberOfLines={1} style={styles.overlaySubtitle}>{item.Name}</Text>}</View>
    </View>}
-   {large&&!controlsVisible&&<Pressable accessibilityRole="button" accessibilityLabel="Playersteuerung einblenden" style={StyleSheet.absoluteFill} onPress={()=>setControlsVisible(true)}/>}
    {(!large||controlsVisible)&&<View style={styles.overlayCenter} pointerEvents="box-none">
      <Pressable accessibilityRole="button" accessibilityLabel="10 Sekunden zurück" onPress={()=>skipBy(-10)} style={styles.overlayCircle}><Text style={styles.overlayControlText}>↶ 10</Text></Pressable>
      <Pressable accessibilityRole="button" accessibilityLabel={playing?'Pause':'Abspielen'} onPress={()=>{if(playing)player.pause();else player.play();setControlsVisible(true)}} style={styles.overlayMainCircle}><Text style={styles.overlayMainText}>{playing?'Ⅱ':'▶'}</Text></Pressable>
@@ -143,6 +142,7 @@ export default function PlayerScreen(){
    <Modal visible={fullscreen} animationType="fade" supportedOrientations={['portrait','landscape','landscape-left','landscape-right']} statusBarTranslucent navigationBarTranslucent onRequestClose={()=>setFullscreen(false)}>
      <View style={[styles.fullscreenStage,{width:viewportWidth,height:viewportHeight}]}>
        {fullscreen&&url?<VideoView player={player} style={StyleSheet.absoluteFill} nativeControls={false} fullscreenOptions={{enable:false}} contentFit="contain" allowsPictureInPicture/>:<ActivityIndicator color={accentColor}/>}
+        <Pressable accessibilityRole="button" accessibilityLabel={controlsVisible?'Playersteuerung ausblenden':'Playersteuerung einblenden'} style={StyleSheet.absoluteFill} onPress={()=>setControlsVisible(value=>value&&playing?false:true)}/>
        {videoControls(true)}
      </View>
    </Modal>
