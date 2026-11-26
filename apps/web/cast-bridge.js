@@ -75,7 +75,7 @@ const VelarisCastBridge=(()=>{
   document.body.appendChild(overlay);
   const devices=overlay.querySelector('#velaris-cast-devices'),feedback=overlay.querySelector('#velaris-cast-feedback');
   const controls=overlay.querySelector('#velaris-cast-controls'),positionNode=overlay.querySelector('#velaris-cast-position');
-  let selected=null,position=0,closed=false,interval=null,startPolls=0,confirmed=false;
+  let selected=null,position=0,closed=false,interval=null,startPolls=0,confirmed=false,localPaused=false;
   const info=value=>{if(!closed)feedback.textContent=value};
   const onKeyDown=event=>{if(event.key==='Escape')close()};
   const close=()=>{if(closed)return;closed=true;if(interval)clearInterval(interval);
@@ -95,10 +95,14 @@ const VelarisCastBridge=(()=>{
     const state=String(entry.state||'UNKNOWN').toUpperCase();
     const idle=String(entry.idleReason||'').toUpperCase();
     startPolls++;
+    if(state==='PLAYING'&&!localPaused){
+     localPaused=true;
+     if(typeof onStarted==='function')onStarted();
+    }
     if(state==='PLAYING'||state==='PAUSED'||state==='BUFFERING'){
      if(!confirmed){
       confirmed=true;
-      if(state==='PLAYING'&&typeof onStarted==='function')onStarted();
+      
       info(state==='PLAYING'?'Wiedergabe auf dem Fernseher gestartet.':'Chromecast hat das Video angenommen ('+state+').');
      }
     }else if(state==='IDLE'&&(idle==='ERROR'||idle==='CANCELLED'||startPolls>=4&&!confirmed)){
@@ -149,7 +153,7 @@ const VelarisCastBridge=(()=>{
       try{
        const result=await call(account,'play',{deviceId:device.id,itemId:item.Id});
        if(closed)return;
-       selected=device.id;controls.hidden=false;confirmed=false;startPolls=0;
+       selected=device.id;controls.hidden=false;confirmed=false;localPaused=false;startPolls=0;
        info('Wiedergabeauftrag an '+(result.device||device.name)+' gesendet. Warte auf den Player-Status …');
        await updateStatus();
        if(!interval)interval=setInterval(updateStatus,5000);
