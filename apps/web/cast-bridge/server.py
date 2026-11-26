@@ -3,6 +3,7 @@
 All commands require a valid Jellyfin token; commands operate only on devices
 discovered by the bridge. Do not expose this service to the public internet.
 """
+import atexit
 import json
 import logging
 import os
@@ -24,7 +25,9 @@ JELLYFIN_CAST = os.getenv("JELLYFIN_CAST_URL", "http://192.168.0.74:8097").rstri
 KNOWN_HOSTS = [host.strip() for host in os.getenv("CAST_KNOWN_HOSTS", "").split(",") if host.strip()]
 _LOCK = threading.RLock()
 _DEVICES = {}
-_LAST_SCAN = 0.0
+_DISCOVERY_LOCK = threading.Lock()
+_DISCOVERY_BROWSER = None  # Keep Zeroconf alive while Chromecast sockets need mDNS.
+_DISCOVERY_READY = threading.Event()
 _ACTIVE = {}  # Device uuid -> Jellyfin user ID. Never persist credentials.
 _MAX_BODY = 4096
 
@@ -161,22 +164,68 @@ def check_cast_jellyfin_url():
         ) from exc
 
 
+def _remember_cast(cast):
+    """Receive devices asynchronously while keeping the live browser available."""
+    if cast.uuid is None:
+        return
+    with _LOCK:
+        _DEVICES[str(cast.uuid)] = cast
+    _DISCOVERY_READY.set()
+
+
+def _device_list():
+    with _LOCK:
+        return [
+            dict(id=k, name=cast.name, model=cast.cast_info.model_name or "")
+            for k, cast in _DEVICES.items()
+        ]
+
+
 def discover(force=False):
-    global _LAST_SCAN
-    with _LOCK:
-        if not force and time.monotonic() - _LAST_SCAN < 20:
-            return [dict(id=k, name=cast.name, model=cast.cast_info.model_name or "")
-                    for k, cast in _DEVICES.items()]
-        _LAST_SCAN = time.monotonic()
-    casts, browser = pychromecast.get_chromecasts(timeout=4, tries=1, known_hosts=KNOWN_HOSTS or None)
-    try:
-        fresh = {str(cast.uuid): cast for cast in casts if cast.uuid}
-    finally:
-        pychromecast.discovery.stop_discovery(browser)
-    with _LOCK:
-        _DEVICES.update(fresh)
-        return [dict(id=k, name=cast.name, model=cast.cast_info.model_name or "")
-                for k, cast in _DEVICES.items()]
+    """Start mDNS once and keep the browser alive for subsequent /play calls.
+
+    Stopping a CastBrowser immediately after listing devices shuts down its
+    Zeroconf event loop, which is still required by Chromecast.socket_client.
+    For additional devices, the long-lived browser delivers new callbacks.
+    """
+    global _DISCOVERY_BROWSER
+    if _DISCOVERY_BROWSER is None:
+        with _DISCOVERY_LOCK:
+            if _DISCOVERY_BROWSER is None:
+                _DISCOVERY_READY.clear()
+                # Non-blocking discovery callback updates the shared device map
+                # after the initial request as well.
+                _DISCOVERY_BROWSER = pychromecast.get_chromecasts(
+                    blocking=False, callback=_remember_cast,
+                    tries=1, timeout=8, known_hosts=KNOWN_HOSTS or None
+                )
+                LOG.info("Chromecast discovery started; mDNS kept alive for playback")
+    if not _DISCOVERY_READY.is_set():
+        _DISCOVERY_READY.wait(timeout=4)
+    return _device_list()
+
+
+def stop_discovery():
+    """Close sockets before shutting down the shared Zeroconf event loop."""
+    global _DISCOVERY_BROWSER
+    with _DISCOVERY_LOCK:
+        browser = _DISCOVERY_BROWSER
+        _DISCOVERY_BROWSER = None
+        with _LOCK:
+            casts = list(_DEVICES.values())
+            _DEVICES.clear()
+            _ACTIVE.clear()
+        for cast in casts:
+            try:
+                if cast.socket_client.is_alive():
+                    cast.disconnect(timeout=2)
+            except Exception:
+                LOG.debug("Cast socket cleanup failed", exc_info=True)
+        if browser is not None:
+            browser.stop_discovery()
+
+
+atexit.register(stop_discovery)
 
 
 def device_for(device_id, user_id, allow_new=False):
