@@ -110,7 +110,7 @@ function p9Play(item){
   };
  }
  if(typeof velarisInstallFullscreenUI==='function')velarisInstallFullscreenUI(root,video,item);
- const currentSession=session();const previous=document.querySelectorAll('#p9-player');for(const old of previous)if(old!==root){const previousVideo=old.querySelector('video');if(previousVideo){previousVideo.pause();previousVideo.removeAttribute('src');previousVideo.load()}old.remove()}let quality=prefs.quality,fallback=false,reloading=false,pendingPosition=(item.UserData?.PlaybackPositionTicks||0)/10000000,stopped=false,reported=0,playbackInfo=null,streamGeneration=0,sourceUrl='',hlsEngine=null,hlsError='',startupAt=0,infoReadyAt=0,mediaRequestedAt=0,manifestReadyAt=0,firstFrameReported=false,next=null,segments=[],skipSeen=new Set(),nextShown=false,countdown=null,lastNextCountdown=-1;
+ const currentSession=session();const previous=document.querySelectorAll('#p9-player');for(const old of previous)if(old!==root){const previousVideo=old.querySelector('video');if(previousVideo){previousVideo.pause();previousVideo.removeAttribute('src');previousVideo.load()}old.remove()}let quality=prefs.quality,fallback=false,reloading=false,pendingPosition=(item.UserData?.PlaybackPositionTicks||0)/10000000,stopped=false,reported=0,playbackInfo=null,streamGeneration=0,sourceUrl='',hlsEngine=null,hlsError='',startupAt=0,infoReadyAt=0,mediaRequestedAt=0,manifestReadyAt=0,firstFrameReported=false,next=null,segments=[],skipSeen=new Set(),nextShown=false,countdown=null,lastNextCountdown=-1,streamWatchdog=null,streamRetryCount=0;
  const isAlive=()=>root.isConnected&&!stopped&&session()?.userId===currentSession.userId&&session()?.url===currentSession.url;
  const playerMessage=message=>{if(isAlive())note.textContent=message};
  const report=async type=>{if(!isAlive()&&type!=='Stopped')return;const pos=Number.isFinite(video.currentTime)?video.currentTime:0;try{await api('/Sessions/Playing/'+type,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ItemId:item.Id,PositionTicks:Math.floor(pos*10000000),IsPaused:video.paused,MediaSourceId:playbackInfo?.MediaSources?.[0]?.Id,PlaySessionId:playbackInfo?.PlaySessionId,PlayMethod:playbackInfo?.MediaSources?.[0]?.TranscodingUrl?'Transcode':'DirectStream'})},currentSession)}catch{}};
@@ -126,6 +126,7 @@ function p9Play(item){
  const nativeHls=!!video.canPlayType('application/vnd.apple.mpegurl')||!!video.canPlayType('application/x-mpegURL');
  const mseHls=()=>!!(window.Hls&&typeof window.Hls.isSupported==='function'&&window.Hls.isSupported());
  const resetEngine=()=>{
+  if(streamWatchdog!==null){clearTimeout(streamWatchdog);streamWatchdog=null}
   if(hlsEngine){hlsEngine.destroy();hlsEngine=null}
   video.pause();
   video.removeAttribute('src');
@@ -173,11 +174,44 @@ function p9Play(item){
    video.load();
    tryPlay();
   }
+  // Safari can remain stuck on a spinner without emitting a video error.
+  // Try the negotiated Jellyfin media source after a real startup stall.
+  const activeGeneration=streamGeneration;
+  streamWatchdog=setTimeout(async()=>{
+   streamWatchdog=null;
+   if(!isAlive()||activeGeneration!==streamGeneration||video.readyState>=2||firstFrameReported)return;
+   if(streamRetryCount>=2){
+    retry.hidden=false;
+    playerMessage('Stream reagiert nicht. Tippe auf „Erneut versuchen“ oder prüfe Jellyfin.');
+    return;
+   }
+   streamRetryCount++;
+   const pos=video.currentTime||pendingPosition;
+   try{
+    let media=playbackInfo;
+    if(!media){
+     media=await p9Warmup(item,currentSession,quality);
+     if(!isAlive()||activeGeneration!==streamGeneration||video.readyState>=2)return;
+     playbackInfo=media;
+    }
+    const negotiated=p9Stream(item,quality,currentSession,media,false);
+    const useMp4=streamRetryCount>1||negotiated===sourceUrl;
+    fallback=useMp4;
+    playerMessage(useMp4?'MP4-Ersatzstream wird geladen …':'Jellyfin-Stream erneut verbinden …');
+    activateStream(useMp4?p9Stream(item,quality,currentSession,media,true):negotiated,pos);
+   }catch(error){
+    if(!isAlive()||activeGeneration!==streamGeneration)return;
+    fallback=true;
+    playerMessage('Jellyfin-Ersatzstream wird geladen …');
+    activateStream(p9Stream(item,quality,currentSession,playbackInfo,true),pos);
+   }
+  },8500);
  };
  const source=async(position=0)=>{
   if(!isAlive())return;
   startupAt=performance.now();infoReadyAt=0;mediaRequestedAt=0;manifestReadyAt=0;firstFrameReported=false;
   const generation=++streamGeneration;
+  streamRetryCount=0;
   pendingPosition=Math.max(0,position);
   reloading=true;
   retry.hidden=true;
@@ -231,6 +265,7 @@ function p9Play(item){
  const reportStartup=()=>{
   if(!isAlive()||firstFrameReported||!startupAt)return;
   firstFrameReported=true;
+  if(streamWatchdog!==null){clearTimeout(streamWatchdog);streamWatchdog=null}
   const finish=performance.now();
   const sec=ms=>(Math.max(0,ms)/1000).toFixed(1);
   const info=infoReadyAt||mediaRequestedAt||finish;
@@ -247,7 +282,7 @@ function p9Play(item){
    transport:hlsEngine?'hls.js':nativeHls?'native':'html5'
   });
  };
- video.addEventListener('playing',()=>{report('')});
+ video.addEventListener('playing',()=>{if(video.readyState>=2&&streamWatchdog!==null){clearTimeout(streamWatchdog);streamWatchdog=null}report('')});
  // loadedmetadata is not first-frame readiness; video "playing" can fire
  // before video data appears. The playing event is used only as a fallback.
  video.addEventListener('loadeddata',reportStartup,{once:true});
@@ -260,6 +295,7 @@ function p9Play(item){
  root.querySelector('#p9-forward').onclick=()=>{video.currentTime=Math.min(Number.isFinite(video.duration)?video.duration:Infinity,video.currentTime+10)};
  root.querySelector('#p9-toggle').onclick=()=>video.paused?video.play().catch(()=>{}):video.pause();
  retry.onclick=()=>{
+  streamRetryCount=0;
   if(video.readyState>=2 && video.paused){tryPlay();return}
   void source(video.currentTime||pendingPosition);
  };
