@@ -25,11 +25,13 @@ Die mobilen, TV- und Web-Anwendungen liegen in einem Monorepo, bleiben aber eige
 | --- | --- |
 | Velaris TV | **2.2.1** (`versionCode` 11) – Design-Synchronisierung |
 | Velaris Smartphone | **2.2.1** (Expo, Android `versionCode` 11) – Design-Synchronisierung |
-| Velaris Web und iPhone-PWA | **2.2.1** (responsive Handy- und Desktop-Layout) |
+| Velaris Web und iPhone-PWA | **3.0.0 Stable** (gemeinsamer Web/PWA-Release vom 26.11.2026) |
 
 **Layout-Familien:** Smartphone-App und iPhone-PWA nutzen das Mobile Design mit vier Bottom-Tabs und einer eigenen Kategorienauswahl. Desktop-Web und Android TV nutzen das TV/Desktop Design mit horizontaler Kategorienavigation. Der gemeinsame Vertrag liegt in [`brand.json`](packages/velaris-design/brand.json). Die [Design-Synchronisierung 2.2.1](docs/DESIGN_SYNC_2_2_1.md) dokumentiert den historischen Ausgangsstand vor dem neuen Mobile-Navigationspass. Pixelgenaue Gerätevergleiche, native Builds und ein erneutes PWA-Deployment stehen noch aus.
 
 Die Versionsnummern sind unabhängig von einem signierten oder ausgerollten Release. Mobile benötigt einen neuen EAS-Build, Web ein neues Deployment und TV eine signierte APK für produktive Updates.
+
+**Web/PWA Stable 3.0.0:** iPhone-PWA-Wiedergabe und Chromecast wurden nach den Fixes auf der ZimaOS-Installation bestätigt. Siehe die [Release Notes](apps/web/RELEASE_3.0.0.md). Diese Versionsvergabe betrifft **nur** `apps/web`; TV und native Smartphone-App bleiben bei ihren eigenen Versionen.
 
 ## Design – zwei Layout-Familien
 

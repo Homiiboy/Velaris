@@ -29,20 +29,20 @@ x-casaos:
   scheme: http
   icon: https://raw.githubusercontent.com/Homiiboy/Velaris/main/assets/logos/NewAppIcon.png
   title:
-    en_US: Velaris 2.0
-    de_DE: Velaris 2.0
+    en_US: Velaris 3.0
+    de_DE: Velaris 3.0
   tagline:
     en_US: Your Jellyfin streaming experience
     de_DE: Deine Jellyfin-Streaming-App
   description:
-    en_US: Velaris Web 2.1.0 with category color branding.
-    de_DE: Velaris Web 2.1.0 mit Kategorie-Farbgestaltung.
+    en_US: Velaris Web & PWA Stable 3.0.0.
+    de_DE: Velaris Web & PWA Stable 3.0.0.
   author: Velaris
   developer: Velaris
   category: Entertainment
   architectures:
     - amd64
     - arm64
-  version: "2.1.0"
-  update_at: "2026-11-14"
+  version: "3.0.0"
+  update_at: "2026-11-26"
   repo: https://github.com/Homiiboy/Velaris
