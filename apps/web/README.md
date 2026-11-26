@@ -1,7 +1,16 @@
 # Velaris Web (iPhone PWA)
 
-**Aktuelle Quellcode-Version: 2.2.1.** Mediennavigation auf Web/Desktop oben unter dem Header, auf iPhone weiterhin unten. Sämtliche vorhandenen Kategorien erhalten eigene VELARIS-Überschriften, Akzentfarben, Fokusränder und Fortschrittsanzeigen. Kategorie-Farbpass: Schwarz bleibt als Grundfläche, aktive Kategorie-Akzente sind Violett/Grün/Eisblau/Orange/Gelb. YouTube-Rot ist für die künftige Integration reserviert. Die Versionsangabe liegt im PWA-Manifest und HTML-Metadaten; der Service-Worker-Cache wird mit einer neuen Kennung aktualisiert. Die Web-Version wird beim nächsten Deployment sichtbar. Browser/iPhone-Tests bleiben erforderlich.
+**Aktuelle stabile Version: 3.0.0 (Web und iPhone-PWA, 26.11.2026).** Mediennavigation auf Web/Desktop oben unter dem Header, auf iPhone weiterhin unten. Sämtliche vorhandenen Kategorien erhalten eigene VELARIS-Überschriften, Akzentfarben, Fokusränder und Fortschrittsanzeigen. Kategorie-Farbpass: Schwarz bleibt als Grundfläche, aktive Kategorie-Akzente sind Violett/Grün/Eisblau/Orange/Gelb. YouTube-Rot ist für die künftige Integration reserviert. Die Versionsangabe liegt im PWA-Manifest und HTML-Metadaten; der Service-Worker-Cache wird mit einer neuen Kennung aktualisiert. Die Web-Version wird beim nächsten Deployment sichtbar. Browser/iPhone-Tests bleiben erforderlich.
 Eigenständige installierbare Web-App im gemeinsamen Velaris-Monorepo. Keine Apple-Developer-Mitgliedschaft oder kostenpflichtige Domain nötig.
+
+## Stable Release 3.0.0
+
+- **Gilt für:** Desktop-Web und installierte iPhone-PWA aus `apps/web`. Die Android-TV-APK und die native Smartphone-App werden unabhängig versioniert.
+- **Abnahme:** iPhone-PWA-Streaming und Chromecast-Wiedergabe wurden nach den Fixes vom 26.11.2026 auf ZimaOS vom Anwender erfolgreich getestet. Das bedeutet keine Garantie für andere Fernseher, Codecs oder Netzwerkkonfigurationen.
+- **Player:** bewährte Jellyfin-`PlaybackInfo`-Aushandlung vor dem Streamstart; kein spekulativer Safari-HLS-Start.
+- **Cast Bridge:** langlebige Chromecast-Erkennung/Zeroconf während der Übertragung, passende Jellyfin-Medienquellen-Aushandlung.
+- **PWA-Cache:** neue Service-Worker-Cachekennung für 3.0.0; gespeicherte Jellyfin-Sitzungen werden nicht verändert.
+- **Release-Dokumentation:** [RELEASE_3.0.0.md](RELEASE_3.0.0.md). Der Quellcode-/CI-Stand ist Stable; die Installation auf ZimaOS benötigt ein separates Deployment.
 
 ## Schnellstart
 Im Ordner `apps/web`:
