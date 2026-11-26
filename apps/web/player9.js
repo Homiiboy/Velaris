@@ -91,7 +91,7 @@ function p9Play(item){
  const isIos=/iPad|iPhone|iPod/i.test(navigator.userAgent||'');
  // Non-Chrome clients can use the authenticated Cast Bridge instead of the SDK.
   if(!p9CastClientEligible())castButton.dataset.bridge='1'
- if(typeof velarisInstallFullscreenUI==='function')velarisInstallFullscreenUI(root,video,item);
+ if(typeof velarisInstallFullscreenUI==='function')try{velarisInstallFullscreenUI(root,video,item)}catch(error){console.warn('Velaris optional player controls unavailable',error)}
  if(typeof velarisInstallDesktopPlayer==='function')velarisInstallDesktopPlayer(root,video,item);
  const currentSession=session();const previous=document.querySelectorAll('#p9-player');for(const old of previous)if(old!==root){const previousVideo=old.querySelector('video');if(previousVideo){previousVideo.pause();previousVideo.removeAttribute('src');previousVideo.load()}old.remove()}let startupTimer=null;let stage='Initialisierung',stageError='',startedFallback=false;let castCtrl=null;let quality=prefs.quality,fallback=false,reloading=false,pendingPosition=(item.UserData?.PlaybackPositionTicks||0)/10000000,stopped=false,reported=0,playbackInfo=null,streamGeneration=0,sourceUrl='',hlsEngine=null,hlsError='',startupAt=0,infoReadyAt=0,mediaRequestedAt=0,manifestReadyAt=0,firstFrameReported=false,next=null,segments=[],skipSeen=new Set(),nextShown=false,countdown=null,lastNextCountdown=-1;
  const isAlive=()=>root.isConnected&&!stopped&&session()?.userId===currentSession.userId&&session()?.url===currentSession.url;
