@@ -473,6 +473,21 @@ class MainActivity : Activity() {
                 val sciFiF=async("/Users/$userId/Items?Recursive=true&Limit=18&Genres=Science%20Fiction&IncludeItemTypes=Movie,Series&Fields=PrimaryImageAspectRatio")
                 val replayF=async("/Users/$userId/Items?Recursive=true&Limit=18&SortBy=DatePlayed&SortOrder=Descending&IncludeItemTypes=Movie,Series&Filters=IsPlayed&Fields=PrimaryImageAspectRatio")
                 val watchedF=async("/Users/$userId/Items?Recursive=true&Limit=1&SortBy=DatePlayed&SortOrder=Descending&IncludeItemTypes=Movie,Series&Filters=IsPlayed&Fields=PrimaryImageAspectRatio")
+                // First useful content should not wait for all ten independent
+                // recommendation queries. Render the latest items as soon as possible.
+                val quickLatest=runCatching {
+                    latestF.get(1800,java.util.concurrent.TimeUnit.MILLISECONDS)
+                }.getOrDefault(emptyList())
+                if(quickLatest.isNotEmpty())runOnUiThread {
+                    if(!destroyed && homeRoot===requestRoot && requestRoot.isAttachedToWindow) {
+                        requestRoot.animate().cancel()
+                        requestRoot.removeAllViews()
+                        requestRoot.tag="velaris_fast_home_preview"
+                        addHeroCarousel(quickLatest.take(5))
+                        addRow("Kürzlich hinzugefügt",quickLatest.take(12))
+                        requestRoot.alpha=1f
+                    }
+                }
                 val resume=resumeF.get(); val latest=latestF.get(); val favorites=favoritesF.get()
                 val recommended=recommendedF.get(); val topTen=topTenF.get(); val action=actionF.get()
                 val comedy=comedyF.get(); val sciFi=sciFiF.get(); val replay=replayF.get(); val watched=watchedF.get()
@@ -484,7 +499,10 @@ class MainActivity : Activity() {
                     if(destroyed || homeRoot!==requestRoot || !requestRoot.isAttachedToWindow)
                         return@runOnUiThread
                     requestRoot.animate().cancel()
-                    requestRoot.alpha=0f
+                    val hadPreview=requestRoot.tag=="velaris_fast_home_preview"
+                    val focusedTag=if(hadPreview)requestRoot.findFocus()?.tag else null
+                    if(!hadPreview)requestRoot.alpha=0f
+                    requestRoot.tag=null
                     requestRoot.removeAllViews()
                     addHeroCarousel((latest+recommended).distinctBy{it.optString("Id")}.take(5))
                     val randomButton=actionButton("🎲  Zufälliger Film",false){playRandomMovie()}
@@ -529,7 +547,12 @@ class MainActivity : Activity() {
                             }
                         }
                     }
-                    requestRoot.animate().alpha(1f).setDuration(280).start()
+                    if(!hadPreview)requestRoot.animate().alpha(1f).setDuration(280).start()
+                    else requestRoot.alpha=1f
+                    if(hadPreview&&focusedTag is String) {
+                        requestRoot.post { if(requestRoot.isAttachedToWindow)
+                            requestRoot.findViewWithTag<View>(focusedTag)?.requestFocus() }
+                    }
                     val focusId=restoreMediaFocusId
                     if(focusId.isNotBlank()) {
                         restoreMediaFocusId=""
