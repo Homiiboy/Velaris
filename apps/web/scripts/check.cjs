@@ -517,3 +517,19 @@ assert(stylesheet.includes('.p9-player .vfc-top .vfc-cast')&&stylesheet.includes
 assert(stylesheet.includes('stroke:#fff!important'),
  'Cast icon must remain visible even if inherited theme changes');
 console.log('Velaris Web: violet Chromecast button visibility checks passed.');
+
+
+/* Cast controls must remain optional, and Safari must escape silent HLS hangs. */
+assert(classic.includes("streamWatchdog=setTimeout(async()=>"),
+ 'Safari player needs a startup stall watchdog');
+assert(classic.includes("streamRetryCount>=2"),
+ 'Safari player must stop automatic retry loops');
+assert(classic.includes("const negotiated=p9Stream(item,quality,currentSession,media,false)"),
+ 'HLS fallback must use Jellyfin-negotiated MediaSource');
+assert(classic.includes("activateStream(useMp4?p9Stream(item,quality,currentSession,media,true):negotiated,pos)"),
+ 'Safari fallback must try MP4 if the original stream URL still stalls');
+assert(classic.includes("if(streamWatchdog!==null){clearTimeout(streamWatchdog);streamWatchdog=null}"),
+ 'Clear timeout when playback succeeds or player closes');
+for(const src of [classic,player])assert(src.includes("try{velarisInstallFullscreenUI(root,video,item)}catch(error)"),
+ 'Optional Cast/fullscreen chrome must never block player startup');
+console.log('Velaris Web: Safari stall recovery and optional Cast controls verified.');
