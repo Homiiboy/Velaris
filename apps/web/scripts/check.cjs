@@ -502,6 +502,6 @@ assert(fullscreenCast.includes('class="vfc-cast"'), 'Fullscreen player needs Cas
 assert(fullscreenCast.includes('VelarisCastBridge.open(item,session()'), 'Fullscreen Cast button must open bridge');
 assert(bridgeUi.includes('const hasMedia=!!item?.Id'), 'Cast dialog must allow home device discovery');
 assert(bridgeUi.includes('if(!hasMedia){'), 'Home device selection must not initiate playback');
-assert(bridgeUi.includes("if(state==='PLAYING'&&typeof onStarted==='function')onStarted();"),
+assert(bridgeUi.includes("if(state==='PLAYING'&&!localPaused)")&&bridgeUi.includes("if(typeof onStarted==='function')onStarted();"),
  'Local video should pause only when TV reports successful playback');
 console.log('Velaris Web: Cast access on Home and player verified.');
