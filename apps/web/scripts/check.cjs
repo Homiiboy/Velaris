@@ -475,21 +475,19 @@ for(const source of [player,classic]){
 console.log('Velaris Web: poster and player return performance guardrails passed.');
 
 
-/* Safari quick start must begin playback without awaiting PlaybackInfo,
- * while keeping the original negotiated path for browsers and fallback. */
-const safariSourceStart=classic.indexOf('const source=async(position=0)=>');
-const safariFastStart=classic.indexOf('if(nativeHls){',safariSourceStart);
-const safariNegotiatedStart=classic.indexOf('try{media=await p9Warmup(item,currentSession,quality)}',safariSourceStart);
-assert(safariSourceStart>=0&&safariFastStart>safariSourceStart&&safariFastStart<safariNegotiatedStart,
- 'Safari native HLS must be attempted before awaiting Jellyfin PlaybackInfo');
-const safariFastPath=classic.slice(safariFastStart,safariNegotiatedStart);
-assert(safariFastPath.includes('activateStream(p9Stream(item,quality,currentSession,null),pendingPosition)'),
- 'Native HLS stream must start directly inside play gesture');
-assert(safariFastPath.includes('void p9Warmup(item,currentSession,quality).then(info=>{'),
- 'Jellyfin PlaybackInfo must be negotiated in the background');
-assert(safariFastPath.includes('playbackInfo=info;')&&safariFastPath.includes('return;'),
- 'Background metadata must not force an unnecessary stream restart');
-console.log('Velaris Web: Safari immediate HLS startup regression passed.');
+/* Playback safety: iPhone Safari must obtain a Jellyfin-negotiated source,
+ * not build a blind master.m3u8 URL before PlaybackInfo is returned. */
+const safariStart=classic.indexOf('const source=async(position=0)=>');
+const safariNegotiation=classic.indexOf('try{media=await p9Warmup(item,currentSession,quality)}',safariStart);
+const safariActivation=classic.indexOf('activateStream(p9Stream(item,quality,currentSession,media,fallback),pendingPosition)',safariStart);
+assert(safariStart>=0&&safariNegotiation>safariStart&&safariActivation>safariNegotiation,
+ 'iPhone player must negotiate Jellyfin PlaybackInfo before setting video source');
+const safariSourceSection=classic.slice(safariStart,classic.indexOf('const doClose=',safariStart));
+assert(!safariSourceSection.includes("activateStream(p9Stream(item,quality,currentSession,null)"),
+ 'Do not start an unnegotiated Safari HLS playlist');
+assert(safariSourceSection.includes("fallback=!nativeHls&&!mseHls()"),
+ 'Keep working browser-compatible MP4 fallback');
+console.log('Velaris Web: negotiated Safari playback regression passed.');
 
 
 /* PWA Cast access from Home, classic Safari video player and fullscreen chrome. */
@@ -519,17 +517,7 @@ assert(stylesheet.includes('stroke:#fff!important'),
 console.log('Velaris Web: violet Chromecast button visibility checks passed.');
 
 
-/* Cast controls must remain optional, and Safari must escape silent HLS hangs. */
-assert(classic.includes("streamWatchdog=setTimeout(async()=>"),
- 'Safari player needs a startup stall watchdog');
-assert(classic.includes("streamRetryCount>=2"),
- 'Safari player must stop automatic retry loops');
-assert(classic.includes("const negotiated=p9Stream(item,quality,currentSession,media,false)"),
- 'HLS fallback must use Jellyfin-negotiated MediaSource');
-assert(classic.includes("activateStream(useMp4?p9Stream(item,quality,currentSession,media,true):negotiated,pos)"),
- 'Safari fallback must try MP4 if the original stream URL still stalls');
-assert(classic.includes("if(streamWatchdog!==null){clearTimeout(streamWatchdog);streamWatchdog=null}"),
- 'Clear timeout when playback succeeds or player closes');
+/* Optional Cast chrome must not interrupt playback startup. */
 for(const src of [classic,player])assert(src.includes("try{velarisInstallFullscreenUI(root,video,item)}catch(error)"),
  'Optional Cast/fullscreen chrome must never block player startup');
-console.log('Velaris Web: Safari stall recovery and optional Cast controls verified.');
+console.log('Velaris Web: optional Cast controls verified.');
