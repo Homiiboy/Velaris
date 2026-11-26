@@ -12,7 +12,7 @@ const VelarisCastBridge=(()=>{
   return json;
  }
  const icon='<svg class="velaris-cast-icon" viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M2 7V4a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2h-7"/><path d="M2 13a9 9 0 0 1 9 9M2 18a4 4 0 0 1 4 4"/><path d="M2 22h.01"/></svg>';
- function open(item,account){
+ function open(item,account,onStarted){
   if(!account?.token)return;
   const hasMedia=!!item?.Id;
   document.getElementById('velaris-cast-dialog')?.remove();
@@ -98,6 +98,7 @@ const VelarisCastBridge=(()=>{
     if(state==='PLAYING'||state==='PAUSED'||state==='BUFFERING'){
      if(!confirmed){
       confirmed=true;
+      if(state==='PLAYING'&&typeof onStarted==='function')onStarted();
       info(state==='PLAYING'?'Wiedergabe auf dem Fernseher gestartet.':'Chromecast hat das Video angenommen ('+state+').');
      }
     }else if(state==='IDLE'&&(idle==='ERROR'||idle==='CANCELLED'||startPolls>=4&&!confirmed)){
