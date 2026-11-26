@@ -4,7 +4,7 @@ function velarisInstallFullscreenUI(root, video, item) {
  if (!root || !video || !window.matchMedia('(max-width:849px), (pointer:coarse) and (max-height:600px)').matches) return;
  const controls = document.createElement('div');
  controls.className = 'velaris-fullscreen-chrome';
- controls.innerHTML = '<div class="vfc-top"><button type="button" class="vfc-back" aria-label="Player schließen">‹</button><div class="vfc-heading"></div><button type="button" class="vfc-immersive" aria-label="Vollbild einschalten">⛶</button></div>'+
+ controls.innerHTML = '<div class="vfc-top"><button type="button" class="vfc-back" aria-label="Player schließen">‹</button><div class="vfc-heading"></div><button type="button" class="vfc-cast" aria-label="Auf Chromecast abspielen" title="Chromecast">'+(typeof VelarisCastBridge!=='undefined'?VelarisCastBridge.icon:'▣')+'</button><button type="button" class="vfc-immersive" aria-label="Vollbild einschalten">⛶</button></div>'+
   '<div class="vfc-center"><button type="button" class="vfc-rewind" aria-label="10 Sekunden zurück">↶ 10</button><button type="button" class="vfc-play" aria-label="Wiedergabe anhalten oder starten">▶</button><button type="button" class="vfc-forward" aria-label="10 Sekunden vor">10 ↷</button></div>'+
   '<div class="vfc-bottom"><input type="range" class="vfc-seek" aria-label="Wiedergabeposition" min="0" max="1000" value="0" step="1"><div class="vfc-timing"><span class="vfc-current">0:00</span><span class="vfc-total">0:00</span></div><div class="vfc-actions"><button type="button" class="vfc-episodes" hidden>Episoden</button><button type="button" class="vfc-tracks">Audio / Untertitel</button><button type="button" class="vfc-collapse">Steuerung ausblenden</button></div></div>';
  root.classList.add('vfc-enabled');
@@ -67,6 +67,11 @@ function velarisInstallFullscreenUI(root, video, item) {
   if(enabled&&root.requestFullscreen&&document.fullscreenEnabled)root.requestFullscreen().catch(()=>{});
   if(enabled&&screen.orientation?.lock)screen.orientation.lock('landscape').catch(()=>{});
   else if(!enabled){if(document.fullscreenElement===root)document.exitFullscreen?.().catch(()=>{});if(screen.orientation?.unlock)try{screen.orientation.unlock()}catch{}}
+  display();
+ };
+ q('.vfc-cast').onclick=()=>{
+  if(typeof VelarisCastBridge==='undefined'||!session())return;
+  VelarisCastBridge.open(item,session(),()=>{if(root.isConnected)video.pause()});
   display();
  };
  q('.vfc-collapse').onclick=hide;
