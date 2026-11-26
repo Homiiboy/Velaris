@@ -27,6 +27,14 @@ import java.util.concurrent.Executors
 @UnstableApi
 class MainActivity : Activity() {
     private val prefs by lazy { getSharedPreferences("velaris_tv", MODE_PRIVATE) }
+    private val deviceId by lazy {
+        android.provider.Settings.Secure.getString(contentResolver, android.provider.Settings.Secure.ANDROID_ID)
+            ?.takeIf { it.isNotBlank() }?.let { "velaris-tv-$it" }
+            ?: prefs.getString("device_id", null) ?: java.util.UUID.randomUUID().toString().also {
+                prefs.edit().putString("device_id", it).apply()
+            }
+    }
+    private val clientVersion by lazy { packageManager.getPackageInfo(packageName, 0).versionName ?: "unknown" }
     private val io = Executors.newFixedThreadPool(6)
     // Image decoding and downloading must never block Jellyfin catalog requests.
     private val imageIo = Executors.newFixedThreadPool(4)
@@ -189,7 +197,7 @@ class MainActivity : Activity() {
         if (username.isBlank()) return toast("Benutzername eingeben")
         io.execute {
             try {
-                val body = JSONObject().put("Username", username).put("Pw", password).toString()
+                val body = JSONObject().put("Username", username.trim()).put("Pw", password).toString()
                 val json = request("/Users/AuthenticateByName", "POST", body, false)
                 token = json.getString("AccessToken")
                 userId = json.getJSONObject("User").getString("Id")
@@ -2677,13 +2685,22 @@ class MainActivity : Activity() {
         try {
             conn.requestMethod=method; conn.connectTimeout=8000; conn.readTimeout=12000
             conn.setRequestProperty("Accept","application/json")
-            conn.setRequestProperty("Authorization", """MediaBrowser Client="Velaris TV", Device="Android TV", DeviceId="velaris-tv", Version="1.0.0"${if(auth && token.isNotBlank()) ", Token=\"$token\"" else ""}""")
+            conn.setRequestProperty("Authorization", """MediaBrowser Client="Velaris TV", Device="Android TV", DeviceId="$deviceId", Version="$clientVersion"${if(auth && token.isNotBlank()) ", Token=\"$token\"" else ""}""")
             if(body!=null){ conn.doOutput=true; conn.setRequestProperty("Content-Type","application/json"); conn.outputStream.use{it.write(body.toByteArray())} }
             val code=conn.responseCode
             val text=(if(code in 200..299) conn.inputStream else conn.errorStream)?.bufferedReader()?.use{it.readText()}.orEmpty()
-            if(code == 401 || code == 403) throw SecurityException("Sitzung abgelaufen")
+            val isLogin = path == "/Users/AuthenticateByName"
+            if (isLogin || code !in 200..299) {
+                android.util.Log.i("VelarisAuth", "$method ${if (isLogin) "AuthenticateByName" else "API"} HTTP $code (auth=$auth)")
+            }
+            if (isLogin && code == 401) throw SecurityException("Anmeldung von Jellyfin abgelehnt (HTTP 401). Benutzername und Passwort prüfen.")
+            if (isLogin && code == 403) throw SecurityException("Jellyfin verweigert die Anmeldung (HTTP 403). Benutzer- und Gerätefreigabe prüfen.")
+            if(code == 401 || code == 403) throw SecurityException("Sitzung abgelaufen oder Zugriff verweigert (HTTP $code)")
             if(code !in 200..299) throw IllegalStateException("Serverfehler HTTP $code")
             return if(text.trim().startsWith("[")) JSONObject().put("array",org.json.JSONArray(text)) else if(text.isBlank()) JSONObject() else JSONObject(text)
+        } catch (e: Exception) {
+            android.util.Log.w("VelarisAuth", "$method ${if (path == "/Users/AuthenticateByName") "AuthenticateByName" else "API"} failed: ${e.javaClass.simpleName}")
+            throw e
         } finally { conn.disconnect() }
     }
 
@@ -2697,7 +2714,7 @@ class MainActivity : Activity() {
         }
         root.addView(TextView(this).apply{text="Einstellungen";textSize=38f;setTextColor(Color.WHITE);typeface=Typeface.DEFAULT_BOLD})
         root.addView(TextView(this).apply{
-            text="Velaris TV · Version 1.0.0"
+            text="Velaris TV · Version $clientVersion"
             textSize=16f;setTextColor(Color.GRAY)
             setPadding(0,dp(4),0,dp(24))
         })
