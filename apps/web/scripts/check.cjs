@@ -212,7 +212,7 @@ console.log('Velaris Web: Google Cast sender and local HLS syntax checks passed.
  * manual start when native autoplay is delayed or blocked. */
 for(const token of [
  "if(!p9CastClientEligible())",
- "castButton.hidden=true",
+ "castButton.dataset.bridge='1'",
  "if(isIos){retry.hidden=false;retry.textContent='▶ Wiedergabe starten'}",
  "startupTimer=setTimeout(",
  "if(isIos&&sourceUrl&&video.paused){",
@@ -384,7 +384,7 @@ for(const token of [
  "void p9Warmup(item,currentSession,quality).then(info=>{",
  "playbackInfo=info;",
  "p9Stream(item,quality,currentSession,info,true)",
- "castButton.style.display='none'"
+ "if(!p9CastClientEligible())castButton.dataset.bridge='1'"
 ])assert(player.includes(token),'iOS Jellyfin negotiated fallback missing: '+token);
 const safariSource=player.slice(player.indexOf('if(isIos&&nativeHls){',player.indexOf('const source=async')),player.indexOf('\n  clearStartupTimer();',player.indexOf('if(isIos&&nativeHls){',player.indexOf('const source=async'))+10));
 assert(!safariSource.includes('await '),'Native iOS player must remain gesture synchronous');
@@ -490,3 +490,18 @@ assert(safariFastPath.includes('void p9Warmup(item,currentSession,quality).then(
 assert(safariFastPath.includes('playbackInfo=info;')&&safariFastPath.includes('return;'),
  'Background metadata must not force an unnecessary stream restart');
 console.log('Velaris Web: Safari immediate HLS startup regression passed.');
+
+
+/* PWA Cast access from Home, classic Safari video player and fullscreen chrome. */
+const fullscreenCast=fs.readFileSync(path.join(root,'fullscreen-controls.js'),'utf8');
+assert(runtime.includes('id="velaris-cast-home"'), 'Home header needs Chromecast control');
+assert(runtime.includes('VelarisCastBridge.open(null,session())'), 'Home must open cast discovery without media');
+assert(classic.includes('id="p9-bridge-cast"'), 'Safari player needs Chromecast control');
+assert(classic.includes('VelarisCastBridge.open(item,session()'), 'Safari player must pass selected media');
+assert(fullscreenCast.includes('class="vfc-cast"'), 'Fullscreen player needs Cast button');
+assert(fullscreenCast.includes('VelarisCastBridge.open(item,session()'), 'Fullscreen Cast button must open bridge');
+assert(bridgeUi.includes('const hasMedia=!!item?.Id'), 'Cast dialog must allow home device discovery');
+assert(bridgeUi.includes('if(!hasMedia){'), 'Home device selection must not initiate playback');
+assert(bridgeUi.includes("if(state==='PLAYING'&&typeof onStarted==='function')onStarted();"),
+ 'Local video should pause only when TV reports successful playback');
+console.log('Velaris Web: Cast access on Home and player verified.');
