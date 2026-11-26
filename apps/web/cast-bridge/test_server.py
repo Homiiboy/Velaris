@@ -4,6 +4,7 @@ from pathlib import Path
 import sys
 import types
 import unittest
+from unittest.mock import patch
 
 sys.modules.setdefault("pychromecast", types.ModuleType("pychromecast"))
 spec = importlib.util.spec_from_file_location(
@@ -71,6 +72,76 @@ class CastPlaybackTests(unittest.TestCase):
         }]}
         with self.assertRaisesRegex(RuntimeError, "kein Transcoding"):
             bridge.cast_media_source(ITEM, TOKEN, info)
+
+
+
+class CastDiscoveryLifecycleTests(unittest.TestCase):
+    """Regression for stopped Zeroconf loop before /play."""
+
+    def setUp(self):
+        bridge.stop_discovery()
+
+    def tearDown(self):
+        bridge.stop_discovery()
+
+    def test_keeps_browser_alive_and_reuses_cast_instances(self):
+        class FakeCast:
+            uuid = "device-uuid"
+            name = "Wohnzimmer TV"
+            cast_info = types.SimpleNamespace(model_name="Google TV")
+            socket_client = types.SimpleNamespace(is_alive=lambda: False)
+
+        class FakeBrowser:
+            def __init__(self):
+                self.stop_count = 0
+
+            def stop_discovery(self):
+                self.stop_count += 1
+
+        browser = FakeBrowser()
+        cast = FakeCast()
+        calls = []
+
+        def mock_discover(**kwargs):
+            calls.append(kwargs)
+            self.assertFalse(kwargs["blocking"])
+            self.assertIsNotNone(kwargs["callback"])
+            kwargs["callback"](cast)
+            return browser
+
+        with patch.object(bridge.pychromecast, "get_chromecasts", mock_discover, create=True):
+            first = bridge.discover(force=True)
+            second = bridge.discover(force=True)
+            self.assertEqual(len(calls), 1, "Repeat device listing must reuse browser")
+            self.assertEqual(first, second)
+            self.assertEqual(first[0]["name"], "Wohnzimmer TV")
+            self.assertEqual(browser.stop_count, 0, "Never stop Zeroconf before cast.wait")
+            self.assertIs(bridge.device_for("device-uuid", "profile", allow_new=True), cast)
+
+        bridge.stop_discovery()
+        self.assertEqual(browser.stop_count, 1, "Stop mDNS when the bridge shuts down")
+
+    def test_browser_callback_tracks_devices_discovered_later(self):
+        class FakeBrowser:
+            def stop_discovery(self):
+                pass
+
+        callbacks = []
+
+        def mock_discover(**kwargs):
+            callbacks.append(kwargs["callback"])
+            return FakeBrowser()
+
+        with patch.object(bridge.pychromecast, "get_chromecasts", mock_discover, create=True):
+            with patch.object(bridge._DISCOVERY_READY, "wait", return_value=False):
+                self.assertEqual(bridge.discover(force=True), [])
+            cast = types.SimpleNamespace(
+                uuid="later-device", name="Schlafzimmer",
+                cast_info=types.SimpleNamespace(model_name="Chromecast"),
+                socket_client=types.SimpleNamespace(is_alive=lambda: False),
+            )
+            callbacks[0](cast)
+            self.assertEqual(bridge.discover(force=True)[0]["id"], "later-device")
 
 
 if __name__ == "__main__":
