@@ -11,7 +11,10 @@ const VelarisCastBridge=(()=>{
   if(!response.ok)throw Error(json.error||'Cast Bridge HTTP '+response.status);
   return json;
  }
- function open(item,account){
+ const icon='<svg class="velaris-cast-icon" viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M2 7V4a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2h-7"/><path d="M2 13a9 9 0 0 1 9 9M2 18a4 4 0 0 1 4 4"/><path d="M2 22h.01"/></svg>';
+ function open(item,account,onStarted){
+  if(!account?.token)return;
+  const hasMedia=!!item?.Id;
   document.getElementById('velaris-cast-dialog')?.remove();
   // Keep this modal independently positioned even if an older PWA CSS file
   // is cached by iOS Safari. Scoped styles are installed once.
@@ -55,8 +58,8 @@ const VelarisCastBridge=(()=>{
   overlay.id='velaris-cast-dialog';
   overlay.className='velaris-cast-overlay';
   overlay.innerHTML='<section class="velaris-cast-panel" role="dialog" aria-modal="true" aria-labelledby="velaris-cast-title">'
-   +'<header><h2 id="velaris-cast-title">Auf Chromecast abspielen</h2><button type="button" id="velaris-cast-close" class="secondary">Schließen</button></header>'
-   +'<p class="hint">Wähle einen Chromecast in deinem Heimnetz. Der Fernseher braucht keine Jellyfin-App.</p>'
+   +'<header><h2 id="velaris-cast-title">'+(hasMedia?'Auf Chromecast abspielen':'Chromecast-Geräte')+'</h2><button type="button" id="velaris-cast-close" class="secondary">Schließen</button></header>'
+   +'<p class="hint">'+(hasMedia?'Wähle einen Chromecast für '+escText(item.Name||'das Video')+'.':'Wähle dein TV-Gerät. Zum Abspielen öffne einen Film und tippe dort auf Cast.')+'</p>'
    +'<div id="velaris-cast-feedback" role="status" aria-live="polite">Chromecast-Geräte werden gesucht …</div>'
    +'<div id="velaris-cast-devices"></div>'
    +'<div id="velaris-cast-controls" hidden><button id="velaris-cast-pause" class="secondary">Pause</button>'
@@ -72,7 +75,7 @@ const VelarisCastBridge=(()=>{
   document.body.appendChild(overlay);
   const devices=overlay.querySelector('#velaris-cast-devices'),feedback=overlay.querySelector('#velaris-cast-feedback');
   const controls=overlay.querySelector('#velaris-cast-controls'),positionNode=overlay.querySelector('#velaris-cast-position');
-  let selected=null,position=0,closed=false,interval=null,startPolls=0,confirmed=false;
+  let selected=null,position=0,closed=false,interval=null,startPolls=0,confirmed=false,localPaused=false;
   const info=value=>{if(!closed)feedback.textContent=value};
   const onKeyDown=event=>{if(event.key==='Escape')close()};
   const close=()=>{if(closed)return;closed=true;if(interval)clearInterval(interval);
@@ -92,9 +95,14 @@ const VelarisCastBridge=(()=>{
     const state=String(entry.state||'UNKNOWN').toUpperCase();
     const idle=String(entry.idleReason||'').toUpperCase();
     startPolls++;
+    if(state==='PLAYING'&&!localPaused){
+     localPaused=true;
+     if(typeof onStarted==='function')onStarted();
+    }
     if(state==='PLAYING'||state==='PAUSED'||state==='BUFFERING'){
      if(!confirmed){
       confirmed=true;
+      
       info(state==='PLAYING'?'Wiedergabe auf dem Fernseher gestartet.':'Chromecast hat das Video angenommen ('+state+').');
      }
     }else if(state==='IDLE'&&(idle==='ERROR'||idle==='CANCELLED'||startPolls>=4&&!confirmed)){
@@ -135,11 +143,17 @@ const VelarisCastBridge=(()=>{
      button.textContent=device.name||'Chromecast';
      button.onclick=async()=>{
       devices.querySelectorAll('button').forEach(b=>b.disabled=true);
-      info('Starte '+(item.Name||'Film')+' auf '+(device.name||'Chromecast')+' …');
+      if(!hasMedia){
+        selected=device.id;controls.hidden=true;
+        info((device.name||'Chromecast')+' ausgewählt. Öffne einen Film und tippe im Player auf Cast.');
+        devices.querySelectorAll('button').forEach(b=>b.disabled=false);
+        return;
+       }
+       info('Starte '+(item.Name||'Film')+' auf '+(device.name||'Chromecast')+' …');
       try{
        const result=await call(account,'play',{deviceId:device.id,itemId:item.Id});
        if(closed)return;
-       selected=device.id;controls.hidden=false;confirmed=false;startPolls=0;
+       selected=device.id;controls.hidden=false;confirmed=false;localPaused=false;startPolls=0;
        info('Wiedergabeauftrag an '+(result.device||device.name)+' gesendet. Warte auf den Player-Status …');
        await updateStatus();
        if(!interval)interval=setInterval(updateStatus,5000);
@@ -153,5 +167,5 @@ const VelarisCastBridge=(()=>{
   };
   void loadDevices();
  }
- return {open};
+ return {open,icon};
 })();

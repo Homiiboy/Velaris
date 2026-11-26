@@ -84,12 +84,13 @@ function p9Play(item){
  // On iPhone use the proven player implementation from before Chromecast.
  if(/iPad|iPhone|iPod/i.test(navigator.userAgent||'')&&typeof p9PlayClassic==='function')return p9PlayClassic(item);
  stopHero();if(item.Type==='Series')return detail(item.Id);
- const prefs=p9Prefs(),html='<div id="p9-player" class="p9-player" role="region" aria-label="Velaris Videoplayer"><div class="p9-header"><button class="secondary" id="p9-close">‹ Zurück</button><strong>'+esc(item.Name)+'</strong><button class="secondary" id="p9-cast-button" type="button" aria-label="Auf Chromecast übertragen">▣ Cast</button><button class="secondary" id="p9-quality-button" aria-label="Streamingqualität ändern">⚙ Qualität</button></div><video id="p9-video" controls playsinline autoplay preload="metadata" aria-label="'+esc(item.Name)+'"></video><div class="p9-bottom"><div class="p9-transport"><button id="p9-rewind" aria-label="10 Sekunden zurück">↶ 10</button><button id="p9-toggle" aria-label="Pause oder Wiedergabe">❚❚</button><button id="p9-forward" aria-label="10 Sekunden vorwärts">10 ↷</button><span id="p9-clock" aria-live="off">0:00 / –:––</span></div><div id="p9-skip-zone" hidden><button id="p9-skip" class="secondary">Segment überspringen</button></div><div id="p9-next" class="p9-next" hidden></div><div id="p9-message" class="p9-message" role="status">Stream wird geladen …</div><div id="p9-diagnostics" class="p9-message" aria-live="polite"></div><div class="p9-cast-status" id="p9-cast-status" role="status" aria-live="polite"></div><button class="secondary" id="p9-cast-stop" type="button" hidden>TV-Wiedergabe beenden</button><button class="secondary" id="p9-retry" hidden>Erneut versuchen</button></div></div>';
+ const prefs=p9Prefs(),html='<div id="p9-player" class="p9-player" role="region" aria-label="Velaris Videoplayer"><div class="p9-header"><button class="secondary" id="p9-close">‹ Zurück</button><strong>'+esc(item.Name)+'</strong><button class="secondary" id="p9-cast-button" type="button" aria-label="Auf Chromecast übertragen">'+(typeof VelarisCastBridge!=='undefined'?VelarisCastBridge.icon:'▣')+' <span>Cast</span></button><button class="secondary" id="p9-quality-button" aria-label="Streamingqualität ändern">⚙ Qualität</button></div><video id="p9-video" controls playsinline autoplay preload="metadata" aria-label="'+esc(item.Name)+'"></video><div class="p9-bottom"><div class="p9-transport"><button id="p9-rewind" aria-label="10 Sekunden zurück">↶ 10</button><button id="p9-toggle" aria-label="Pause oder Wiedergabe">❚❚</button><button id="p9-forward" aria-label="10 Sekunden vorwärts">10 ↷</button><span id="p9-clock" aria-live="off">0:00 / –:––</span></div><div id="p9-skip-zone" hidden><button id="p9-skip" class="secondary">Segment überspringen</button></div><div id="p9-next" class="p9-next" hidden></div><div id="p9-message" class="p9-message" role="status">Stream wird geladen …</div><div id="p9-diagnostics" class="p9-message" aria-live="polite"></div><div class="p9-cast-status" id="p9-cast-status" role="status" aria-live="polite"></div><button class="secondary" id="p9-cast-stop" type="button" hidden>TV-Wiedergabe beenden</button><button class="secondary" id="p9-retry" hidden>Erneut versuchen</button></div></div>';
  app.insertAdjacentHTML('beforeend',html);
  const root=app.querySelector('#p9-player'),video=root.querySelector('#p9-video'),clock=root.querySelector('#p9-clock'),note=root.querySelector('#p9-message'),retry=root.querySelector('#p9-retry'),nextBox=root.querySelector('#p9-next'),skipZone=root.querySelector('#p9-skip-zone'),skip=root.querySelector('#p9-skip');
  const diagnostics=root.querySelector('#p9-diagnostics'),castStatus=root.querySelector('#p9-cast-status'),castStop=root.querySelector('#p9-cast-stop'),castButton=root.querySelector('#p9-cast-button');
  const isIos=/iPad|iPhone|iPod/i.test(navigator.userAgent||'');
- if(!p9CastClientEligible()){castButton.hidden=true;castButton.style.display='none'}
+ // Non-Chrome clients can use the authenticated Cast Bridge instead of the SDK.
+  if(!p9CastClientEligible())castButton.dataset.bridge='1'
  if(typeof velarisInstallFullscreenUI==='function')velarisInstallFullscreenUI(root,video,item);
  if(typeof velarisInstallDesktopPlayer==='function')velarisInstallDesktopPlayer(root,video,item);
  const currentSession=session();const previous=document.querySelectorAll('#p9-player');for(const old of previous)if(old!==root){const previousVideo=old.querySelector('video');if(previousVideo){previousVideo.pause();previousVideo.removeAttribute('src');previousVideo.load()}old.remove()}let startupTimer=null;let stage='Initialisierung',stageError='',startedFallback=false;let castCtrl=null;let quality=prefs.quality,fallback=false,reloading=false,pendingPosition=(item.UserData?.PlaybackPositionTicks||0)/10000000,stopped=false,reported=0,playbackInfo=null,streamGeneration=0,sourceUrl='',hlsEngine=null,hlsError='',startupAt=0,infoReadyAt=0,mediaRequestedAt=0,manifestReadyAt=0,firstFrameReported=false,next=null,segments=[],skipSeen=new Set(),nextShown=false,countdown=null,lastNextCountdown=-1;
@@ -309,14 +310,16 @@ function p9Play(item){
    if(!isAlive())return;
    // Keep the browser paused: resuming local playback is explicitly user-driven.
    try{if(Number.isFinite(position)&&video.readyState>=1)video.currentTime=position}catch{}
-   castStop.hidden=true;castButton.textContent='▣ Cast';
+   castStop.hidden=true;castButton.innerHTML=(typeof VelarisCastBridge!=='undefined'?VelarisCastBridge.icon:'▣')+' <span>Cast</span>';
    clock.textContent=p9Format(position)+' · TV getrennt';
    report('Stopped',position);
   }
  });
  castButton.onclick=()=>{if(castCtrl?.isCasting()){
   castStatus.textContent='Bereits verbunden. Mit „TV-Wiedergabe beenden“ trennen.';
- }else void castCtrl.start()};
+ }else if(castButton.dataset.bridge==='1'){
+   if(typeof VelarisCastBridge!=='undefined')VelarisCastBridge.open(item,currentSession,()=>{if(root.isConnected)video.pause()});
+  }else void castCtrl.start()};
  castStop.onclick=()=>castCtrl.stop();
  retry.onclick=()=>{
   // Safari requires a user gesture to begin media playback. Keep that gesture

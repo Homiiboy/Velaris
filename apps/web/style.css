@@ -1138,3 +1138,25 @@ button:disabled{cursor:wait;opacity:.65}
  }
  .shell .details-screen .episode-card{align-items:flex-start}
 }
+
+/* PWA Cast: same device-picker affordance in the home header and both player modes. */
+.velaris-cast-icon{display:block;width:23px;height:23px;flex-shrink:0}
+.shell>.top .top-actions #velaris-cast-home,
+.p9-player .velaris-cast-player,
+.p9-player .vfc-cast{
+ display:inline-flex;align-items:center;justify-content:center;
+ min-width:42px;min-height:42px;padding:8px;border-radius:13px;
+ color:#fff;background:#24212f;border:1px solid #ffffff35;
+ touch-action:manipulation;
+}
+.shell>.top .top-actions #velaris-cast-home:hover,
+.shell>.top .top-actions #velaris-cast-home:focus-visible,
+.p9-player .velaris-cast-player:hover,
+.p9-player .vfc-cast:focus-visible{border-color:var(--accent,#a78bfa)}
+.p9-player .vfc-top .vfc-cast{margin-left:auto;z-index:2}
+.p9-player .vfc-top .vfc-heading{min-width:0;flex:1}
+@media(max-width:849px){
+ .shell>.top .top-actions #velaris-cast-home{min-width:40px;min-height:40px;padding:7px}
+ .shell>.top .top-actions #velaris-cast-home .velaris-cast-icon{width:22px;height:22px}
+ .p9-player.vfc-enabled .p9-header .velaris-cast-player{pointer-events:none}
+}
