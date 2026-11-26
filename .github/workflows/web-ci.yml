@@ -25,3 +25,7 @@ jobs:
           node --check apps/web/scripts/check.cjs
       - name: Validate PWA assets and manifest
         run: node apps/web/scripts/check.cjs
+      - name: Validate Chromecast Bridge Python and media negotiation
+        run: |
+          python3 -m py_compile apps/web/cast-bridge/server.py
+          python3 -m unittest discover -s apps/web/cast-bridge -p 'test_*.py' -v
