@@ -1160,3 +1160,41 @@ button:disabled{cursor:wait;opacity:.65}
  .shell>.top .top-actions #velaris-cast-home .velaris-cast-icon{width:22px;height:22px}
  .p9-player.vfc-enabled .p9-header .velaris-cast-player{pointer-events:none}
 }
+
+
+/* Cast button: accessible, high-contrast Velaris Violet on Home and in both players.
+ * The accent stays violet even in category sections with other theme colors. */
+.shell>.top .top-actions #velaris-cast-home,
+.p9-player .p9-header .velaris-cast-player,
+.p9-player .p9-header #p9-cast-button,
+.p9-player .vfc-top .vfc-cast {
+ display:inline-flex!important;align-items:center!important;justify-content:center!important;
+ min-width:44px;min-height:44px;padding:8px 10px!important;
+ border-radius:13px!important;border:1px solid #aa92ff!important;
+ background:linear-gradient(180deg,#7c5cff 0%,#5c3ff2 100%)!important;
+ color:#fff!important;
+ box-shadow:0 0 0 1px rgba(167,139,250,.18),0 8px 22px rgba(92,63,242,.35)!important;
+ touch-action:manipulation;
+}
+.shell>.top .top-actions #velaris-cast-home:where(:hover,:focus-visible),
+.p9-player .p9-header .velaris-cast-player:where(:hover,:focus-visible),
+.p9-player .p9-header #p9-cast-button:where(:hover,:focus-visible),
+.p9-player .vfc-top .vfc-cast:where(:hover,:focus-visible){
+ background:linear-gradient(180deg,#8a6cff,#6a4cf6)!important;
+ border-color:#c4b5fd!important;
+ box-shadow:0 0 0 1px rgba(196,181,253,.28),0 10px 24px rgba(106,76,246,.42)!important;
+}
+.velaris-cast-icon{
+ width:24px!important;height:24px!important;display:block!important;flex:none;
+ fill:none!important;stroke:#fff!important;stroke-width:2.5!important;
+ stroke-linecap:square;stroke-linejoin:round;
+}
+@media(max-width:849px){
+ .shell>.top .top-actions #velaris-cast-home,
+ .p9-player .vfc-top .vfc-cast{min-width:44px!important;min-height:44px!important}
+}
+/* The fullscreen chrome is the interactive control on mobile; keep the
+ * duplicate legacy header button visually out of the way. */
+@media(max-width:849px){
+ .p9-player.vfc-enabled .p9-header .velaris-cast-player{pointer-events:none!important}
+}

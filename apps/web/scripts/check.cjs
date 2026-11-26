@@ -505,3 +505,15 @@ assert(bridgeUi.includes('if(!hasMedia){'), 'Home device selection must not init
 assert(bridgeUi.includes("if(state==='PLAYING'&&!localPaused)")&&bridgeUi.includes("if(typeof onStarted==='function')onStarted();"),
  'Local video should pause only when TV reports successful playback');
 console.log('Velaris Web: Cast access on Home and player verified.');
+
+
+/* Velaris violet Cast redesign: white icon must be legible on dark PWA UI. */
+assert(bridgeUi.includes('stroke="#ffffff" stroke-width="2.5"'),
+ 'Cast SVG should have explicit, high-contrast white strokes');
+assert(stylesheet.includes('background:linear-gradient(180deg,#7c5cff 0%,#5c3ff2 100%)!important'),
+ 'Cast buttons need Velaris violet gradient');
+assert(stylesheet.includes('.p9-player .vfc-top .vfc-cast')&&stylesheet.includes('#velaris-cast-home'),
+ 'Cast styling must cover both fullscreen player and homescreen');
+assert(stylesheet.includes('stroke:#fff!important'),
+ 'Cast icon must remain visible even if inherited theme changes');
+console.log('Velaris Web: violet Chromecast button visibility checks passed.');

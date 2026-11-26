@@ -11,7 +11,7 @@ const VelarisCastBridge=(()=>{
   if(!response.ok)throw Error(json.error||'Cast Bridge HTTP '+response.status);
   return json;
  }
- const icon='<svg class="velaris-cast-icon" viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M2 7V4a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2h-7"/><path d="M2 13a9 9 0 0 1 9 9M2 18a4 4 0 0 1 4 4"/><path d="M2 22h.01"/></svg>';
+ const icon='<svg class="velaris-cast-icon" viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="square" stroke-linejoin="round" role="img" aria-label="Chromecast"><path d="M2 7V4a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2h-7"/><path d="M2 13a9 9 0 0 1 9 9"/><path d="M2 18a4 4 0 0 1 4 4"/><path d="M2 22h.01"/></svg>';
  function open(item,account,onStarted){
   if(!account?.token)return;
   const hasMedia=!!item?.Id;
