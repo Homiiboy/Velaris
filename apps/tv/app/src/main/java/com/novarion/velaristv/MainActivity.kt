@@ -28,6 +28,8 @@ import java.util.concurrent.Executors
 class MainActivity : Activity() {
     private val prefs by lazy { getSharedPreferences("velaris_tv", MODE_PRIVATE) }
     private val io = Executors.newFixedThreadPool(6)
+    // Image decoding and downloading must never block Jellyfin catalog requests.
+    private val imageIo = Executors.newFixedThreadPool(4)
     private val imageCacheMaxKb = ((Runtime.getRuntime().maxMemory() / 1024L) / 8L).coerceIn(12L * 1024L, 48L * 1024L).toInt()
     private val imageCache = object: android.util.LruCache<String,android.graphics.Bitmap>(imageCacheMaxKb) {
         override fun sizeOf(key:String, value:android.graphics.Bitmap):Int = (value.byteCount / 1024).coerceAtLeast(1)
@@ -66,7 +68,7 @@ class MainActivity : Activity() {
         }
     }
 
-    override fun onDestroy() { destroyed = true; io.shutdownNow(); super.onDestroy() }
+    override fun onDestroy() { destroyed = true; io.shutdownNow(); imageIo.shutdownNow(); super.onDestroy() }
 
     override fun onTrimMemory(level:Int) {
         super.onTrimMemory(level)
@@ -2580,18 +2582,27 @@ class MainActivity : Activity() {
             }
         }
         val disk=java.io.File(cacheDir,"img_"+cacheKey.hashCode().toUInt().toString(16)+".jpg")
-        if(disk.exists()) {
-            val bmp=runCatching{android.graphics.BitmapFactory.decodeFile(disk.absolutePath)}.getOrNull()
-            if(bmp!=null) { imageCache.put(cacheKey,bmp); view.setImageBitmap(bmp); return } else disk.delete()
-        }
         val shouldFetch=synchronized(pendingImages) {
             val waiting=pendingImages[cacheKey]
             if(waiting!=null){waiting.add(view);false}
             else{pendingImages[cacheKey]=mutableListOf(view);true}
         }
         if(!shouldFetch)return
-        io.execute {
+        imageIo.execute {
             try {
+                // Decoding a cached JPEG on the main thread can freeze D-pad focus.
+                if(disk.exists()) {
+                    val cached=runCatching{android.graphics.BitmapFactory.decodeFile(disk.absolutePath)}.getOrNull()
+                    if(cached!=null) {
+                        imageCache.put(cacheKey,cached)
+                        val waiting=synchronized(pendingImages){pendingImages[cacheKey]?.toList().orEmpty()}
+                        runOnUiThread {
+                            if(!isFinishing&&!isDestroyed)waiting.filter{it.isAttachedToWindow}
+                                .forEach{it.setImageBitmap(cached)}
+                        }
+                        return@execute
+                    } else disk.delete()
+                }
                 val conn=URL("$server/Items/$id/Images/$type?maxWidth=$width&quality=82").openConnection() as HttpURLConnection
                 conn.setRequestProperty("X-Emby-Token",token); conn.connectTimeout=4500; conn.readTimeout=7000
                 try {
@@ -2623,7 +2634,7 @@ class MainActivity : Activity() {
 
     private fun loadImageWithFallback(view:ImageView,id:String,type:String,width:Int,onMissing:()->Unit) {
         if(id.isBlank() || server.isBlank() || token.isBlank()) return onMissing()
-        io.execute {
+        imageIo.execute {
             try {
                 val conn=URL("$server/Items/$id/Images/$type?maxWidth=$width&quality=92").openConnection() as HttpURLConnection
                 try {
