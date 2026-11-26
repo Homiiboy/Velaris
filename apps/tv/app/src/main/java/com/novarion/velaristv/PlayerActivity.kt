@@ -39,6 +39,8 @@ import java.util.concurrent.Executors
 @UnstableApi
 class PlayerActivity : Activity() {
     private val io = Executors.newSingleThreadExecutor()
+    // Playback URL negotiation must not queue behind optional title/segment requests.
+    private val playbackIo = Executors.newSingleThreadExecutor()
     private var player: ExoPlayer? = null
     private var itemId = ""
     private var server = ""
@@ -356,7 +358,7 @@ class PlayerActivity : Activity() {
         skipIntroButton?.visibility=View.GONE
         loadMediaSegments(id)
         val request=++playbackRequestSerial
-        io.execute {
+        playbackIo.execute {
             val result=runCatching{resolvePlaybackUrl(id,forceCompatible)}
             runOnUiThread {
                 if(isFinishing||isDestroyed||player!==exo||request!=playbackRequestSerial)return@runOnUiThread
@@ -807,6 +809,7 @@ class PlayerActivity : Activity() {
         player?.release()
         player=null
         io.shutdownNow()
+        playbackIo.shutdownNow()
         super.onDestroy()
     }
 
