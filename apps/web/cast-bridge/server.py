@@ -10,7 +10,7 @@ import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.error import HTTPError, URLError
-from urllib.parse import quote, urlencode
+from urllib.parse import quote, urlencode, urljoin, urlsplit, urlunsplit, parse_qsl
 from urllib.request import Request, urlopen
 
 import pychromecast
@@ -34,6 +34,114 @@ def jellyfin_get(path, token):
     with urlopen(req, timeout=8) as response:
         return json.load(response)
 
+
+
+# Chromecast receivers cannot use the PWA's authenticated Jellyfin session.
+# Negotiate a receiver-compatible source using the same Jellyfin PlaybackInfo
+# endpoint the working local player uses, then rewrite it to the LAN origin.
+_CAST_PROFILE = {
+    "Name": "Velaris Chromecast (H.264/AAC)",
+    "MaxStreamingBitrate": 12_000_000,
+    "MaxStaticBitrate": 12_000_000,
+    "DirectPlayProfiles": [
+        {"Type": "Video", "Container": "mp4,m4v,mov",
+         "VideoCodec": "h264", "AudioCodec": "aac,mp3"}
+    ],
+    "TranscodingProfiles": [
+        {"Type": "Video", "Context": "Streaming", "Protocol": "hls",
+         "Container": "ts", "VideoCodec": "h264", "AudioCodec": "aac",
+         "Conditions": []}
+    ],
+    "SubtitleProfiles": [],
+    "CodecProfiles": [],
+    "ContainerProfiles": [],
+}
+
+
+def jellyfin_playback_info(item_id, user_id, token):
+    body = json.dumps({
+        "UserId": user_id,
+        "IsPlayback": True,
+        "AutoOpenLiveStream": True,
+        "EnableDirectPlay": True,
+        "EnableDirectStream": True,
+        "EnableTranscoding": True,
+        "MaxStreamingBitrate": 12_000_000,
+        "DeviceProfile": _CAST_PROFILE,
+    }).encode("utf-8")
+    req = Request(
+        JELLYFIN_LOCAL + "/Items/" + quote(item_id) + "/PlaybackInfo",
+        data=body,
+        headers={
+            "X-Emby-Token": token, "Accept": "application/json",
+            "Content-Type": "application/json",
+        },
+        method="POST",
+    )
+    with urlopen(req, timeout=12) as response:
+        return json.load(response)
+
+
+def cast_media_source(item_id, token, playback):
+    """Return LAN URL and receiver MIME; never return an unplayable source path."""
+    sources = playback.get("MediaSources") or []
+    if not sources:
+        raise RuntimeError("Jellyfin hat keine abspielbare Medienquelle zurückgegeben.")
+    source = sources[0]
+    source_id = source.get("Id") or ""
+    session_id = playback.get("PlaySessionId") or ""
+    container = str(source.get("Container") or "").lower()
+    codecs = {str(track.get("Type") or "").lower():
+              str(track.get("Codec") or "").lower()
+              for track in (source.get("MediaStreams") or [])
+              if track.get("Type") in ("Video", "Audio")}
+    can_direct = (
+        source.get("SupportsDirectPlay") is not False
+        and container in ("mp4", "m4v", "mov")
+        and codecs.get("video") == "h264"
+        and codecs.get("audio") in ("aac", "mp3")
+    )
+    if can_direct:
+        params = {"Static": "true", "api_key": token}
+        if source_id:
+            params["MediaSourceId"] = source_id
+        url = JELLYFIN_CAST + "/Videos/" + quote(item_id) + "/stream.mp4?" + urlencode(params)
+        return url, "video/mp4", "Direct Play"
+
+    transcoding = source.get("TranscodingUrl") or ""
+    if transcoding:
+        # A negotiated path is trusted only if it belongs to our Jellyfin
+        # server. Never send credentials to an external playback endpoint.
+        parts = urlsplit(urljoin(JELLYFIN_LOCAL + "/", transcoding))
+        allowed = {urlsplit(JELLYFIN_LOCAL).netloc, urlsplit(JELLYFIN_CAST).netloc}
+        if parts.netloc not in allowed or parts.scheme not in ("http", "https"):
+            raise RuntimeError("Jellyfin lieferte eine unerwartete Streaming-Adresse.")
+        params = dict(parse_qsl(parts.query, keep_blank_values=True))
+        if not any(k.lower() == "api_key" or k.lower() == "apikey" for k in params):
+            params["api_key"] = token
+        path = parts.path
+        url = JELLYFIN_CAST + path + "?" + urlencode(params)
+        if path.lower().endswith(".m3u8"):
+            return url, "application/vnd.apple.mpegurl", "HLS Transcoding"
+        if path.lower().endswith(".mp4"):
+            return url, "video/mp4", "MP4 Transcoding"
+        raise RuntimeError("Jellyfin lieferte ein unbekanntes Streamingformat.")
+
+    if source.get("SupportsTranscoding") is False:
+        raise RuntimeError(
+            "Der Film ist auf Chromecast nicht direkt abspielbar und "
+            "Jellyfin erlaubt für diese Medienquelle kein Transcoding."
+        )
+    params = {
+        "api_key": token, "VideoCodec": "h264", "AudioCodec": "aac",
+        "TranscodingContainer": "ts", "MaxStreamingBitrate": "12000000",
+    }
+    if source_id:
+        params["MediaSourceId"] = source_id
+    if session_id:
+        params["PlaySessionId"] = session_id
+    url = JELLYFIN_CAST + "/Videos/" + quote(item_id) + "/master.m3u8?" + urlencode(params)
+    return url, "application/vnd.apple.mpegurl", "HLS Transcoding (fallback)"
 
 def check_cast_jellyfin_url():
     """The Chromecast must reach this LAN endpoint independently of the iPhone/Tailscale."""
@@ -147,16 +255,17 @@ class Handler(BaseHTTPRequestHandler):
                     raise ValueError("Nur Filme und Episoden können abgespielt werden.")
                 check_cast_jellyfin_url()
                 cast.wait(timeout=12)
-                # Chromecast itself retrieves this URL from the LAN. The Jellyfin token
-                # is needed by the receiver; it never appears in bridge responses/logs.
-                params = urlencode({"api_key": token, "VideoCodec": "h264", "AudioCodec": "aac",
-                                    "TranscodingContainer": "ts"})
-                url = JELLYFIN_CAST + "/Videos/" + quote(item_id) + "/master.m3u8?" + params
-                cast.media_controller.play_media(url, "application/x-mpegURL", title=item.get("Name", "Velaris"),
+                # Select a playable receiver source before sending LOAD. The TV
+                # fetches it over LAN; the PWA's Tailscale URL is not usable there.
+                playback = jellyfin_playback_info(item_id, user_id, token)
+                url, mime, mode = cast_media_source(item_id, token, playback)
+                LOG.info("Cast media request device=%s mode=%s mime=%s", cast.name, mode, mime)
+                cast.media_controller.play_media(url, mime, title=item.get("Name", "Velaris"),
                                                  stream_type="BUFFERED")
                 with _LOCK:
                     _ACTIVE[device_id] = user_id
-                return self.answer(200, {"ok": True, "device": cast.name, "state": "STARTING"})
+                return self.answer(200, {"ok": True, "device": cast.name, "state": "STARTING",
+                                         "mode": mode})
             if self.path == "/control":
                 cast = device_for(device_id, user_id)
                 action = data.get("action")
