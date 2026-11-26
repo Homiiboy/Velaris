@@ -28,6 +28,8 @@ import java.util.concurrent.Executors
 class MainActivity : Activity() {
     private val prefs by lazy { getSharedPreferences("velaris_tv", MODE_PRIVATE) }
     private val io = Executors.newFixedThreadPool(6)
+    // Image decoding and downloading must never block Jellyfin catalog requests.
+    private val imageIo = Executors.newFixedThreadPool(4)
     private val imageCacheMaxKb = ((Runtime.getRuntime().maxMemory() / 1024L) / 8L).coerceIn(12L * 1024L, 48L * 1024L).toInt()
     private val imageCache = object: android.util.LruCache<String,android.graphics.Bitmap>(imageCacheMaxKb) {
         override fun sizeOf(key:String, value:android.graphics.Bitmap):Int = (value.byteCount / 1024).coerceAtLeast(1)
@@ -66,7 +68,7 @@ class MainActivity : Activity() {
         }
     }
 
-    override fun onDestroy() { destroyed = true; io.shutdownNow(); super.onDestroy() }
+    override fun onDestroy() { destroyed = true; io.shutdownNow(); imageIo.shutdownNow(); super.onDestroy() }
 
     override fun onTrimMemory(level:Int) {
         super.onTrimMemory(level)
@@ -471,6 +473,21 @@ class MainActivity : Activity() {
                 val sciFiF=async("/Users/$userId/Items?Recursive=true&Limit=18&Genres=Science%20Fiction&IncludeItemTypes=Movie,Series&Fields=PrimaryImageAspectRatio")
                 val replayF=async("/Users/$userId/Items?Recursive=true&Limit=18&SortBy=DatePlayed&SortOrder=Descending&IncludeItemTypes=Movie,Series&Filters=IsPlayed&Fields=PrimaryImageAspectRatio")
                 val watchedF=async("/Users/$userId/Items?Recursive=true&Limit=1&SortBy=DatePlayed&SortOrder=Descending&IncludeItemTypes=Movie,Series&Filters=IsPlayed&Fields=PrimaryImageAspectRatio")
+                // First useful content should not wait for all ten independent
+                // recommendation queries. Render the latest items as soon as possible.
+                val quickLatest=runCatching {
+                    latestF.get(1800,java.util.concurrent.TimeUnit.MILLISECONDS)
+                }.getOrDefault(emptyList())
+                if(quickLatest.isNotEmpty())runOnUiThread {
+                    if(!destroyed && homeRoot===requestRoot && requestRoot.isAttachedToWindow) {
+                        requestRoot.animate().cancel()
+                        requestRoot.removeAllViews()
+                        requestRoot.tag="velaris_fast_home_preview"
+                        addHeroCarousel(quickLatest.take(5))
+                        addRow("Kürzlich hinzugefügt",quickLatest.take(12))
+                        requestRoot.alpha=1f
+                    }
+                }
                 val resume=resumeF.get(); val latest=latestF.get(); val favorites=favoritesF.get()
                 val recommended=recommendedF.get(); val topTen=topTenF.get(); val action=actionF.get()
                 val comedy=comedyF.get(); val sciFi=sciFiF.get(); val replay=replayF.get(); val watched=watchedF.get()
@@ -482,7 +499,10 @@ class MainActivity : Activity() {
                     if(destroyed || homeRoot!==requestRoot || !requestRoot.isAttachedToWindow)
                         return@runOnUiThread
                     requestRoot.animate().cancel()
-                    requestRoot.alpha=0f
+                    val hadPreview=requestRoot.tag=="velaris_fast_home_preview"
+                    val focusedTag=if(hadPreview)requestRoot.findFocus()?.tag else null
+                    if(!hadPreview)requestRoot.alpha=0f
+                    requestRoot.tag=null
                     requestRoot.removeAllViews()
                     addHeroCarousel((latest+recommended).distinctBy{it.optString("Id")}.take(5))
                     val randomButton=actionButton("🎲  Zufälliger Film",false){playRandomMovie()}
@@ -527,7 +547,12 @@ class MainActivity : Activity() {
                             }
                         }
                     }
-                    requestRoot.animate().alpha(1f).setDuration(280).start()
+                    if(!hadPreview)requestRoot.animate().alpha(1f).setDuration(280).start()
+                    else requestRoot.alpha=1f
+                    if(hadPreview&&focusedTag is String) {
+                        requestRoot.post { if(requestRoot.isAttachedToWindow)
+                            requestRoot.findViewWithTag<View>(focusedTag)?.requestFocus() }
+                    }
                     val focusId=restoreMediaFocusId
                     if(focusId.isNotBlank()) {
                         restoreMediaFocusId=""
@@ -2580,18 +2605,27 @@ class MainActivity : Activity() {
             }
         }
         val disk=java.io.File(cacheDir,"img_"+cacheKey.hashCode().toUInt().toString(16)+".jpg")
-        if(disk.exists()) {
-            val bmp=runCatching{android.graphics.BitmapFactory.decodeFile(disk.absolutePath)}.getOrNull()
-            if(bmp!=null) { imageCache.put(cacheKey,bmp); view.setImageBitmap(bmp); return } else disk.delete()
-        }
         val shouldFetch=synchronized(pendingImages) {
             val waiting=pendingImages[cacheKey]
             if(waiting!=null){waiting.add(view);false}
             else{pendingImages[cacheKey]=mutableListOf(view);true}
         }
         if(!shouldFetch)return
-        io.execute {
+        imageIo.execute {
             try {
+                // Decoding a cached JPEG on the main thread can freeze D-pad focus.
+                if(disk.exists()) {
+                    val cached=runCatching{android.graphics.BitmapFactory.decodeFile(disk.absolutePath)}.getOrNull()
+                    if(cached!=null) {
+                        imageCache.put(cacheKey,cached)
+                        val waiting=synchronized(pendingImages){pendingImages[cacheKey]?.toList().orEmpty()}
+                        runOnUiThread {
+                            if(!isFinishing&&!isDestroyed)waiting.filter{it.isAttachedToWindow}
+                                .forEach{it.setImageBitmap(cached)}
+                        }
+                        return@execute
+                    } else disk.delete()
+                }
                 val conn=URL("$server/Items/$id/Images/$type?maxWidth=$width&quality=82").openConnection() as HttpURLConnection
                 conn.setRequestProperty("X-Emby-Token",token); conn.connectTimeout=4500; conn.readTimeout=7000
                 try {
@@ -2623,7 +2657,7 @@ class MainActivity : Activity() {
 
     private fun loadImageWithFallback(view:ImageView,id:String,type:String,width:Int,onMissing:()->Unit) {
         if(id.isBlank() || server.isBlank() || token.isBlank()) return onMissing()
-        io.execute {
+        imageIo.execute {
             try {
                 val conn=URL("$server/Items/$id/Images/$type?maxWidth=$width&quality=92").openConnection() as HttpURLConnection
                 try {
