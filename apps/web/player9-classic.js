@@ -109,7 +109,7 @@ function p9Play(item){
    catch(error){console.warn('Velaris AirPlay target selection unavailable',error)}
   };
  }
- if(typeof velarisInstallFullscreenUI==='function')velarisInstallFullscreenUI(root,video,item);
+ if(typeof velarisInstallFullscreenUI==='function')try{velarisInstallFullscreenUI(root,video,item)}catch(error){console.warn('Velaris optional player controls unavailable',error)}
  const currentSession=session();const previous=document.querySelectorAll('#p9-player');for(const old of previous)if(old!==root){const previousVideo=old.querySelector('video');if(previousVideo){previousVideo.pause();previousVideo.removeAttribute('src');previousVideo.load()}old.remove()}let quality=prefs.quality,fallback=false,reloading=false,pendingPosition=(item.UserData?.PlaybackPositionTicks||0)/10000000,stopped=false,reported=0,playbackInfo=null,streamGeneration=0,sourceUrl='',hlsEngine=null,hlsError='',startupAt=0,infoReadyAt=0,mediaRequestedAt=0,manifestReadyAt=0,firstFrameReported=false,next=null,segments=[],skipSeen=new Set(),nextShown=false,countdown=null,lastNextCountdown=-1,streamWatchdog=null,streamRetryCount=0;
  const isAlive=()=>root.isConnected&&!stopped&&session()?.userId===currentSession.userId&&session()?.url===currentSession.url;
  const playerMessage=message=>{if(isAlive())note.textContent=message};
