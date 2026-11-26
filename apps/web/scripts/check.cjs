@@ -521,3 +521,14 @@ console.log('Velaris Web: violet Chromecast button visibility checks passed.');
 for(const src of [classic,player])assert(src.includes("try{velarisInstallFullscreenUI(root,video,item)}catch(error)"),
  'Optional Cast/fullscreen chrome must never block player startup');
 console.log('Velaris Web: optional Cast controls verified.');
+
+
+/* Web/iPhone-PWA Stable 3.0.0: versions match and no runtime media changes. */
+assert.equal(manifest.version,'3.0.0','Web/PWA manifest must identify Stable 3.0.0');
+assert(html.includes('name="application-version" content="3.0.0"'),
+ 'Web and iPhone PWA HTML must identify Stable 3.0.0');
+assert(sw.includes("velaris-shell-v68-web-pwa-3.0.0-stable"),
+ 'Stable 3.0.0 needs a fresh PWA service-worker cache');
+assert(fs.existsSync(path.join(root,'RELEASE_3.0.0.md')),
+ 'Stable release notes must be present');
+console.log('Velaris Web & iPhone PWA: Stable 3.0.0 version contract passed.');
